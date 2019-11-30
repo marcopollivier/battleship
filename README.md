@@ -29,15 +29,15 @@ Porta-Aviões     | 5       | 1
 
 ### Rebocador
 
-**Descrição**: **Fonte:** [Wikipedia]()
+**Descrição**: Um rebocador é um barco projetado para empurrar, puxar e rebocar barcaças ou navios em manobras delicadas como atracação e desatracação.Um rebocador de alto-mar é uma embarcação de grande porte, grande potência (motores de até 10 mil HP) e extenso raio de ação. Destinado a missões de socorro de embarcações avariadas, combate a incêndios e resgate de pessoal longe das áreas portuárias. **Fonte:** [Wikipedia](https://pt.wikipedia.org/wiki/Rebocador)
 
 ### Submarino
 
-**Descrição**: **Fonte:** [Wikipedia]()
+**Descrição**: Submarino é uma embarcação especializada para operar submersa, tendo sido largamente usada pela primeira vez na Primeira Guerra Mundial, sendo empregada por todas as grandes marinhas atualmente. Submarinos civis e submergíveis são usados com fins científicos tanto na água doce quanto salgada para trabalhar em profundidades muito grandes para mergulhadores humanos. **Fonte:** [Wikipedia](https://pt.wikipedia.org/wiki/Submarino)
 
 ### Destroyer
 
-**Descrição**: Um contratorpedeiro, também referido como Destroyer ou Destróier, é um tipo de navio de guerra, rápido e manobrável, concebido para escoltar navios maiores numa esquadra naval ou comboio de navios e defendê-los contra agressores menores, mas perigosos. **Fonte:** [Wikipedia](https://pt.wikipedia.org/wiki/ContratorpedeiroPort)
+**Descrição**: Um contratorpedeiro, também referido como Destroyer ou Destróier, é um tipo de navio de guerra, rápido e manobrável, concebido para escoltar navios maiores numa esquadra naval ou comboio de navios e defendê-los contra agressores menores, mas perigosos. **Fonte:** [Wikipedia](https://pt.wikipedia.org/wiki/Contratorpedeiro)
 
 AKA: Contratorpedeiro, Destróier
 
