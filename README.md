@@ -19,11 +19,11 @@ O tabuleiro do jogo é constituído por uma matriz de 10x10 onde as escalas são
 
 Este jogo é recomendado para duas pessoas. Ambos os jogadores devem posicionar seus Navios de Combate em sua matriz 10xJ. 
 
-O primeiro jogador dispara indicando uma posição da Matriz. Exemplo: A1, B3, J10.
-Caso ele acerte, tem o direito de efetuar mais um disparo. 
-Caso erre, é considerado um tiro na água e a vez passa a ser do outro jogador. 
-Quando todas as partes de um Navio são acertadas o mesmo é considerado como "Afundado"
-Quem afundar todos os Navios do oponente, **ganha o jogo**
+- O primeiro jogador dispara indicando uma posição da Matriz. Exemplo: A1, B3, J10.
+- Caso ele acerte, tem o direito de efetuar mais um disparo. 
+- Caso erre, é considerado um tiro na água e a vez passa a ser do outro jogador. 
+- Quando todas as partes de um Navio são acertadas o mesmo é considerado como "Afundado"
+- Quem afundar todos os Navios do oponente, **ganha o jogo**
 
 Os navios são posicionados de acordo com seu tamanho e posição no tabuleiro - podendo ser posicionados tanto na horizontal quanto na vertical - tendo os seguintes tamanhos e quantidade inicial:
 
