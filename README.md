@@ -21,10 +21,15 @@ Os navios são posicionados de acordo com seu tamanho e posição no tabuleiro t
 
 Navio            | Tamanho | Quantidade
 ---------------- | ------- | ----------
-Submarino        | 1       | 4
-Destroyer        | 2       | 3
-Encouraçado      | 4       | 2
+Rebocador        | 1       | 4
+Submarino        | 2       | 3
+Destroyer        | 3       | 2
+Encouraçado      | 4       | 1
 Porta-Aviões     | 5       | 1
+
+### Rebocador
+
+>TODO
 
 ### Submarino
 
