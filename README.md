@@ -29,27 +29,27 @@ Porta-Aviões     | 5       | 1
 
 ### Rebocador
 
->TODO
+**Descrição**: **Fonte:** [Wikipedia]()
 
 ### Submarino
 
->TODO
+**Descrição**: **Fonte:** [Wikipedia]()
 
 ### Destroyer
 
->TODO
+**Descrição**: Um contratorpedeiro, também referido como Destroyer ou Destróier, é um tipo de navio de guerra, rápido e manobrável, concebido para escoltar navios maiores numa esquadra naval ou comboio de navios e defendê-los contra agressores menores, mas perigosos. **Fonte:** [Wikipedia](https://pt.wikipedia.org/wiki/ContratorpedeiroPort)
 
 AKA: Contratorpedeiro, Destróier
 
 ### Encouraçado
 
->TODO
+**Descrição**: Um couraçado ou encouraçado é um navio de guerra pesadamente blindado e armado com as peças de artilharia de longo alcance e de maior calibre existentes. Normalmente, os couraçados eram maiores, mais armados e mais blindados que os cruzadores e contratorpedeiros. **Fonte:** [Wikipedia](https://pt.wikipedia.org/wiki/Coura%C3%A7ado)
 
 AKA: Couraçado
 
 ### Porta Aviões
 
->TODO
+**Descrição**: Um porta-aviões é um navio de guerra cujo papel principal é servir de base aérea móvel. Permite, portanto, que uma força naval possa projetar o seu poderio aéreo a grandes distâncias, sem a necessidade de depender de aeroportos para os seus aviões. **Fonte:** [Wikipedia](https://pt.wikipedia.org/wiki/Porta-avi%C3%B5es)
 
 ## TODO - Evolução do projeto
 
