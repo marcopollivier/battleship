@@ -1,0 +1,17 @@
+
+### Go ###
+# Binaries for programs and plugins
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+
+### Go Patch ###
+/vendor/
+/Godeps/
+
+### Intellij ###
+.idea/**
+
