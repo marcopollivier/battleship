@@ -7,6 +7,10 @@
 *.so
 *.dylib
 
+# Build directories and binaries
+bin/
+battleship
+
 
 ### Go Patch ###
 /vendor/
@@ -14,4 +18,3 @@
 
 ### Intellij ###
 .idea/**
-
