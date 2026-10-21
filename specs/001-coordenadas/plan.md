@@ -1,7 +1,7 @@
 # 001 — Plano
 
 - **Spec:** [spec.md](spec.md)
-- **Status:** Rascunho
+- **Status:** Aprovado
 
 ## Abordagem
 
@@ -16,14 +16,14 @@ Criar o pacote de domínio `internal/board`, que nas próximas specs também vai
 const Size = 10
 
 var (
-	ErrInvalidFormat = errors.New("invalid coordinate format")
-	ErrOutOfBounds   = errors.New("coordinate out of bounds")
+ ErrInvalidFormat = errors.New("invalid coordinate format")
+ ErrOutOfBounds   = errors.New("coordinate out of bounds")
 )
 
 // Coord is a cell on the board. Col and Row are zero-based: A1 is {0, 0}, J10 is {9, 9}.
 type Coord struct {
-	Col int
-	Row int
+ Col int
+ Row int
 }
 
 // ParseCoord converts text such as "A1" or " j10 " into a Coord.
