@@ -2,13 +2,21 @@
 package board
 
 import (
+	"errors"
 	"fmt"
+	"regexp"
 	"strconv"
 	"strings"
 )
 
 // Size is the number of rows and columns on the board.
 const Size = 10
+
+// ErrInvalidFormat means the text is not a letter followed by a number without leading zeros.
+var ErrInvalidFormat = errors.New("invalid coordinate format")
+
+// coordPattern is a letter followed by a number without leading zeros.
+var coordPattern = regexp.MustCompile(`^[A-Za-z](0|[1-9][0-9]*)$`)
 
 // Coord is a cell on the board. Col and Row are zero-based: A1 is {0, 0}, J10 is {9, 9}.
 type Coord struct {
@@ -17,10 +25,11 @@ type Coord struct {
 }
 
 // ParseCoord converts text such as "A1" or " j10 " into a Coord.
+// Errors wrap ErrInvalidFormat and include the original input.
 func ParseCoord(s string) (Coord, error) {
 	text := strings.TrimSpace(s)
-	if len(text) < 2 {
-		return Coord{}, fmt.Errorf("parse coordinate %q", s)
+	if !coordPattern.MatchString(text) {
+		return Coord{}, fmt.Errorf("%w: %q", ErrInvalidFormat, s)
 	}
 	row, err := strconv.Atoi(text[1:])
 	if err != nil {

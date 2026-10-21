@@ -1,7 +1,9 @@
 package board
 
 import (
+	"errors"
 	"strconv"
+	"strings"
 	"testing"
 )
 
@@ -74,5 +76,36 @@ func TestCoord_RoundTrip(t *testing.T) {
 				t.Errorf("ParseCoord(%q) = %+v, want %+v", c.String(), got, c)
 			}
 		}
+	}
+}
+
+func TestParseCoord_InvalidFormat(t *testing.T) {
+	tests := []struct {
+		name string
+		in   string
+	}{
+		{"CA-7 empty", ""},
+		{"CA-7 only spaces", "   "},
+		{"CA-7 letter only", "A"},
+		{"CA-7 number only", "1"},
+		{"CA-7 two letters", "AA1"},
+		{"CA-7 trailing letter", "A1B"},
+		{"CA-7 dash", "A-1"},
+		{"CA-7 symbol", "@1"},
+		{"CA-7 non-ASCII letter", "Ç1"},
+		{"CA-10 inner space", "A 1"},
+		{"CA-10 reversed", "1A"},
+		{"CA-10 leading zero", "A01"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			_, err := ParseCoord(tt.in)
+			if !errors.Is(err, ErrInvalidFormat) {
+				t.Fatalf("ParseCoord(%q) error = %v, want ErrInvalidFormat", tt.in, err)
+			}
+			if quoted := strconv.Quote(tt.in); !strings.Contains(err.Error(), quoted) {
+				t.Errorf("ParseCoord(%q) error = %q, want it to contain %s", tt.in, err.Error(), quoted)
+			}
+		})
 	}
 }
