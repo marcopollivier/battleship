@@ -61,7 +61,7 @@ install-deps: ## Instala dependências externas do sistema
 
 install-tools: ## Instala ferramentas de desenvolvimento Go
 	@echo "🛠️  Instalando ferramentas Go..."
-	@go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
+	@go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@latest
 	@echo "✅ Ferramentas Go instaladas"
 
 setup: install-deps install-tools ## Configura ambiente de desenvolvimento completo

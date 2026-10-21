@@ -1,41 +1,50 @@
-# Configuração do golangci-lint
-# Versão do golangci-lint recomendada
-run:
-  timeout: 5m
-
+# Configuração do golangci-lint (formato v2).
+# errcheck, govet, ineffassign e unused vêm do conjunto padrão; stylecheck e gosimple fazem parte do staticcheck na v2.
+version: "2"
 linters:
   enable:
-    - errcheck
-    - gosimple
-    - govet
-    - ineffassign
-    - staticcheck
-    - typecheck
-    - unused
-    - gofmt
-    - goimports
-    - misspell
+    - dupl
     - goconst
     - gocyclo
     - gosec
-    - stylecheck
+    - misspell
+    - staticcheck
     - unconvert
-    - dupl
-
-linters-settings:
-  gocyclo:
-    min-complexity: 15
-  goconst:
-    min-len: 2
-    min-occurrences: 2
-  misspell:
-    locale: US
-  goimports:
-    local-prefixes: github.com/marcopollivier/battleship
-
-issues:
-  exclude-rules:
-    - path: _test\.go
-      linters:
-        - errcheck
-        - gosec
+  settings:
+    goconst:
+      min-len: 2
+      min-occurrences: 2
+    gocyclo:
+      min-complexity: 15
+    misspell:
+      locale: US
+  exclusions:
+    generated: lax
+    presets:
+      - comments
+      - common-false-positives
+      - legacy
+      - std-error-handling
+    rules:
+      - linters:
+          - errcheck
+          - gosec
+        path: _test\.go
+    paths:
+      - third_party$
+      - builtin$
+      - examples$
+formatters:
+  enable:
+    - gofmt
+    - goimports
+  settings:
+    goimports:
+      local-prefixes:
+        - github.com/marcopollivier/battleship
+  exclusions:
+    generated: lax
+    paths:
+      - third_party$
+      - builtin$
+      - examples$
