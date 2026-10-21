@@ -37,15 +37,17 @@ Never commit directly to `master`. Each context gets its own branch and PR: `fea
 - The board is 10x10: columns A–J, rows 1–10. Shots are written as coordinates such as `A1`, `B3`, `J10`.
 - A player who hits a ship shoots again. A miss ("tiro na água") passes the turn to the other player.
 - A ship is sunk when all of its cells are hit. The first player to sink every enemy ship wins.
-- Ships can be placed horizontally or vertically. The default fleet is:
+- The default fleet comes from the original paper pad shown in `doc/img/batalha-naval.jpg`. It has 8 ships covering 19 cells:
 
-| Ship (PT)    | Size | Count |
-| ------------ | ---- | ----- |
-| Rebocador    | 1    | 4     |
-| Submarino    | 2    | 3     |
-| Destroyer    | 3    | 2     |
-| Encouraçado  | 4    | 1     |
-| Porta-Aviões | 5    | 1     |
+| Ship (PT)    | Size | Count | Shape |
+| ------------ | ---- | ----- | ----- |
+| Submarino    | 1    | 3     | single cell |
+| Destroyer    | 2    | 2     | line |
+| Cruzador     | 3    | 1     | line |
+| Encouraçado  | 4    | 1     | line |
+| Porta-Aviões | 5    | 1     | T: a row of 3 cells with 2 cells extending from its middle |
+
+- Line ships can be placed horizontally or vertically. The T-shaped Porta-Aviões can be placed in any of its 4 rotations.
 
 Planned features (README TODO): attacking a randomly generated board, placing your own ships and playing against the computer, and choosing how many ships to play with.
 

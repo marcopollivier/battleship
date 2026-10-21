@@ -29,19 +29,25 @@ Este jogo é recomendado para duas pessoas. Ambos os jogadores devem posicionar 
 - Quando todas as partes de um Navio são acertadas o mesmo é considerado como "Afundado"
 - Quem afundar todos os Navios do oponente, **ganha o jogo**
 
-Os navios são posicionados de acordo com seu tamanho e posição no tabuleiro - podendo ser posicionados tanto na horizontal quanto na vertical - tendo os seguintes tamanhos e quantidade inicial:
+A frota segue a cartela de papel original:
 
-Navio            | Tamanho | Quantidade
----------------- | ------- | ----------
-Rebocador        | 1       | 4
-Submarino        | 2       | 3
-Destroyer        | 3       | 2
-Encouraçado      | 4       | 1
-Porta-Aviões     | 5       | 1
+<img src="doc/img/batalha-naval.jpg" width="60%">
 
-### Rebocador
+Navio            | Tamanho | Quantidade | Formato
+---------------- | ------- | ---------- | -------
+Submarino        | 1       | 3          | 1 casa
+Destroyer        | 2       | 2          | Linha de 2 casas
+Cruzador         | 3       | 1          | Linha de 3 casas
+Encouraçado      | 4       | 1          | Linha de 4 casas
+Porta-Aviões     | 5       | 1          | T: 3 casas em linha e 2 descendo do meio
 
-**Descrição**: Um rebocador é um barco projetado para empurrar, puxar e rebocar barcaças ou navios em manobras delicadas como atracação e desatracação.Um rebocador de alto-mar é uma embarcação de grande porte, grande potência (motores de até 10 mil HP) e extenso raio de ação. Destinado a missões de socorro de embarcações avariadas, combate a incêndios e resgate de pessoal longe das áreas portuárias. **Fonte:** [Wikipedia](https://pt.wikipedia.org/wiki/Rebocador)
+São 8 navios, que ocupam 19 casas. Os navios em linha podem ser posicionados na horizontal ou na vertical. O Porta-Aviões pode ser posicionado em qualquer uma das 4 orientações do T:
+
+```
+■■■     ■       ■   ■
+ ■      ■     ■■■   ■■■
+ ■     ■■■      ■   ■
+```
 
 ### Submarino
 
@@ -52,6 +58,10 @@ Porta-Aviões     | 5       | 1
 **Descrição**: Um contratorpedeiro, também referido como Destroyer ou Destróier, é um tipo de navio de guerra, rápido e manobrável, concebido para escoltar navios maiores numa esquadra naval ou comboio de navios e defendê-los contra agressores menores, mas perigosos. **Fonte:** [Wikipedia](https://pt.wikipedia.org/wiki/Contratorpedeiro)
 
 AKA: Contratorpedeiro, Destróier
+
+### Cruzador
+
+**Descrição**: Um cruzador é um tipo de navio de guerra. Designando originalmente qualquer navio encarregado de tarefas de exploração em uma esquadra, o termo "cruzador" passou a designar, no final do século XIX, um tipo específico de navio oceânico, maior e mais armado que as fragatas, que acabou por substituí-las. **Fonte:** [Wikipedia](https://pt.wikipedia.org/wiki/Cruzador)
 
 ### Encouraçado
 
