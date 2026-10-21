@@ -109,3 +109,29 @@ func TestParseCoord_InvalidFormat(t *testing.T) {
 		})
 	}
 }
+
+func TestParseCoord_OutOfBounds(t *testing.T) {
+	tests := []struct {
+		name string
+		in   string
+	}{
+		{"CA-5 column past J", "K1"},
+		{"CA-5 last letter", "Z5"},
+		{"CA-5 lowercase past j", "k1"},
+		{"CA-6 row zero", "A0"},
+		{"CA-6 row past 10", "A11"},
+		{"CA-6 two-digit row", "B99"},
+		{"CA-6 row overflowing int", "A99999999999999999999"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			_, err := ParseCoord(tt.in)
+			if !errors.Is(err, ErrOutOfBounds) {
+				t.Fatalf("ParseCoord(%q) error = %v, want ErrOutOfBounds", tt.in, err)
+			}
+			if quoted := strconv.Quote(tt.in); !strings.Contains(err.Error(), quoted) {
+				t.Errorf("ParseCoord(%q) error = %q, want it to contain %s", tt.in, err.Error(), quoted)
+			}
+		})
+	}
+}

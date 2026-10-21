@@ -12,8 +12,12 @@ import (
 // Size is the number of rows and columns on the board.
 const Size = 10
 
-// ErrInvalidFormat means the text is not a letter followed by a number without leading zeros.
-var ErrInvalidFormat = errors.New("invalid coordinate format")
+var (
+	// ErrInvalidFormat means the text is not a letter followed by a number without leading zeros.
+	ErrInvalidFormat = errors.New("invalid coordinate format")
+	// ErrOutOfBounds means the text is well formed but names a cell outside the board.
+	ErrOutOfBounds = errors.New("coordinate out of bounds")
+)
 
 // coordPattern is a letter followed by a number without leading zeros.
 var coordPattern = regexp.MustCompile(`^[A-Za-z](0|[1-9][0-9]*)$`)
@@ -25,17 +29,23 @@ type Coord struct {
 }
 
 // ParseCoord converts text such as "A1" or " j10 " into a Coord.
-// Errors wrap ErrInvalidFormat and include the original input.
+// Errors wrap ErrInvalidFormat or ErrOutOfBounds and include the original input.
 func ParseCoord(s string) (Coord, error) {
 	text := strings.TrimSpace(s)
 	if !coordPattern.MatchString(text) {
 		return Coord{}, fmt.Errorf("%w: %q", ErrInvalidFormat, s)
 	}
-	row, err := strconv.Atoi(text[1:])
-	if err != nil {
-		return Coord{}, fmt.Errorf("parse coordinate %q: %w", s, err)
-	}
+
 	letter := strings.ToUpper(text[:1])[0]
+	digits := text[1:]
+	// Checking the length first keeps strconv.Atoi from overflowing on huge numbers.
+	if letter > 'A'+Size-1 || len(digits) > len(strconv.Itoa(Size)) {
+		return Coord{}, fmt.Errorf("%w: %q", ErrOutOfBounds, s)
+	}
+	row, err := strconv.Atoi(digits)
+	if err != nil || row < 1 || row > Size {
+		return Coord{}, fmt.Errorf("%w: %q", ErrOutOfBounds, s)
+	}
 	return Coord{Col: int(letter - 'A'), Row: row - 1}, nil
 }
 
