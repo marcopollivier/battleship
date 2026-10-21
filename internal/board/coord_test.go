@@ -33,3 +33,46 @@ func TestCoord_String_OutOfBounds(t *testing.T) {
 		}
 	}
 }
+
+func TestParseCoord_Valid(t *testing.T) {
+	tests := []struct {
+		name string
+		in   string
+		want Coord
+	}{
+		{"CA-1 first cell", "A1", Coord{Col: 0, Row: 0}},
+		{"CA-2 last cell", "J10", Coord{Col: 9, Row: 9}},
+		{"CA-3 middle cell", "C7", Coord{Col: 2, Row: 6}},
+		{"CA-8 lowercase first cell", "a1", Coord{Col: 0, Row: 0}},
+		{"CA-8 lowercase last cell", "j10", Coord{Col: 9, Row: 9}},
+		{"CA-9 surrounding spaces", " A1 ", Coord{Col: 0, Row: 0}},
+		{"CA-9 surrounding tab and newline", "\tA1\n", Coord{Col: 0, Row: 0}},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := ParseCoord(tt.in)
+			if err != nil {
+				t.Fatalf("ParseCoord(%q) returned error: %v", tt.in, err)
+			}
+			if got != tt.want {
+				t.Errorf("ParseCoord(%q) = %+v, want %+v", tt.in, got, tt.want)
+			}
+		})
+	}
+}
+
+// CA-4: every cell survives String -> ParseCoord unchanged.
+func TestCoord_RoundTrip(t *testing.T) {
+	for col := range Size {
+		for row := range Size {
+			c := Coord{Col: col, Row: row}
+			got, err := ParseCoord(c.String())
+			if err != nil {
+				t.Fatalf("ParseCoord(%q) returned error: %v", c.String(), err)
+			}
+			if got != c {
+				t.Errorf("ParseCoord(%q) = %+v, want %+v", c.String(), got, c)
+			}
+		}
+	}
+}
