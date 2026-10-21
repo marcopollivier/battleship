@@ -1,6 +1,6 @@
 # 001 — Coordenadas
 
-- **Status:** Em andamento
+- **Status:** Concluída
 - **Roadmap:** #001
 - **Depende de:** —
 
@@ -56,4 +56,11 @@ Todas decididas em 2026-10-21:
 
 ## Encerramento
 
-Preenchido na fase 5: desvios em relação ao plano e o que ficou para o roadmap.
+Concluída em 2026-10-21, nas tarefas T1–T4. Os 10 critérios de aceitação são cobertos por testes em `internal/board/coord_test.go`.
+
+**Desvios em relação ao plano:**
+
+- O limite de dígitos do número é calculado a partir de `Size` (`len(strconv.Itoa(Size))`), em vez de ficar fixo em 2. O comportamento é o mesmo do plano.
+- O risco previsto com o `goconst` nos testes não aconteceu. O lint quebrado foi corrigido antes da implementação, no PR #3.
+
+**Para o roadmap:** o `cmd/init.go` ainda monta o tabuleiro com os próprios literais (`10`, cabeçalho `A`–`J`). Trocar isso por `board.Size` e `Coord.String()` fica para a #004.

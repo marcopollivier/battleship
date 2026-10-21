@@ -6,7 +6,7 @@ Status: `Backlog` → `Spec` → `Em andamento` → `Concluída`
 
 | # | Feature | Origem | Status |
 | - | ------- | ------ | ------ |
-| 001 | Coordenadas: converter `A1`…`J10` em posição e vice-versa, rejeitar entradas inválidas | Regras do README | Em andamento |
+| 001 | Coordenadas: converter `A1`…`J10` em posição e vice-versa, rejeitar entradas inválidas | Regras do README | Concluída |
 | 002 | Tabuleiro e frota: tipos de navio, tamanhos e quantidades padrão, posicionamento horizontal/vertical com validação de limites e sobreposição | Regras do README | Backlog |
 | 003 | Disparo: resultado água/acerto/afundado, tiro repetido, fim de jogo quando toda a frota afunda | Regras do README | Backlog |
 | 004 | Renderização no terminal: tabuleiro próprio e tabuleiro de ataque | `cmd/init.go` atual | Backlog |
