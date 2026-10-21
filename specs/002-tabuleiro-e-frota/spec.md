@@ -1,6 +1,6 @@
 # 002 — Tabuleiro e frota
 
-- **Status:** Rascunho
+- **Status:** Aprovada
 - **Roadmap:** #002
 - **Depende de:** 001 (coordenadas)
 
@@ -29,9 +29,13 @@ Antes de qualquer disparo, cada jogador precisa ter a frota posicionada no tabul
    ■     ■■■      ■   ■
   ```
 
-- Para posicionar um navio, o jogador indica o tipo do navio, uma casa de referência e uma orientação. A regra que define a casa de referência depende da questão em aberto 2.
+- Para posicionar um navio, o jogador indica o tipo do navio, uma casa de referência e uma orientação:
+  - **Navios em linha:** a referência é a primeira casa (a mais à esquerda na horizontal, a de cima na vertical). A orientação é `horizontal` ou `vertical`.
+  - **Porta-Aviões:** a referência é o meio da barra de 3 casas, onde a haste se encaixa. A orientação é a direção para onde a haste aponta: `cima`, `baixo`, `esquerda` ou `direita`.
+- Uma orientação que não vale para o tipo do navio é rejeitada (por exemplo, um Cruzador para `baixo` ou o Porta-Aviões na `horizontal`).
 - Todas as casas de um navio precisam estar dentro do tabuleiro.
 - Dois navios não podem ocupar a mesma casa.
+- Dois navios não podem encostar: nenhuma casa de um navio pode ser vizinha de uma casa de outro, nem na diagonal.
 - Não é possível posicionar mais navios de um tipo do que a quantidade prevista na frota.
 - Um posicionamento inválido é rejeitado com um erro, e o tabuleiro continua exatamente como estava.
 - O tabuleiro está completo quando os 8 navios da frota estiverem posicionados.
@@ -42,30 +46,34 @@ Antes de qualquer disparo, cada jogador precisa ter a frota posicionada no tabul
 - **CA-2:** Dado um tabuleiro vazio, quando o jogador posiciona um Cruzador em `A1` na horizontal, então ele ocupa `A1`, `B1` e `C1`. Na vertical, ocupa `A1`, `A2` e `A3`.
 - **CA-3:** Dado um tabuleiro vazio, quando o jogador posiciona um Submarino em `E5`, então ele ocupa só `E5`, em qualquer orientação.
 - **CA-4:** Dado um tabuleiro vazio, quando o jogador posiciona um Encouraçado em `J7` na vertical, então o posicionamento é aceito e ocupa `J7` a `J10`. Em `J8` na vertical, ou em `H1` na horizontal, o posicionamento é rejeitado com um erro de fora do tabuleiro.
-- **CA-5:** Dado um tabuleiro vazio, quando o jogador posiciona o Porta-Aviões em cada uma das 4 orientações, então ele ocupa as 5 casas esperadas. As casas exatas dependem da questão em aberto 2.
-- **CA-6:** Dado um tabuleiro vazio, quando o jogador posiciona o Porta-Aviões numa orientação em que alguma das 5 casas sai do tabuleiro, então o posicionamento é rejeitado com um erro de fora do tabuleiro.
+- **CA-5:** Dado um tabuleiro vazio, quando o jogador posiciona o Porta-Aviões com referência em `E5`, então ele ocupa:
+  - `baixo`: `D5`, `E5`, `F5`, `E6`, `E7`
+  - `cima`: `D5`, `E5`, `F5`, `E4`, `E3`
+  - `direita`: `E4`, `E5`, `E6`, `F5`, `G5`
+  - `esquerda`: `E4`, `E5`, `E6`, `D5`, `C5`
+- **CA-6:** Dado um tabuleiro vazio, quando o jogador posiciona o Porta-Aviões em `E9` para `baixo` (a haste chegaria a `E11`) ou em `A5` para `cima` (a barra começaria à esquerda da coluna `A`), então o posicionamento é rejeitado com um erro de fora do tabuleiro.
 - **CA-7:** Dado um Cruzador em `A1` na horizontal, quando o jogador posiciona um Destroyer em `B1` na vertical, então o posicionamento é rejeitado com um erro de sobreposição, e o tabuleiro continua com só o Cruzador.
 - **CA-8:** Dados 3 Submarinos posicionados, quando o jogador tenta posicionar um quarto, então o posicionamento é rejeitado com um erro de quantidade excedida.
 - **CA-9:** Dado um tabuleiro com 7 navios posicionados, quando o jogo verifica se ele está completo, então a resposta é não. Depois de posicionar o oitavo, a resposta é sim.
-
-As decisões das questões em aberto podem acrescentar ou ajustar critérios.
+- **CA-10:** Dado um Cruzador em `A1` na horizontal (`A1`–`C1`), quando o jogador posiciona um Destroyer em `D1` na horizontal (encosta do lado), em `A2` na horizontal (encosta embaixo) ou em `D2` na vertical (encosta na diagonal de `C1`), então o posicionamento é rejeitado com um erro de navio encostado. Em `E1` na horizontal, com uma casa de água entre os dois, o posicionamento é aceito.
+- **CA-11:** Dado um tabuleiro vazio, quando o jogador posiciona um Cruzador para `baixo` ou o Porta-Aviões na `horizontal`, então o posicionamento é rejeitado com um erro de orientação inválida.
 
 ## Fora de escopo
 
 - Disparos e o estado de casa atingida ou de navio afundado (#003).
 - Ler o posicionamento do teclado (por exemplo, `A1 H`) e desenhar o tabuleiro no terminal (#004 e #007).
 - Posicionamento aleatório (#005).
+- Remover ou reposicionar um navio já posicionado. Isso fica para a #007, quando o jogador montar o tabuleiro pelo terminal.
 - Frotas diferentes da padrão (#008). As regras desta spec devem funcionar para qualquer frota, mas só a padrão é definida e testada.
 
 ## Questões em aberto
 
-- [ ] **1. Navios encostados:** dois navios podem ocupar casas vizinhas? E na diagonal? Na versão de papel, o costume é que nenhum navio encoste em outro, nem pela diagonal.
-- [ ] **2. Casa de referência e nomes das orientações:**
-  - Para os navios em linha, a referência é a primeira casa (a mais à esquerda ou a de cima) e a orientação é `horizontal` ou `vertical`?
-  - Para o Porta-Aviões, qual casa é a referência: o meio da barra de 3 casas ou o canto superior esquerdo do quadrado 3 × 3 que envolve o T?
-  - As 4 orientações do T são nomeadas pela direção para onde a haste aponta (cima, baixo, esquerda, direita)?
-- [ ] **3. Remover navio:** o jogador pode tirar ou reposicionar um navio já posicionado, ou isso fica para a #007, quando ele montar o tabuleiro pelo terminal?
-- [ ] **4. Tamanho da spec:** se as decisões acima levarem o plano a mais de ~8 tarefas, dividimos a spec em 002 (frota e formatos) e uma spec nova para o posicionamento no tabuleiro?
+Todas decididas em 2026-10-21:
+
+- [x] **1. Navios encostados:** não podem encostar, nem na diagonal (CA-10).
+- [x] **2. Casa de referência e nomes das orientações:** nos navios em linha, a referência é a primeira casa, com orientação `horizontal` ou `vertical`. No Porta-Aviões, a referência é o meio da barra e a orientação é a direção da haste: `cima`, `baixo`, `esquerda` ou `direita` (CA-5, CA-11).
+- [x] **3. Remover navio:** fica para a #007 (fora de escopo).
+- [x] **4. Tamanho da spec:** se o plano passar de ~8 tarefas, a spec é dividida em 002 (frota e formatos) e uma spec nova para o posicionamento.
 
 ## Encerramento
 

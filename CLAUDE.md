@@ -47,7 +47,7 @@ Never commit directly to `master`. Each context gets its own branch and PR: `fea
 | Encouraçado  | 4    | 1     | line |
 | Porta-Aviões | 5    | 1     | T: a row of 3 cells with 2 cells extending from its middle |
 
-- Line ships can be placed horizontally or vertically. The T-shaped Porta-Aviões can be placed in any of its 4 rotations.
+- Line ships can be placed horizontally or vertically. The T-shaped Porta-Aviões can be placed in any of its 4 rotations. Ships may not overlap or touch, not even diagonally.
 
 Planned features (README TODO): attacking a randomly generated board, placing your own ships and playing against the computer, and choosing how many ships to play with.
 

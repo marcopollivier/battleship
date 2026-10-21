@@ -49,6 +49,8 @@ São 8 navios, que ocupam 19 casas. Os navios em linha podem ser posicionados na
  ■     ■■■      ■   ■
 ```
 
+Os navios não podem se sobrepor nem encostar uns nos outros, nem pela diagonal: sempre há pelo menos uma casa de água entre dois navios.
+
 ### Submarino
 
 **Descrição**: Submarino é uma embarcação especializada para operar submersa, tendo sido largamente usada pela primeira vez na Primeira Guerra Mundial, sendo empregada por todas as grandes marinhas atualmente. Submarinos civis e submergíveis são usados com fins científicos tanto na água doce quanto salgada para trabalhar em profundidades muito grandes para mergulhadores humanos. **Fonte:** [Wikipedia](https://pt.wikipedia.org/wiki/Submarino)

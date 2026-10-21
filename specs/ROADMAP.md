@@ -19,6 +19,5 @@ Status: `Backlog` → `Spec` → `Em andamento` → `Concluída`
 
 Decisões que o README não cobre e que alguma spec vai precisar fechar:
 
-- Navios podem encostar uns nos outros (inclusive na diagonal)? Na versão de papel, normalmente não.
 - O jogador é avisado de qual navio afundou ou só de que afundou?
 - Na frota configurável, quais limites valem (tamanho máximo, ocupação máxima do tabuleiro)?
