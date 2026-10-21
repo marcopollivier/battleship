@@ -25,6 +25,8 @@ The pre-commit hooks run go-fmt, go-mod-tidy, go unit tests and golangci-lint on
 
 Features are built through the spec-driven development (SDD) process in `specs/README.md`, and every plan must follow the principles in `specs/constitution.md`. The order is spec, then plan, then tasks, then implementation, with explicit user approval needed before moving from one phase to the next. Don't write production code for a feature that has no approved `specs/NNN-slug/tasks.md`. If implementation contradicts the spec, stop and propose a spec change. Each phase has a slash command: `/spec`, `/plan`, `/tasks` and `/implement`. The feature backlog and the open game-rule questions are in `specs/ROADMAP.md`.
 
+Never commit directly to `master`. Each context gets its own branch and PR: `feat/NNN-slug` for a spec, and `docs/`, `chore/` or `fix/` for anything else. The full convention is under "Branches e PRs" in `specs/README.md`. Work that falls outside the current PR's context goes on a separate branch, or into the roadmap.
+
 ## Architecture
 
 - `main.go` is a thin entrypoint that only calls `cmd.Init()`.

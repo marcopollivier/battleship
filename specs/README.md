@@ -37,6 +37,20 @@ Cada fase termina num **gate**: a próxima fase só começa depois que a pessoa 
 - Se a implementação revelar que a spec está errada ou incompleta, pare, atualize a spec e peça nova aprovação antes de seguir.
 - Mudanças fora do escopo da spec atual vão para o `ROADMAP.md`, não para o código.
 
+## Branches e PRs
+
+Cada contexto tem um branch e um PR próprios. Nada é commitado direto no `master`.
+
+| Contexto | Branch | PR contém |
+| -------- | ------ | --------- |
+| Uma spec | `feat/NNN-slug` | `spec.md`, `plan.md`, `tasks.md` e a implementação, um commit por tarefa |
+| Processo, docs e tooling | `docs/<assunto>` ou `chore/<assunto>` | Só a mudança daquele assunto |
+| Correção fora de uma spec | `fix/<assunto>` | A correção e o teste que a reproduz |
+
+- O PR de uma spec é aberto como draft na fase 1 e sai de draft quando todas as tarefas estiverem marcadas.
+- A descrição do PR linka a spec e lista os critérios de aceitação.
+- Algo que surgir fora do contexto do PR vai para outro branch ou para o `ROADMAP.md`.
+
 ## Status de uma spec
 
 `Rascunho` → `Aprovada` → `Em andamento` → `Concluída`
