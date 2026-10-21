@@ -1,6 +1,6 @@
 # 001 — Coordenadas
 
-- **Status:** Aprovada
+- **Status:** Em andamento
 - **Roadmap:** #001
 - **Depende de:** —
 
