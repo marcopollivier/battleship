@@ -1,6 +1,17 @@
 package board
 
-import "fmt"
+import (
+	"errors"
+	"fmt"
+)
+
+// A shot outside the board reuses ErrOutOfBounds from coord.go.
+var (
+	// ErrAlreadyShot means the cell has already received a shot.
+	ErrAlreadyShot = errors.New("cell was already shot")
+	// ErrIncompleteBoard means not every ship of the fleet is placed yet.
+	ErrIncompleteBoard = errors.New("board is not complete")
+)
 
 // ShotResult is the outcome of a shot: Miss, Hit or Sunk.
 type ShotResult int
@@ -34,6 +45,16 @@ type Shot struct {
 
 // Fire shoots at c. On error the board is left unchanged.
 func (b *Board) Fire(c Coord) (Shot, error) {
+	// The board is checked first: no shot makes sense on an incomplete board.
+	if !b.Complete() {
+		return Shot{}, fmt.Errorf("%w: shot at %v", ErrIncompleteBoard, c)
+	}
+	if !c.inBounds() {
+		return Shot{}, fmt.Errorf("%w: shot at %v", ErrOutOfBounds, c)
+	}
+	if b.shots[c] {
+		return Shot{}, fmt.Errorf("%w: %v", ErrAlreadyShot, c)
+	}
 	b.shots[c] = true
 
 	ship := b.shipAt(c)

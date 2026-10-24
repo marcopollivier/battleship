@@ -1,6 +1,8 @@
 package board
 
 import (
+	"errors"
+	"maps"
 	"testing"
 )
 
@@ -151,4 +153,50 @@ func TestCellState_String(t *testing.T) {
 			t.Errorf("CellState(%d).String() = %q, want %q", int(tt.s), got, tt.want)
 		}
 	}
+}
+
+// assertFireRejected checks that firing at c fails with want and leaves every
+// cell of b unchanged, including c itself.
+func assertFireRejected(t *testing.T, b *Board, c Coord, want error) {
+	t.Helper()
+	before := cellStates(b)
+	stateBefore := b.Cell(c)
+	shot, err := b.Fire(c)
+	if !errors.Is(err, want) {
+		t.Fatalf("Fire(%v) = %+v, %v, want error %v", c, shot, err, want)
+	}
+	if after := cellStates(b); !maps.Equal(before, after) {
+		t.Errorf("board changed after rejected shot at %v", c)
+	}
+	if got := b.Cell(c); got != stateBefore {
+		t.Errorf("Cell(%v) = %v after rejected shot, want %v", c, got, stateBefore)
+	}
+}
+
+// CA-6, CA-8 and CA-9: invalid shots are rejected without changing the board.
+func TestFire_Rejected(t *testing.T) {
+	t.Run("CA-6 out of bounds", func(t *testing.T) {
+		b := exampleBoard(t)
+		for _, c := range []Coord{{Col: Size, Row: 0}, {Col: 0, Row: -1}} {
+			assertFireRejected(t, b, c, ErrOutOfBounds)
+		}
+	})
+
+	t.Run("CA-8 repeated shot", func(t *testing.T) {
+		b := exampleBoard(t)
+		fire(t, b, "J10", "E1")
+		for _, name := range []string{"J10", "E1"} {
+			assertFireRejected(t, b, mustCoord(t, name), ErrAlreadyShot)
+		}
+	})
+
+	t.Run("CA-9 incomplete board", func(t *testing.T) {
+		b := NewBoard(DefaultFleet())
+		place(t, b, placement{Cruiser, "J1", Vertical})
+		for _, name := range []string{"J1", "A1"} {
+			assertFireRejected(t, b, mustCoord(t, name), ErrIncompleteBoard)
+		}
+		// The board check comes first, even for a cell outside the board.
+		assertFireRejected(t, b, Coord{Col: Size, Row: 0}, ErrIncompleteBoard)
+	})
 }
