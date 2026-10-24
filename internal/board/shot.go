@@ -36,10 +36,24 @@ type Shot struct {
 func (b *Board) Fire(c Coord) (Shot, error) {
 	b.shots[c] = true
 
-	if b.shipAt(c) == nil {
+	ship := b.shipAt(c)
+	if ship == nil {
 		return Shot{Result: Miss}, nil
 	}
+	if b.sunk(ship) {
+		return Shot{Result: Sunk, Ship: ship.Type}, nil
+	}
 	return Shot{Result: Hit}, nil
+}
+
+// sunk reports whether every cell of s has been shot.
+func (b *Board) sunk(s *PlacedShip) bool {
+	for _, c := range s.Cells {
+		if !b.shots[c] {
+			return false
+		}
+	}
+	return true
 }
 
 // shipAt returns the placed ship that occupies c, or nil if there is none.

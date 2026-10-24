@@ -72,3 +72,28 @@ func TestShotResult_String(t *testing.T) {
 		}
 	}
 }
+
+// CA-3 and CA-4: the shot on the last untouched cell of a ship sinks it and
+// reveals the ship type.
+func TestFire_Sinks(t *testing.T) {
+	t.Run("cruiser after three shots", func(t *testing.T) {
+		b := exampleBoard(t)
+		for _, cell := range []string{"J1", "J2"} {
+			if got := fire(t, b, cell); got != (Shot{Result: Hit}) {
+				t.Fatalf("Fire(%s) = %+v, want Hit", cell, got)
+			}
+		}
+		want := Shot{Result: Sunk, Ship: Cruiser}
+		if got := fire(t, b, "J3"); got != want {
+			t.Errorf("Fire(J3) = %+v, want %+v", got, want)
+		}
+	})
+
+	t.Run("submarine on the first shot", func(t *testing.T) {
+		b := exampleBoard(t)
+		want := Shot{Result: Sunk, Ship: Submarine}
+		if got := fire(t, b, "H5"); got != want {
+			t.Errorf("Fire(H5) = %+v, want %+v", got, want)
+		}
+	})
+}
