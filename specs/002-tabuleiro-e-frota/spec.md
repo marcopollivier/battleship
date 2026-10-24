@@ -1,6 +1,6 @@
 # 002 — Tabuleiro e frota
 
-- **Status:** Em andamento
+- **Status:** Concluída
 - **Roadmap:** #002
 - **Depende de:** 001 (coordenadas)
 
@@ -77,4 +77,13 @@ Todas decididas em 2026-10-21:
 
 ## Encerramento
 
-Preenchido na fase 5: desvios em relação ao plano e o que ficou para o roadmap.
+Concluída em 2026-10-24, nas tarefas T1–T7. Os 11 critérios de aceitação são cobertos por testes em `internal/board/ship_test.go` e `internal/board/board_test.go`, com 98,9% de cobertura do pacote.
+
+**Desvios em relação ao plano:**
+
+- O `ErrInvalidOrientation` ficou em `ship.go`, e não em `board.go`, porque quem o retorna é o `ShipCells`. O `Place` só repassa o erro.
+- O risco previsto com o `goconst` aconteceu na T2: o lint passou a reclamar dos literais repetidos nas tabelas de teste. A correção (ignorar o `goconst` em `_test.go`) foi para o PR #5, que foi mergeado neste branch para a implementação continuar. Por isso a #5 precisa entrar no `master` antes ou junto com esta spec.
+- O `Coord` ganhou um método interno `inBounds()`, usado pelo `Place`. O `String()` manteve a checagem de limites explícita, porque é ela que permite ao `gosec` provar que a conversão para `rune` é segura.
+- Para um tipo de navio desconhecido, o `ShipCells` retorna um erro simples, sem sentinela. Pelo `Place`, esse caso nunca chega lá: um tipo fora da frota é barrado antes, com `ErrFleetLimit`.
+
+**Para o roadmap:** a #004 precisa traduzir para português os nomes de `ShipType` (`Cruiser` → Cruzador...) e de `Orientation` (`Up` → cima...), que no domínio estão em inglês.
