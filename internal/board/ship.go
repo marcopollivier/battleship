@@ -89,6 +89,15 @@ func (o Orientation) String() string {
 	return fmt.Sprintf("Orientation(%d)", int(o))
 }
 
+// carrierOffsets are the AircraftCarrier cells as (dCol, dRow) from the
+// middle of the bar, keyed by the direction the stem points.
+var carrierOffsets = map[Orientation][5][2]int{
+	Down:  {{-1, 0}, {0, 0}, {1, 0}, {0, 1}, {0, 2}},
+	Up:    {{-1, 0}, {0, 0}, {1, 0}, {0, -1}, {0, -2}},
+	Right: {{0, -1}, {0, 0}, {0, 1}, {1, 0}, {2, 0}},
+	Left:  {{0, -1}, {0, 0}, {0, 1}, {-1, 0}, {-2, 0}},
+}
+
 // ShipCells returns the cells a ship of type t occupies when placed at ref
 // with orientation o. It does not check board bounds.
 // Returns ErrInvalidOrientation if o does not apply to t.
@@ -96,6 +105,9 @@ func ShipCells(t ShipType, ref Coord, o Orientation) ([]Coord, error) {
 	size := t.Size()
 	if size == 0 {
 		return nil, fmt.Errorf("unknown ship type %v", t)
+	}
+	if t == AircraftCarrier {
+		return carrierCells(ref, o)
 	}
 
 	var dCol, dRow int
@@ -111,6 +123,18 @@ func ShipCells(t ShipType, ref Coord, o Orientation) ([]Coord, error) {
 	cells := make([]Coord, size)
 	for i := range size {
 		cells[i] = Coord{Col: ref.Col + i*dCol, Row: ref.Row + i*dRow}
+	}
+	return cells, nil
+}
+
+func carrierCells(ref Coord, o Orientation) ([]Coord, error) {
+	offsets, ok := carrierOffsets[o]
+	if !ok {
+		return nil, fmt.Errorf("%w: %v %v", ErrInvalidOrientation, AircraftCarrier, o)
+	}
+	cells := make([]Coord, len(offsets))
+	for i, d := range offsets {
+		cells[i] = Coord{Col: ref.Col + d[0], Row: ref.Row + d[1]}
 	}
 	return cells, nil
 }

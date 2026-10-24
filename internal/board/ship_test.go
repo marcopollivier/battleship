@@ -151,3 +151,39 @@ func TestOrientation_String(t *testing.T) {
 		}
 	}
 }
+
+// CA-5: the T-shaped carrier, with the reference at the middle of the bar.
+func TestShipCells_AircraftCarrier(t *testing.T) {
+	tests := []struct {
+		orientation Orientation
+		want        []string
+	}{
+		{Down, []string{"D5", "E5", "F5", "E6", "E7"}},
+		{Up, []string{"D5", "E5", "F5", "E4", "E3"}},
+		{Right, []string{"E4", "E5", "E6", "F5", "G5"}},
+		{Left, []string{"E4", "E5", "E6", "D5", "C5"}},
+	}
+	for _, tt := range tests {
+		t.Run(tt.orientation.String(), func(t *testing.T) {
+			cells, err := ShipCells(AircraftCarrier, mustCoord(t, "E5"), tt.orientation)
+			if err != nil {
+				t.Fatalf("ShipCells returned error: %v", err)
+			}
+			want := slices.Clone(tt.want)
+			slices.Sort(want)
+			if got := cellNames(cells); !slices.Equal(got, want) {
+				t.Errorf("ShipCells(AircraftCarrier, E5, %v) = %v, want %v", tt.orientation, got, want)
+			}
+		})
+	}
+}
+
+// CA-11 (carrier): Horizontal and Vertical do not apply to the T.
+func TestShipCells_AircraftCarrierInvalidOrientation(t *testing.T) {
+	for _, o := range []Orientation{Horizontal, Vertical} {
+		_, err := ShipCells(AircraftCarrier, mustCoord(t, "E5"), o)
+		if !errors.Is(err, ErrInvalidOrientation) {
+			t.Errorf("ShipCells(AircraftCarrier, E5, %v) error = %v, want ErrInvalidOrientation", o, err)
+		}
+	}
+}
