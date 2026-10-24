@@ -126,3 +126,36 @@ func TestRenderAttackBoard_Format(t *testing.T) {
 		}
 	}
 }
+
+// CA-3: every cell of a sunk ship shows the letter of its type, while a ship
+// that is only hit still shows X.
+func TestRenderAttackBoard_Sunk(t *testing.T) {
+	tests := []struct {
+		name  string
+		shots []string
+		want  map[string]string
+	}{
+		{
+			name:  "cruiser sunk",
+			shots: []string{"J1", "J2", "J3"},
+			want:  map[string]string{"J1": "C", "J2": "C", "J3": "C"},
+		},
+		{
+			name:  "cruiser hit twice",
+			shots: []string{"J1", "J2"},
+			want:  map[string]string{"J1": "X", "J2": "X"},
+		},
+		{
+			name:  "submarine sunk next to a miss and a hit",
+			shots: []string{"A8", "B8", "E1"},
+			want:  map[string]string{"A8": "S", "B8": "o", "E1": "X"},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			b := attackExampleBoard(t)
+			attackFire(t, b, tt.shots...)
+			attackAssertCells(t, attackRender(t, b), tt.want)
+		})
+	}
+}

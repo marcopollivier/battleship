@@ -28,5 +28,23 @@ func RenderAttackBoard(w io.Writer, b *board.Board) error {
 			}
 		}
 	}
+	for _, ship := range b.Ships() {
+		if !shipSunk(b, ship) {
+			continue
+		}
+		for _, c := range ship.Cells {
+			grid[c.Row][c.Col] = shipSymbol(ship.Type)
+		}
+	}
 	return writeBoard(w, &grid, AttackLegend)
+}
+
+// shipSunk reports whether every cell of ship has been hit.
+func shipSunk(b *board.Board, ship board.PlacedShip) bool {
+	for _, c := range ship.Cells {
+		if b.Cell(c) != board.CellHit {
+			return false
+		}
+	}
+	return true
 }
