@@ -10,4 +10,4 @@ Cada tarefa é um commit: teste falhando → implementação → `make pre-commi
 - [x] **T3** — Criar `internal/terminal/fleet.go` com `ParseFleet` para textos válidos. (cobre CA-1, CA-2)
 - [x] **T4** — Recusas de formato em `ParseFleet` com `ErrInvalidFleetFormat`. (cobre CA-4)
 - [x] **T5** — `FleetErrorMessage`. (cobre CA-9)
-- [ ] **T6** — `cmd.Run(args, stdout, stderr) int` com a opção `--frota`, e o `main.go` usando o código de saída. Remover `cmd.Init()`. (cobre CA-3, CA-10)
+- [x] **T6** — `cmd.Run(args, stdout, stderr) int` com a opção `--frota`, e o `main.go` usando o código de saída. Remover `cmd.Init()`. (cobre CA-3, CA-10)
