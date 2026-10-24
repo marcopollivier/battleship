@@ -200,3 +200,28 @@ func TestFire_Rejected(t *testing.T) {
 		assertFireRejected(t, b, Coord{Col: Size, Row: 0}, ErrIncompleteBoard)
 	})
 }
+
+// CA-7: the fleet is sunk only after the last ship cell is hit.
+func TestBoard_AllSunk(t *testing.T) {
+	b := exampleBoard(t)
+	if b.AllSunk() {
+		t.Fatal("AllSunk() = true before any shot")
+	}
+
+	for _, s := range b.Ships() {
+		for _, c := range s.Cells {
+			if c.String() == "E8" {
+				continue
+			}
+			fire(t, b, c.String())
+		}
+	}
+	if b.AllSunk() {
+		t.Fatal("AllSunk() = true with E8 still afloat")
+	}
+
+	fire(t, b, "E8")
+	if !b.AllSunk() {
+		t.Error("AllSunk() = false after every ship cell was hit")
+	}
+}

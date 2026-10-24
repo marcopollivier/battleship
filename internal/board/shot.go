@@ -67,6 +67,17 @@ func (b *Board) Fire(c Coord) (Shot, error) {
 	return Shot{Result: Hit}, nil
 }
 
+// AllSunk reports whether every placed ship has been sunk.
+// A board with no ships placed reports true.
+func (b *Board) AllSunk() bool {
+	for i := range b.ships {
+		if !b.sunk(&b.ships[i]) {
+			return false
+		}
+	}
+	return true
+}
+
 // sunk reports whether every cell of s has been shot.
 func (b *Board) sunk(s *PlacedShip) bool {
 	for _, c := range s.Cells {
