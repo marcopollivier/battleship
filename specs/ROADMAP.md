@@ -10,13 +10,22 @@ Features da mesma onda não dependem umas das outras e são tocadas em paralelo 
 | - | ------- | ------ | ---------- | ---- | ------ |
 | 001 | Coordenadas: converter `A1`…`J10` em posição e vice-versa, rejeitar entradas inválidas | Regras do README | — | — | Concluída |
 | 002 | Tabuleiro e frota: tipos de navio e formatos (linha e T), quantidades padrão, posicionamento com rotação, validação de limites e sobreposição | Regras do README | 001 | — | Concluída |
-| 003 | Disparo: resultado água/acerto/afundado, tiro repetido, fim de jogo quando toda a frota afunda | Regras do README | 002 | 1 | Spec |
-| 004 | Terminal, tabuleiro próprio: desenhar o tabuleiro com os navios do jogador e os nomes em português de navios e orientações | `cmd/init.go` atual | 002 | 1 | Spec |
-| 005 | Posicionamento aleatório da frota | TODO do README | 002 | 1 | Spec |
-| 009 | Terminal, tabuleiro de ataque: desenhar os disparos feitos no tabuleiro do oponente | Divisão da 004 | 003, 004 | 2 | Backlog |
-| 008 | Frota configurável pelo jogador | TODO do README | 002, 004 | 2 | Backlog |
+| 003 | Disparo: resultado água/acerto/afundado, tiro repetido, fim de jogo quando toda a frota afunda | Regras do README | 002 | 1 | Concluída |
+| 004 | Terminal, tabuleiro próprio: desenhar o tabuleiro com os navios do jogador e os nomes em português de navios e orientações | `cmd/init.go` atual | 002 | 1 | Concluída |
+| 005 | Posicionamento aleatório da frota | TODO do README | 002 | 1 | Concluída |
+| 009 | Terminal, tabuleiro de ataque: desenhar os disparos feitos no tabuleiro do oponente e as mensagens de resultado em português | Divisão da 004 | 003, 004 | 2 | Spec |
+| 008 | Frota configurável pelo jogador | TODO do README | 002, 004 | 2 | Spec |
 | 006 | Modo solo: atacar um tabuleiro gerado aleatoriamente | TODO do README | 003, 005, 009 | 3 | Backlog |
 | 007 | Jogador vs. máquina: posicionar a própria frota e jogar contra jogadas aleatórias, com turno extra após acerto | TODO do README | 006 | 4 | Backlog |
+| 010 | Cores no terminal: água, navios e disparos em cores diferentes | Fora de escopo da 004 | 009 | — | Backlog |
+
+## Notas das specs concluídas
+
+Pendências que specs anteriores deixaram para as próximas:
+
+- **#006:** criar o `*rand.Rand` a partir do relógio por padrão, com opção de o jogador informar a semente para repetir uma partida (decisão da 005).
+- **#007:** usar `board.ValidOrientations` para mostrar as orientações possíveis de cada navio ao jogador (005).
+- **#009:** traduzir `Miss`, `Hit` e `Sunk` para português e só mostrar o tipo do navio quando o resultado for `Sunk`, porque `Shot.Ship` tem o valor zero (`Submarine`) nos outros casos (003).
 
 ## Questões em aberto do jogo
 
