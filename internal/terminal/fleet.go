@@ -1,12 +1,16 @@
 package terminal
 
 import (
+	"errors"
 	"fmt"
 	"strconv"
 	"strings"
 
 	"github.com/marcopollivier/battleship/internal/board"
 )
+
+// ErrInvalidFleetFormat means the fleet text is not a comma-separated list of letter=count pairs.
+var ErrInvalidFleetFormat = errors.New("invalid fleet format")
 
 // ParseFleet reads a fleet such as "S=2,P=1" using the board letters
 // (S, D, C, E, P). Types not listed get no ships. It does not validate
@@ -16,15 +20,18 @@ func ParseFleet(s string) ([]board.FleetEntry, error) {
 	for _, pair := range strings.Split(s, ",") {
 		letter, value, ok := strings.Cut(strings.TrimSpace(pair), "=")
 		if !ok {
-			return nil, fmt.Errorf("missing '=' in %q", pair)
+			return nil, fmt.Errorf("%w: missing '=' in %q", ErrInvalidFleetFormat, pair)
 		}
 		shipType, ok := shipTypeBySymbol(strings.ToUpper(letter))
 		if !ok {
-			return nil, fmt.Errorf("unknown ship letter %q", letter)
+			return nil, fmt.Errorf("%w: unknown ship letter %q", ErrInvalidFleetFormat, letter)
+		}
+		if _, repeated := counts[shipType]; repeated {
+			return nil, fmt.Errorf("%w: repeated ship letter %q", ErrInvalidFleetFormat, letter)
 		}
 		count, err := strconv.Atoi(value)
 		if err != nil {
-			return nil, fmt.Errorf("invalid count %q", value)
+			return nil, fmt.Errorf("%w: invalid count %q", ErrInvalidFleetFormat, value)
 		}
 		counts[shipType] = count
 	}

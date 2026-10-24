@@ -1,6 +1,7 @@
 package terminal
 
 import (
+	"errors"
 	"slices"
 	"testing"
 
@@ -35,6 +36,39 @@ func TestParseFleet(t *testing.T) {
 			}
 			if !slices.Equal(got, tt.want) {
 				t.Errorf("ParseFleet(%q) = %v, want %v", tt.in, got, tt.want)
+			}
+		})
+	}
+}
+
+// CA-4: a malformed fleet text is rejected with ErrInvalidFleetFormat.
+func TestParseFleet_InvalidFormat(t *testing.T) {
+	tests := []struct {
+		name string
+		in   string
+	}{
+		{"empty", ""},
+		{"only spaces", "   "},
+		{"unknown letter", "X=1"},
+		{"count is not a number", "S=a"},
+		{"missing equals sign", "S2"},
+		{"wrong separator", "S=1;D=1"},
+		{"repeated letter", "S=1,S=2"},
+		{"repeated letter in other case", "S=1,s=2"},
+		{"empty pair", "S=1,,D=1"},
+		{"trailing comma", "S=1,"},
+		{"missing count", "S="},
+		{"missing letter", "=1"},
+		{"word instead of letter", "SS=1"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := ParseFleet(tt.in)
+			if !errors.Is(err, ErrInvalidFleetFormat) {
+				t.Errorf("ParseFleet(%q) error = %v, want ErrInvalidFleetFormat", tt.in, err)
+			}
+			if got != nil {
+				t.Errorf("ParseFleet(%q) = %v with the error, want nil", tt.in, got)
 			}
 		})
 	}
