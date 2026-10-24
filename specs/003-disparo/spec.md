@@ -1,6 +1,6 @@
 # 003 — Disparo
 
-- **Status:** Aprovada
+- **Status:** Em andamento
 - **Roadmap:** #003 (onda 1)
 - **Depende de:** 001 (coordenadas), 002 (tabuleiro e frota)
 
