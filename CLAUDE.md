@@ -29,8 +29,17 @@ Never commit directly to `master`. Each context gets its own branch and PR: `fea
 
 ## Architecture
 
-- `main.go` is a thin entrypoint that only calls `cmd.Init()`.
-- `cmd/init.go` holds the game logic for now: it builds the board as a `[10][10]string` filled with `~` (water) and prints it with columns `A`–`J` and rows `1`–`10`.
+Two layers, and the domain never imports the terminal:
+
+- **`internal/board`: the game domain.** It has no I/O and its names are in English.
+  - `coord.go`: `Coord` (zero-based `Col`, `Row`) and `ParseCoord`, which turns `"A1"` into a `Coord`.
+  - `ship.go`: `ShipType`, `Orientation`, `DefaultFleet`, `ShipCells` and `ValidOrientations`.
+  - `board.go`: `Board` with `Place`, which validates fleet limit, orientation, bounds, overlap and adjacency in that order and leaves the board unchanged on error.
+  - `shot.go`: `Fire`, `Cell` and `AllSunk`.
+  - `random.go`: `RandomBoard`, which takes an injected `*rand.Rand`.
+  - Errors are sentinel values wrapped with `%w`; check them with `errors.Is`.
+- **`internal/terminal`: presentation.** It reads the domain and writes to an `io.Writer`. Text shown to the player is in Portuguese (`ShipName`, `OrientationName`, `RenderBoard`).
+- **`cmd/` and `main.go`: wiring.** `cmd.Run(io.Writer)` builds the screen, and `main.go` prints errors to stderr and exits with status 1.
 
 ## Game rules (from README)
 
