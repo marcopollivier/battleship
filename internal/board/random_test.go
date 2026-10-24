@@ -2,6 +2,7 @@ package board
 
 import (
 	"math/rand/v2"
+	"slices"
 	"testing"
 )
 
@@ -106,6 +107,103 @@ func TestRandomBoard_Valid(t *testing.T) {
 		assertValidBoard(t, DefaultFleet(), b)
 		if t.Failed() {
 			t.Fatalf("seed %d produced an invalid board: %v", seed, b.Ships())
+		}
+	}
+}
+
+func sameShips(a, b []PlacedShip) bool {
+	return slices.EqualFunc(a, b, func(x, y PlacedShip) bool {
+		return x.Type == y.Type && slices.Equal(x.Cells, y.Cells)
+	})
+}
+
+// CA-3: the same seed always produces the same board.
+func TestRandomBoard_SameSeed(t *testing.T) {
+	first := mustRandomBoard(t, 42).Ships()
+	second := mustRandomBoard(t, 42).Ships()
+	if !sameShips(first, second) {
+		t.Errorf("seed 42 produced different boards:\n%v\n%v", first, second)
+	}
+}
+
+// CA-4: different seeds produce different boards.
+func TestRandomBoard_DifferentSeeds(t *testing.T) {
+	first := mustRandomBoard(t, 1).Ships()
+	second := mustRandomBoard(t, 2).Ships()
+	if sameShips(first, second) {
+		t.Errorf("seeds 1 and 2 produced the same board: %v", first)
+	}
+}
+
+// orientationOf deduces a ship's orientation from its cells. A Submarine has
+// a single cell, so its orientation cannot be told and it is reported as
+// Horizontal.
+func orientationOf(s PlacedShip) Orientation {
+	rows := map[int]int{}
+	cols := map[int]int{}
+	minCol, maxCol, minRow, maxRow := Size, -1, Size, -1
+	for _, c := range s.Cells {
+		rows[c.Row]++
+		cols[c.Col]++
+		minCol, maxCol = min(minCol, c.Col), max(maxCol, c.Col)
+		minRow, maxRow = min(minRow, c.Row), max(maxRow, c.Row)
+	}
+	if s.Type != AircraftCarrier {
+		if len(rows) == 1 {
+			return Horizontal
+		}
+		return Vertical
+	}
+	// The bar of the T is the row or column with 3 cells; the stem points away from it.
+	switch {
+	case rows[minRow] == 3:
+		return Down
+	case rows[maxRow] == 3:
+		return Up
+	case cols[minCol] == 3:
+		return Right
+	default:
+		return Left
+	}
+}
+
+func TestOrientationOf(t *testing.T) {
+	ref := Coord{Col: 4, Row: 4}
+	for _, shipType := range []ShipType{Destroyer, Cruiser, Battleship, AircraftCarrier} {
+		for _, o := range ValidOrientations(shipType) {
+			cells, err := ShipCells(shipType, ref, o)
+			if err != nil {
+				t.Fatalf("ShipCells(%v, E5, %v): %v", shipType, o, err)
+			}
+			if got := orientationOf(PlacedShip{Type: shipType, Cells: cells}); got != o {
+				t.Errorf("orientationOf(%v %v) = %v", shipType, o, got)
+			}
+		}
+	}
+}
+
+// CA-5: over 1,000 boards, every valid orientation of every type shows up.
+// A Submarine looks the same in both orientations, so it only has to appear.
+func TestRandomBoard_AllOrientations(t *testing.T) {
+	seen := map[ShipType]map[Orientation]bool{}
+	for seed := uint64(1); seed <= 1000; seed++ {
+		for _, s := range mustRandomBoard(t, seed).Ships() {
+			if seen[s.Type] == nil {
+				seen[s.Type] = map[Orientation]bool{}
+			}
+			seen[s.Type][orientationOf(s)] = true
+		}
+	}
+
+	for _, entry := range DefaultFleet() {
+		want := ValidOrientations(entry.Type)
+		if entry.Type == Submarine {
+			want = []Orientation{Horizontal}
+		}
+		for _, o := range want {
+			if !seen[entry.Type][o] {
+				t.Errorf("%v never appeared with orientation %v", entry.Type, o)
+			}
 		}
 	}
 }
