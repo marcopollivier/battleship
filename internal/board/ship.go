@@ -98,6 +98,20 @@ var carrierOffsets = map[Orientation][5][2]int{
 	Left:  {{0, -1}, {0, 0}, {0, 1}, {-1, 0}, {-2, 0}},
 }
 
+// ValidOrientations returns the orientations that apply to t, or nil for an
+// unknown type: Horizontal and Vertical for line ships, Up, Down, Left and
+// Right for the AircraftCarrier.
+func ValidOrientations(t ShipType) []Orientation {
+	switch {
+	case t == AircraftCarrier:
+		return []Orientation{Up, Down, Left, Right}
+	case t.Size() > 0:
+		return []Orientation{Horizontal, Vertical}
+	default:
+		return nil
+	}
+}
+
 // ShipCells returns the cells a ship of type t occupies when placed at ref
 // with orientation o. It does not check board bounds.
 // Returns ErrInvalidOrientation if o does not apply to t.
