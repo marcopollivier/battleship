@@ -3,6 +3,7 @@ package board
 import (
 	"cmp"
 	"errors"
+	"fmt"
 	"math/rand/v2"
 	"slices"
 )
@@ -22,6 +23,12 @@ const (
 // The same rng state always produces the same board.
 func RandomBoard(fleet []FleetEntry, rng *rand.Rand) (*Board, error) {
 	ships := shipsBySize(fleet)
+	for _, t := range ships {
+		// A type with no orientations can never be placed, so no attempt is spent on it.
+		if len(ValidOrientations(t)) == 0 {
+			return nil, fmt.Errorf("%w: unknown ship type %v", ErrFleetDoesNotFit, t)
+		}
+	}
 	for range maxRestarts {
 		if b, ok := tryRandomBoard(fleet, ships, rng); ok {
 			return b, nil

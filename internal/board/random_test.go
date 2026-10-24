@@ -1,9 +1,11 @@
 package board
 
 import (
+	"errors"
 	"math/rand/v2"
 	"slices"
 	"testing"
+	"time"
 )
 
 // seeded returns a random source with a fixed seed, so every run is the same.
@@ -205,5 +207,31 @@ func TestRandomBoard_AllOrientations(t *testing.T) {
 				t.Errorf("%v never appeared with orientation %v", entry.Type, o)
 			}
 		}
+	}
+}
+
+// CA-6: a fleet that cannot fit returns ErrFleetDoesNotFit, in bounded time.
+func TestRandomBoard_DoesNotFit(t *testing.T) {
+	tests := []struct {
+		name  string
+		fleet []FleetEntry
+	}{
+		{"30 battleships", []FleetEntry{{Type: Battleship, Count: 30}}},
+		{"unknown ship type", []FleetEntry{{Type: ShipType(99), Count: 1}}},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			start := time.Now()
+			b, err := RandomBoard(tt.fleet, seeded(1))
+			if !errors.Is(err, ErrFleetDoesNotFit) {
+				t.Errorf("RandomBoard error = %v, want ErrFleetDoesNotFit", err)
+			}
+			if b != nil {
+				t.Errorf("RandomBoard returned a board with the error: %v", b.Ships())
+			}
+			if elapsed := time.Since(start); elapsed > 2*time.Second {
+				t.Errorf("RandomBoard took %v to give up, want under 2s", elapsed)
+			}
+		})
 	}
 }
