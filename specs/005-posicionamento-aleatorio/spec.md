@@ -1,6 +1,6 @@
 # 005 — Posicionamento aleatório
 
-- **Status:** Aprovada
+- **Status:** Em andamento
 - **Roadmap:** #005 (onda 1)
 - **Depende de:** 002 (tabuleiro e frota)
 
