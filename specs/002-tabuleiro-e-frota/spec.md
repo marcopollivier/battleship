@@ -1,6 +1,6 @@
 # 002 — Tabuleiro e frota
 
-- **Status:** Aprovada
+- **Status:** Em andamento
 - **Roadmap:** #002
 - **Depende de:** 001 (coordenadas)
 
