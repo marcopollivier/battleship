@@ -4,16 +4,19 @@ Backlog ordenado. Cada item vira uma pasta `specs/NNN-slug/` quando for especifi
 
 Status: `Backlog` → `Spec` → `Em andamento` → `Concluída`
 
-| # | Feature | Origem | Status |
-| - | ------- | ------ | ------ |
-| 001 | Coordenadas: converter `A1`…`J10` em posição e vice-versa, rejeitar entradas inválidas | Regras do README | Concluída |
-| 002 | Tabuleiro e frota: tipos de navio e formatos (linha e T), quantidades padrão, posicionamento com rotação, validação de limites e sobreposição | Regras do README | Concluída |
-| 003 | Disparo: resultado água/acerto/afundado, tiro repetido, fim de jogo quando toda a frota afunda | Regras do README | Backlog |
-| 004 | Renderização no terminal: tabuleiro próprio e tabuleiro de ataque | `cmd/init.go` atual | Backlog |
-| 005 | Posicionamento aleatório da frota | TODO do README | Backlog |
-| 006 | Modo solo: atacar um tabuleiro gerado aleatoriamente | TODO do README | Backlog |
-| 007 | Jogador vs. máquina: posicionar a própria frota e jogar contra jogadas aleatórias, com turno extra após acerto | TODO do README | Backlog |
-| 008 | Frota configurável pelo jogador | TODO do README | Backlog |
+Features da mesma onda não dependem umas das outras e são tocadas em paralelo (veja "Trabalho em paralelo" em `specs/README.md`). Durante uma onda, esta tabela só é atualizada por PRs `docs/` de quem coordena.
+
+| # | Feature | Origem | Depende de | Onda | Status |
+| - | ------- | ------ | ---------- | ---- | ------ |
+| 001 | Coordenadas: converter `A1`…`J10` em posição e vice-versa, rejeitar entradas inválidas | Regras do README | — | — | Concluída |
+| 002 | Tabuleiro e frota: tipos de navio e formatos (linha e T), quantidades padrão, posicionamento com rotação, validação de limites e sobreposição | Regras do README | 001 | — | Concluída |
+| 003 | Disparo: resultado água/acerto/afundado, tiro repetido, fim de jogo quando toda a frota afunda | Regras do README | 002 | 1 | Spec |
+| 004 | Terminal, tabuleiro próprio: desenhar o tabuleiro com os navios do jogador e os nomes em português de navios e orientações | `cmd/init.go` atual | 002 | 1 | Spec |
+| 005 | Posicionamento aleatório da frota | TODO do README | 002 | 1 | Spec |
+| 009 | Terminal, tabuleiro de ataque: desenhar os disparos feitos no tabuleiro do oponente | Divisão da 004 | 003, 004 | 2 | Backlog |
+| 008 | Frota configurável pelo jogador | TODO do README | 002, 004 | 2 | Backlog |
+| 006 | Modo solo: atacar um tabuleiro gerado aleatoriamente | TODO do README | 003, 005, 009 | 3 | Backlog |
+| 007 | Jogador vs. máquina: posicionar a própria frota e jogar contra jogadas aleatórias, com turno extra após acerto | TODO do README | 006 | 4 | Backlog |
 
 ## Questões em aberto do jogo
 
