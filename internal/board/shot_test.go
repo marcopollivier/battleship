@@ -97,3 +97,58 @@ func TestFire_Sinks(t *testing.T) {
 		}
 	})
 }
+
+// cellStates returns the state of every cell on the board, keyed by its name.
+func cellStates(b *Board) map[string]CellState {
+	states := map[string]CellState{}
+	for col := range Size {
+		for row := range Size {
+			c := Coord{Col: col, Row: row}
+			states[c.String()] = b.Cell(c)
+		}
+	}
+	return states
+}
+
+// CA-5: the board remembers which cells were shot and whether each shot was a
+// miss or a hit.
+func TestBoard_Cell(t *testing.T) {
+	b := exampleBoard(t)
+	fire(t, b, "J10", "E1")
+
+	for name, got := range cellStates(b) {
+		want := CellUntouched
+		switch name {
+		case "J10":
+			want = CellMiss
+		case "E1":
+			want = CellHit
+		}
+		if got != want {
+			t.Errorf("Cell(%s) = %v, want %v", name, got, want)
+		}
+	}
+
+	for _, c := range []Coord{{Col: Size, Row: 0}, {Col: 0, Row: -1}} {
+		if got := b.Cell(c); got != CellUntouched {
+			t.Errorf("Cell(%v) = %v, want %v", c, got, CellUntouched)
+		}
+	}
+}
+
+func TestCellState_String(t *testing.T) {
+	tests := []struct {
+		s    CellState
+		want string
+	}{
+		{CellUntouched, "CellUntouched"},
+		{CellMiss, "CellMiss"},
+		{CellHit, "CellHit"},
+		{CellState(9), "CellState(9)"},
+	}
+	for _, tt := range tests {
+		if got := tt.s.String(); got != tt.want {
+			t.Errorf("CellState(%d).String() = %q, want %q", int(tt.s), got, tt.want)
+		}
+	}
+}

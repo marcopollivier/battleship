@@ -67,3 +67,37 @@ func (b *Board) shipAt(c Coord) *PlacedShip {
 	}
 	return nil
 }
+
+// CellState is what the shooter knows about a cell.
+type CellState int
+
+const (
+	CellUntouched CellState = iota // not shot yet
+	CellMiss                       // shot, no ship
+	CellHit                        // shot, part of a ship
+)
+
+var cellStateNames = map[CellState]string{
+	CellUntouched: "CellUntouched",
+	CellMiss:      "CellMiss",
+	CellHit:       "CellHit",
+}
+
+func (s CellState) String() string {
+	if name, ok := cellStateNames[s]; ok {
+		return name
+	}
+	return fmt.Sprintf("CellState(%d)", int(s))
+}
+
+// Cell reports the state of c. Cells outside the board are CellUntouched.
+func (b *Board) Cell(c Coord) CellState {
+	switch {
+	case !b.shots[c]:
+		return CellUntouched
+	case b.shipAt(c) == nil:
+		return CellMiss
+	default:
+		return CellHit
+	}
+}
