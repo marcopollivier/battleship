@@ -108,3 +108,27 @@ func TestBoard_Place_Overlap(t *testing.T) {
 		t.Errorf("Ships() has %d ships, want only the cruiser", n)
 	}
 }
+
+// CA-10: ships cannot touch, not even diagonally.
+func TestBoard_Place_Adjacent(t *testing.T) {
+	tests := []struct {
+		name string
+		p    placement
+	}{
+		{"touching the side", placement{Destroyer, "D1", Horizontal}},
+		{"touching below", placement{Destroyer, "A2", Horizontal}},
+		{"touching diagonally", placement{Destroyer, "D2", Vertical}},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			b := NewBoard(DefaultFleet())
+			place(t, b, placement{Cruiser, "A1", Horizontal})
+			assertRejected(t, b, tt.p, ErrAdjacent)
+		})
+	}
+
+	t.Run("one water cell apart", func(t *testing.T) {
+		b := NewBoard(DefaultFleet())
+		place(t, b, placement{Cruiser, "A1", Horizontal}, placement{Destroyer, "E1", Horizontal})
+	})
+}
