@@ -54,3 +54,25 @@ func shipTypeBySymbol(symbol string) (board.ShipType, bool) {
 	}
 	return 0, false
 }
+
+// fleetErrorMessages are the Portuguese messages for each fleet rejection.
+var fleetErrorMessages = []struct {
+	err     error
+	message string
+}{
+	{ErrInvalidFleetFormat, "Frota inválida: use letra=quantidade separados por vírgula, por exemplo S=2,D=1,P=1."},
+	{board.ErrNegativeCount, "Frota inválida: as quantidades não podem ser negativas."},
+	{board.ErrEmptyFleet, "Frota inválida: escolha pelo menos um navio."},
+	{board.ErrFleetDoesNotFit, "Não foi possível posicionar essa frota no tabuleiro."},
+}
+
+// FleetErrorMessage returns the Portuguese message for an error from
+// ParseFleet or board.ValidateFleet.
+func FleetErrorMessage(err error) string {
+	for _, m := range fleetErrorMessages {
+		if errors.Is(err, m.err) {
+			return m.message
+		}
+	}
+	return "Erro: " + err.Error()
+}

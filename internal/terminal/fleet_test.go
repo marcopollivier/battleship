@@ -2,6 +2,7 @@ package terminal
 
 import (
 	"errors"
+	"fmt"
 	"slices"
 	"testing"
 
@@ -71,5 +72,35 @@ func TestParseFleet_InvalidFormat(t *testing.T) {
 				t.Errorf("ParseFleet(%q) = %v with the error, want nil", tt.in, got)
 			}
 		})
+	}
+}
+
+// CA-9: each fleet rejection has a Portuguese message, also when wrapped.
+func TestFleetErrorMessage(t *testing.T) {
+	tests := []struct {
+		name string
+		err  error
+		want string
+	}{
+		{"format", ErrInvalidFleetFormat, "Frota inválida: use letra=quantidade separados por vírgula, por exemplo S=2,D=1,P=1."},
+		{"negative count", board.ErrNegativeCount, "Frota inválida: as quantidades não podem ser negativas."},
+		{"empty fleet", board.ErrEmptyFleet, "Frota inválida: escolha pelo menos um navio."},
+		{"does not fit", board.ErrFleetDoesNotFit, "Não foi possível posicionar essa frota no tabuleiro."},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := FleetErrorMessage(tt.err); got != tt.want {
+				t.Errorf("FleetErrorMessage(%v) = %q, want %q", tt.err, got, tt.want)
+			}
+			wrapped := fmt.Errorf("context: %w", tt.err)
+			if got := FleetErrorMessage(wrapped); got != tt.want {
+				t.Errorf("FleetErrorMessage(%v) = %q, want %q", wrapped, got, tt.want)
+			}
+		})
+	}
+
+	other := errors.New("boom")
+	if got, want := FleetErrorMessage(other), "Erro: boom"; got != want {
+		t.Errorf("FleetErrorMessage(%v) = %q, want %q", other, got, want)
 	}
 }
