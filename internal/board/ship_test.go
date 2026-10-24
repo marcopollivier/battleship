@@ -187,3 +187,30 @@ func TestShipCells_AircraftCarrierInvalidOrientation(t *testing.T) {
 		}
 	}
 }
+
+func TestValidOrientations(t *testing.T) {
+	tests := []struct {
+		shipType ShipType
+		want     []Orientation
+	}{
+		{Submarine, []Orientation{Horizontal, Vertical}},
+		{Destroyer, []Orientation{Horizontal, Vertical}},
+		{Cruiser, []Orientation{Horizontal, Vertical}},
+		{Battleship, []Orientation{Horizontal, Vertical}},
+		{AircraftCarrier, []Orientation{Up, Down, Left, Right}},
+		{ShipType(99), nil},
+	}
+	for _, tt := range tests {
+		t.Run(tt.shipType.String(), func(t *testing.T) {
+			got := ValidOrientations(tt.shipType)
+			if !slices.Equal(got, tt.want) {
+				t.Errorf("ValidOrientations(%v) = %v, want %v", tt.shipType, got, tt.want)
+			}
+			for _, o := range got {
+				if _, err := ShipCells(tt.shipType, Coord{Col: 4, Row: 4}, o); err != nil {
+					t.Errorf("ShipCells(%v, E5, %v) rejected a valid orientation: %v", tt.shipType, o, err)
+				}
+			}
+		})
+	}
+}
