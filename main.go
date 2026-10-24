@@ -1,7 +1,15 @@
 package main
 
-import "github.com/marcopollivier/battleship/cmd"
+import (
+	"fmt"
+	"os"
+
+	"github.com/marcopollivier/battleship/cmd"
+)
 
 func main() {
-	cmd.Init()
+	if err := cmd.Init(); err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(1)
+	}
 }
