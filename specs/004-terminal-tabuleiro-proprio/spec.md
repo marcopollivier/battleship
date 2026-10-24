@@ -47,8 +47,6 @@ O jogador precisa ver o próprio tabuleiro com os navios posicionados. Hoje o pr
 - **CA-5:** Dado o programa compilado, quando ele é executado, então imprime o tabuleiro desenhado por esta camada, sem diferença em relação ao CA-1.
 - **CA-6:** Dado um tabuleiro completo com a frota padrão, quando o jogo o desenha, então cada navio aparece com a letra do seu tipo, e a saída inteira só tem caracteres ASCII acima da legenda.
 
-As decisões das questões em aberto podem acrescentar ou ajustar critérios.
-
 ## Fora de escopo
 
 - O tabuleiro de ataque e os disparos (#009).
