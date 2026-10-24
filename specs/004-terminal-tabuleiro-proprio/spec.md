@@ -1,6 +1,6 @@
 # 004 — Terminal: tabuleiro próprio
 
-- **Status:** Aprovada
+- **Status:** Em andamento
 - **Roadmap:** #004 (onda 1)
 - **Depende de:** 001 (coordenadas), 002 (tabuleiro e frota)
 
