@@ -52,8 +52,13 @@ func ParseCoord(s string) (Coord, error) {
 // String returns the canonical form, e.g. "A1", "J10".
 // A Coord outside the board is rendered as "Coord(col,row)".
 func (c Coord) String() string {
+	// The explicit range check lets gosec prove the rune conversion is safe.
 	if c.Col < 0 || c.Col >= Size || c.Row < 0 || c.Row >= Size {
 		return fmt.Sprintf("Coord(%d,%d)", c.Col, c.Row)
 	}
 	return string(rune('A'+c.Col)) + strconv.Itoa(c.Row+1)
+}
+
+func (c Coord) inBounds() bool {
+	return c.Col >= 0 && c.Col < Size && c.Row >= 0 && c.Row < Size
 }
