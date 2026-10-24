@@ -80,6 +80,6 @@ Concluída em 2026-10-24, nas tarefas T1–T5. Os 9 critérios de aceitação s�
 - O `CellState.String()` devolve o nome completo da constante (`CellUntouched`, `CellMiss`, `CellHit`), e não `Miss` e `Hit`. Com os nomes curtos, o `goconst` reclamava dos literais repetidos com o `ShotResult.String()`. Fica mais claro também: no log, um `CellMiss` não se confunde com um `Miss`.
 - O `Fire` e o `Cell` usam um método interno novo, `shipAt`, que procura o navio de uma casa, e o `Fire` e o `AllSunk` usam outro, `sunk`. Os dois ficaram em `shot.go`.
 - Os testes ganharam, além do `exampleBoard`, os helpers `fire`, `cellStates` e `assertFireRejected`. O CA-9 também confere que, num tabuleiro incompleto, até uma casa fora do tabuleiro é rejeitada com `ErrIncompleteBoard`, confirmando a ordem das validações.
-- Num tabuleiro sem nenhum navio, o `AllSunk` responde `true`, porque olha só os navios posicionados, como diz o plano. Na prática isso não aparece: um tabuleiro incompleto não recebe disparos.
+- Num tabuleiro sem nenhum navio, o `AllSunk` responde `false`. O plano só dizia que ele olha os navios posicionados, o que daria `true` para um tabuleiro vazio. Isso foi corrigido na revisão, a pedido do usuário, para que um laço de partida nunca declare vitória num tabuleiro sem navios.
 
 **Para o roadmap:** a #009 precisa traduzir para português os resultados do disparo (`Miss` → água, `Hit` → acerto, `Sunk` → afundado) e mostrar o tipo do navio só quando o resultado for `Sunk`, já que o `Shot.Ship` fica com o valor zero (`Submarine`) nos outros casos.

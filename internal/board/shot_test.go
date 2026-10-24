@@ -225,3 +225,10 @@ func TestBoard_AllSunk(t *testing.T) {
 		t.Error("AllSunk() = false after every ship cell was hit")
 	}
 }
+
+// A board with no ships has no fleet to sink, so the game cannot be won on it.
+func TestBoard_AllSunk_NoShips(t *testing.T) {
+	if NewBoard(DefaultFleet()).AllSunk() {
+		t.Error("AllSunk() = true on a board with no ships")
+	}
+}
