@@ -1,6 +1,6 @@
 # 009 — Terminal: tabuleiro de ataque
 
-- **Status:** Em andamento
+- **Status:** Concluída
 - **Roadmap:** #009 (onda 2)
 - **Depende de:** 003 (disparo), 004 (terminal, tabuleiro próprio)
 
@@ -81,4 +81,16 @@ Todas decididas em 2026-10-24:
 
 ## Encerramento
 
-Preenchido na fase 5: desvios em relação ao plano e o que ficou para o roadmap.
+Concluída em 2026-10-24, nas tarefas T1–T4. Os 7 critérios de aceitação são cobertos por testes em `internal/terminal/messages_test.go`, `internal/terminal/attack_test.go` e `internal/terminal/render_test.go`, com 100% de cobertura no `internal/terminal`. O domínio não mudou. O `go run .` imprime o tabuleiro vazio da 004 com a legenda nova do tabuleiro próprio.
+
+**Desvios em relação ao plano:**
+
+- Os símbolos de disparo viraram constantes internas em `render.go` (`hitSymbol` para `X` e `missSymbol` para `o`), usadas pelos dois tabuleiros, e o `.` virou `untouchedSymbol` em `attack.go`. O `shipSymbols` não mudou.
+- A regra de navio afundado ficou numa função interna, `shipSunk`, em `attack.go`: o navio está afundado quando todas as suas casas estão como `CellHit`, como o plano previa.
+- Os testes ganharam, além de `attackExampleBoard` e `attackFire`, os helpers `attackRender` e `attackAssertCells`, que confere todas as 100 casas (as esperadas e `.` no resto). Ficaram em `attack_test.go`, e o `TestRenderBoard_ReceivedShots` de `render_test.go` também os usa.
+- O `TestShotMessage` também confere que um `Miss` com `Ship` preenchido não cita o navio. O `TestRenderAttackBoard_Sunk` ganhou dois casos além do Cruzador: um Cruzador só atingido (continua `X`) e um Submarino afundado ao lado de uma água e de um acerto.
+
+**Para o roadmap:**
+
+- O `RenderBoard` (tabuleiro próprio) e o `RenderAttackBoard` calculam a grade inteira consultando `Board.Cell` casa a casa, e cada consulta percorre os navios. Para 100 casas isso é irrelevante, mas, se o domínio ganhar um `Board.Sunk(ship)` ou uma consulta em lote, o `shipSunk` do terminal pode ser trocado por ela.
+- O `CLAUDE.md` precisa citar o `RenderAttackBoard`, o `AttackLegend` e o `ShotMessage` no `internal/terminal`.
