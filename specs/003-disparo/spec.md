@@ -1,6 +1,6 @@
 # 003 — Disparo
 
-- **Status:** Rascunho
+- **Status:** Aprovada
 - **Roadmap:** #003 (onda 1)
 - **Depende de:** 001 (coordenadas), 002 (tabuleiro e frota)
 
@@ -21,23 +21,40 @@ Do README:
 Desta spec:
 
 - O resultado de um disparo é um entre três: água, acerto ou afundado. O disparo que acerta a última casa ainda intacta de um navio resulta em afundado, e não em acerto.
-- Um disparo fora do tabuleiro é rejeitado com um erro, e o tabuleiro não muda.
+- Quando o resultado é afundado, ele informa o tipo do navio afundado ("afundou o Cruzador").
+- Quando o resultado é acerto, ele não informa o tipo do navio atingido.
+- Só um tabuleiro completo (com todos os navios da frota posicionados) recebe disparos.
+- Um disparo é rejeitado com um erro, sem alterar o tabuleiro, quando:
+  - a casa está fora do tabuleiro;
+  - a casa já recebeu disparo antes, seja água ou acerto. O jogador atira de novo, sem perder a vez (a vez em si é tratada na #006 e na #007);
+  - o tabuleiro ainda não está completo.
 - O tabuleiro lembra, para cada casa, se já recebeu disparo e, se recebeu, se foi água ou acerto. É isso que vai permitir desenhar o tabuleiro de ataque (#009).
 - O tabuleiro informa se toda a frota já foi afundada.
 
 ## Critérios de aceitação
 
-Nos critérios abaixo, "tabuleiro de exemplo" é um tabuleiro com um Cruzador em `A1` na horizontal (`A1`–`C1`) e um Submarino em `E5`.
+Nos critérios abaixo, o "tabuleiro de exemplo" é um tabuleiro completo com a frota padrão, na mesma disposição usada nos testes da 002:
+
+| Navio | Posição | Casas |
+| ----- | ------- | ----- |
+| Porta-Aviões | `B1`, `baixo` | `A1` `B1` `C1` `B2` `B3` |
+| Encouraçado | `E1`, horizontal | `E1` `F1` `G1` `H1` |
+| Cruzador | `J1`, vertical | `J1` `J2` `J3` |
+| Destroyer | `A5`, horizontal | `A5` `B5` |
+| Destroyer | `E3`, horizontal | `E3` `F3` |
+| Submarino | `H5` | `H5` |
+| Submarino | `A8` | `A8` |
+| Submarino | `E8` | `E8` |
 
 - **CA-1:** Dado o tabuleiro de exemplo, quando o jogador dispara em `J10`, então o resultado é água.
-- **CA-2:** Dado o tabuleiro de exemplo, quando o jogador dispara em `B1`, então o resultado é acerto.
-- **CA-3:** Dado o tabuleiro de exemplo com disparos em `A1` e `B1`, quando o jogador dispara em `C1`, então o resultado é afundado.
-- **CA-4:** Dado o tabuleiro de exemplo, quando o jogador dispara em `E5`, então o resultado é afundado logo no primeiro disparo, porque o Submarino ocupa uma casa só.
-- **CA-5:** Dado o tabuleiro de exemplo com disparos em `J10` (água) e `B1` (acerto), quando o jogo consulta as casas, então `J10` aparece como água atingida, `B1` como navio atingido, e as demais como ainda não atingidas.
+- **CA-2:** Dado o tabuleiro de exemplo, quando o jogador dispara em `E1`, então o resultado é acerto, sem informar o tipo do navio.
+- **CA-3:** Dado o tabuleiro de exemplo com disparos em `J1` e `J2`, quando o jogador dispara em `J3`, então o resultado é afundado, informando que foi o Cruzador.
+- **CA-4:** Dado o tabuleiro de exemplo, quando o jogador dispara em `H5`, então o resultado é afundado logo no primeiro disparo, informando que foi um Submarino.
+- **CA-5:** Dado o tabuleiro de exemplo com disparos em `J10` (água) e `E1` (acerto), quando o jogo consulta as casas, então `J10` aparece como água atingida, `E1` como navio atingido, e as demais como ainda não atingidas.
 - **CA-6:** Dado o tabuleiro de exemplo, quando o jogador dispara numa casa fora do tabuleiro, então o disparo é rejeitado com um erro de fora do tabuleiro, e nenhuma casa muda.
-- **CA-7:** Dado o tabuleiro de exemplo com o Cruzador afundado, quando o jogo verifica se a frota inteira afundou, então a resposta é não. Depois do disparo em `E5`, a resposta é sim.
-
-As decisões das questões em aberto podem acrescentar ou ajustar critérios.
+- **CA-7:** Dado o tabuleiro de exemplo com todas as casas de navio atingidas, exceto `E8`, quando o jogo verifica se a frota inteira afundou, então a resposta é não. Depois do disparo em `E8`, a resposta é sim.
+- **CA-8:** Dado o tabuleiro de exemplo com disparos em `J10` e `E1`, quando o jogador dispara de novo em `J10` ou em `E1`, então o disparo é rejeitado com um erro de tiro repetido, e nenhuma casa muda.
+- **CA-9:** Dado um tabuleiro com só um Cruzador posicionado, quando o jogador dispara em qualquer casa, então o disparo é rejeitado com um erro de tabuleiro incompleto.
 
 ## Fora de escopo
 
@@ -47,10 +64,12 @@ As decisões das questões em aberto podem acrescentar ou ajustar critérios.
 
 ## Questões em aberto
 
-- [ ] **1. Tiro repetido:** um disparo numa casa que já recebeu disparo deve ser rejeitado com um erro (o jogador atira de novo, sem perder a vez) ou aceito e contado como tiro perdido?
-- [ ] **2. Qual navio afundou:** quando um disparo afunda um navio, o resultado informa o tipo do navio ("afundou o Cruzador") ou só que um navio afundou? Esta questão vem do roadmap.
-- [ ] **3. Acerto revela o tipo:** num acerto que não afunda, o resultado informa o tipo do navio atingido ou só "acerto"?
-- [ ] **4. Tabuleiro incompleto:** um tabuleiro que ainda não tem os 8 navios posicionados pode receber disparos, ou o disparo deve ser rejeitado até ele ficar completo?
+Todas decididas em 2026-10-24:
+
+- [x] **1. Tiro repetido:** rejeitado com erro; o jogador atira de novo sem perder a vez (CA-8).
+- [x] **2. Qual navio afundou:** o resultado afundado informa o tipo do navio (CA-3, CA-4).
+- [x] **3. Acerto revela o tipo:** não, o acerto só diz "acerto" (CA-2).
+- [x] **4. Tabuleiro incompleto:** não recebe disparos (CA-9).
 
 ## Encerramento
 
