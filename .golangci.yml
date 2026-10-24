@@ -28,6 +28,7 @@ linters:
     rules:
       - linters:
           - errcheck
+          - goconst
           - gosec
         path: _test\.go
     paths:
