@@ -25,11 +25,12 @@ type PlacedShip struct {
 type Board struct {
 	fleet []FleetEntry
 	ships []PlacedShip
+	shots map[Coord]bool // cells that have been shot
 }
 
 // NewBoard returns an empty board for the given fleet.
 func NewBoard(fleet []FleetEntry) *Board {
-	return &Board{fleet: slices.Clone(fleet)}
+	return &Board{fleet: slices.Clone(fleet), shots: map[Coord]bool{}}
 }
 
 // Place puts a ship of type t on the board at ref with orientation o.
