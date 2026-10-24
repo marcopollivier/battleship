@@ -97,7 +97,7 @@ Arquivo `internal/board/shot_test.go`. Um helper `exampleBoard(t)` monta o tabul
 
 ## Dependências e riscos
 
-- **Mudança de comportamento do `Shot.Ship`:** quando o resultado não é `Sunk`, o campo fica com o valor zero, que é `Submarine`. Quem lê o resultado precisa olhar o `Result` antes. Isso fica documentado no tipo e testado no CA-2.
+- **Valor zero do `Shot.Ship`:** quando o resultado não é `Sunk`, o campo fica com o valor zero, que é `Submarine`. Quem lê o resultado precisa olhar o `Result` antes. Isso fica documentado no tipo e testado no CA-2.
 
 ## Checagem da constituição
 
