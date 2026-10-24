@@ -1,6 +1,6 @@
 # 009 — Terminal: tabuleiro de ataque
 
-- **Status:** Aprovada
+- **Status:** Em andamento
 - **Roadmap:** #009 (onda 2)
 - **Depende de:** 003 (disparo), 004 (terminal, tabuleiro próprio)
 
