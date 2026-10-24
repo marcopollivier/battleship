@@ -1,6 +1,6 @@
 # 008 — Frota configurável
 
-- **Status:** Aprovada
+- **Status:** Em andamento
 - **Roadmap:** #008 (onda 2)
 - **Depende de:** 002 (tabuleiro e frota), 004 (terminal), 005 (posicionamento aleatório, para saber se uma frota cabe)
 
