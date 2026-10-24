@@ -132,3 +132,47 @@ func TestBoard_Place_Adjacent(t *testing.T) {
 		place(t, b, placement{Cruiser, "A1", Horizontal}, placement{Destroyer, "E1", Horizontal})
 	})
 }
+
+// CA-8: a fleet allows only as many ships of a type as it lists.
+func TestBoard_Place_FleetLimit(t *testing.T) {
+	t.Run("fourth submarine", func(t *testing.T) {
+		b := NewBoard(DefaultFleet())
+		place(t, b,
+			placement{Submarine, "A1", Horizontal},
+			placement{Submarine, "C1", Horizontal},
+			placement{Submarine, "E1", Horizontal},
+		)
+		assertRejected(t, b, placement{Submarine, "G1", Horizontal}, ErrFleetLimit)
+	})
+
+	t.Run("type not in fleet", func(t *testing.T) {
+		b := NewBoard([]FleetEntry{{Type: Submarine, Count: 1}})
+		assertRejected(t, b, placement{Cruiser, "A1", Horizontal}, ErrFleetLimit)
+	})
+}
+
+// CA-9: the board is complete once all 8 ships of the default fleet are placed.
+func TestBoard_Complete(t *testing.T) {
+	b := NewBoard(DefaultFleet())
+	if b.Complete() {
+		t.Fatal("empty board is complete")
+	}
+
+	place(t, b,
+		placement{AircraftCarrier, "B1", Down}, // A1 B1 C1 B2 B3
+		placement{Battleship, "E1", Horizontal},
+		placement{Cruiser, "J1", Vertical},
+		placement{Destroyer, "A5", Horizontal},
+		placement{Destroyer, "E3", Horizontal},
+		placement{Submarine, "H5", Horizontal},
+		placement{Submarine, "A8", Horizontal},
+	)
+	if b.Complete() {
+		t.Fatal("board with 7 ships is complete")
+	}
+
+	place(t, b, placement{Submarine, "E8", Horizontal})
+	if !b.Complete() {
+		t.Error("board with all 8 ships is not complete")
+	}
+}

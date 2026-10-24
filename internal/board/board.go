@@ -11,6 +11,8 @@ var (
 	ErrOverlap = errors.New("ship overlaps another ship")
 	// ErrAdjacent means the ship would touch another ship, including diagonally.
 	ErrAdjacent = errors.New("ship touches another ship")
+	// ErrFleetLimit means every ship of that type in the fleet is already placed.
+	ErrFleetLimit = errors.New("no more ships of this type in the fleet")
 )
 
 // PlacedShip is a ship on the board and the cells it occupies.
@@ -33,6 +35,9 @@ func NewBoard(fleet []FleetEntry) *Board {
 // Place puts a ship of type t on the board at ref with orientation o.
 // On error the board is left unchanged.
 func (b *Board) Place(t ShipType, ref Coord, o Orientation) error {
+	if b.placedCount(t) >= b.fleetCount(t) {
+		return fmt.Errorf("%w: %v", ErrFleetLimit, t)
+	}
 	cells, err := ShipCells(t, ref, o)
 	if err != nil {
 		return err
@@ -70,6 +75,36 @@ func (b *Board) Ships() []PlacedShip {
 		ships[i] = PlacedShip{Type: s.Type, Cells: slices.Clone(s.Cells)}
 	}
 	return ships
+}
+
+// Complete reports whether every ship in the fleet has been placed.
+func (b *Board) Complete() bool {
+	for _, entry := range b.fleet {
+		if b.placedCount(entry.Type) < entry.Count {
+			return false
+		}
+	}
+	return true
+}
+
+func (b *Board) fleetCount(t ShipType) int {
+	count := 0
+	for _, entry := range b.fleet {
+		if entry.Type == t {
+			count += entry.Count
+		}
+	}
+	return count
+}
+
+func (b *Board) placedCount(t ShipType) int {
+	count := 0
+	for _, s := range b.ships {
+		if s.Type == t {
+			count++
+		}
+	}
+	return count
 }
 
 // occupied returns the set of cells taken by placed ships.
