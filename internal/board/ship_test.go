@@ -1,6 +1,10 @@
 package board
 
-import "testing"
+import (
+	"errors"
+	"slices"
+	"testing"
+)
 
 // CA-1: the default fleet is the original paper pad fleet.
 func TestDefaultFleet(t *testing.T) {
@@ -66,6 +70,84 @@ func TestShipType_String(t *testing.T) {
 	for _, tt := range tests {
 		if got := tt.shipType.String(); got != tt.want {
 			t.Errorf("ShipType(%d).String() = %q, want %q", int(tt.shipType), got, tt.want)
+		}
+	}
+}
+
+// mustCoord parses a coordinate written as in the spec, such as "A1".
+func mustCoord(t *testing.T, s string) Coord {
+	t.Helper()
+	c, err := ParseCoord(s)
+	if err != nil {
+		t.Fatalf("ParseCoord(%q): %v", s, err)
+	}
+	return c
+}
+
+// cellNames renders cells in canonical form, sorted, so shapes compare as sets.
+func cellNames(cells []Coord) []string {
+	names := make([]string, len(cells))
+	for i, c := range cells {
+		names[i] = c.String()
+	}
+	slices.Sort(names)
+	return names
+}
+
+func TestShipCells_Line(t *testing.T) {
+	tests := []struct {
+		name        string
+		shipType    ShipType
+		ref         string
+		orientation Orientation
+		want        []string
+	}{
+		{"CA-2 cruiser horizontal", Cruiser, "A1", Horizontal, []string{"A1", "B1", "C1"}},
+		{"CA-2 cruiser vertical", Cruiser, "A1", Vertical, []string{"A1", "A2", "A3"}},
+		{"CA-3 submarine horizontal", Submarine, "E5", Horizontal, []string{"E5"}},
+		{"CA-3 submarine vertical", Submarine, "E5", Vertical, []string{"E5"}},
+		{"destroyer vertical", Destroyer, "C3", Vertical, []string{"C3", "C4"}},
+		{"battleship horizontal", Battleship, "B2", Horizontal, []string{"B2", "C2", "D2", "E2"}},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			cells, err := ShipCells(tt.shipType, mustCoord(t, tt.ref), tt.orientation)
+			if err != nil {
+				t.Fatalf("ShipCells returned error: %v", err)
+			}
+			if got := cellNames(cells); !slices.Equal(got, tt.want) {
+				t.Errorf("ShipCells(%v, %s, %v) = %v, want %v", tt.shipType, tt.ref, tt.orientation, got, tt.want)
+			}
+		})
+	}
+}
+
+// CA-11 (line ships): only Horizontal and Vertical apply.
+func TestShipCells_LineInvalidOrientation(t *testing.T) {
+	for _, o := range []Orientation{Up, Down, Left, Right} {
+		_, err := ShipCells(Cruiser, Coord{}, o)
+		if !errors.Is(err, ErrInvalidOrientation) {
+			t.Errorf("ShipCells(Cruiser, A1, %v) error = %v, want ErrInvalidOrientation", o, err)
+		}
+	}
+}
+
+func TestOrientation_String(t *testing.T) {
+	tests := []struct {
+		o    Orientation
+		want string
+	}{
+		{Horizontal, "Horizontal"},
+		{Vertical, "Vertical"},
+		{Up, "Up"},
+		{Down, "Down"},
+		{Left, "Left"},
+		{Right, "Right"},
+		{Orientation(99), "Orientation(99)"},
+	}
+	for _, tt := range tests {
+		if got := tt.o.String(); got != tt.want {
+			t.Errorf("Orientation(%d).String() = %q, want %q", int(tt.o), got, tt.want)
 		}
 	}
 }
