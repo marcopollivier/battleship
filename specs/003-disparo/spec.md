@@ -1,6 +1,6 @@
 # 003 — Disparo
 
-- **Status:** Em andamento
+- **Status:** Concluída
 - **Roadmap:** #003 (onda 1)
 - **Depende de:** 001 (coordenadas), 002 (tabuleiro e frota)
 
@@ -73,4 +73,13 @@ Todas decididas em 2026-10-24:
 
 ## Encerramento
 
-Preenchido na fase 5: desvios em relação ao plano e o que ficou para o roadmap.
+Concluída em 2026-10-24, nas tarefas T1–T5. Os 9 critérios de aceitação são cobertos por testes em `internal/board/shot_test.go`, com 99,2% de cobertura do pacote (100% em `shot.go`).
+
+**Desvios em relação ao plano:**
+
+- O `CellState.String()` devolve o nome completo da constante (`CellUntouched`, `CellMiss`, `CellHit`), e não `Miss` e `Hit`. Com os nomes curtos, o `goconst` reclamava dos literais repetidos com o `ShotResult.String()`. Fica mais claro também: no log, um `CellMiss` não se confunde com um `Miss`.
+- O `Fire` e o `Cell` usam um método interno novo, `shipAt`, que procura o navio de uma casa, e o `Fire` e o `AllSunk` usam outro, `sunk`. Os dois ficaram em `shot.go`.
+- Os testes ganharam, além do `exampleBoard`, os helpers `fire`, `cellStates` e `assertFireRejected`. O CA-9 também confere que, num tabuleiro incompleto, até uma casa fora do tabuleiro é rejeitada com `ErrIncompleteBoard`, confirmando a ordem das validações.
+- Num tabuleiro sem nenhum navio, o `AllSunk` responde `true`, porque olha só os navios posicionados, como diz o plano. Na prática isso não aparece: um tabuleiro incompleto não recebe disparos.
+
+**Para o roadmap:** a #009 precisa traduzir para português os resultados do disparo (`Miss` → água, `Hit` → acerto, `Sunk` → afundado) e mostrar o tipo do navio só quando o resultado for `Sunk`, já que o `Shot.Ship` fica com o valor zero (`Submarine`) nos outros casos.
