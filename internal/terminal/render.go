@@ -8,11 +8,17 @@ import (
 	"github.com/marcopollivier/battleship/internal/board"
 )
 
-// Legend explains the board symbols.
-const Legend = "Legenda: ~ água, S Submarino, D Destroyer, C Cruzador, E Encouraçado, P Porta-Aviões"
+// Legend explains the symbols of the player's own board.
+const Legend = "Legenda: ~ água, S Submarino, D Destroyer, C Cruzador, E Encouraçado, P Porta-Aviões, X atingido, o tiro na água"
 
-// water is the symbol of a cell without a ship.
-const water = "~"
+const (
+	// water is the symbol of a cell without a ship.
+	water = "~"
+	// hitSymbol is the symbol of a ship cell that was shot.
+	hitSymbol = "X"
+	// missSymbol is the symbol of a water cell that was shot.
+	missSymbol = "o"
+)
 
 // shipSymbols are the ASCII letters drawn on the cells of each ship type.
 var shipSymbols = map[board.ShipType]string{
@@ -23,7 +29,8 @@ var shipSymbols = map[board.ShipType]string{
 	board.AircraftCarrier: "P",
 }
 
-// RenderBoard writes the player's own board, followed by a blank line and the legend.
+// RenderBoard writes the player's own board, including the shots it has
+// received, followed by a blank line and the legend.
 func RenderBoard(w io.Writer, b *board.Board) error {
 	var grid [board.Size][board.Size]string
 	for row := range grid {
@@ -36,7 +43,22 @@ func RenderBoard(w io.Writer, b *board.Board) error {
 			grid[c.Row][c.Col] = shipSymbol(ship.Type)
 		}
 	}
+	for row := range grid {
+		for col := range grid[row] {
+			switch b.Cell(board.Coord{Col: col, Row: row}) {
+			case board.CellHit:
+				grid[row][col] = hitSymbol
+			case board.CellMiss:
+				grid[row][col] = missSymbol
+			}
+		}
+	}
+	return writeBoard(w, &grid, Legend)
+}
 
+// writeBoard writes the header, the rows of grid, a blank line and legend
+// as a single Write.
+func writeBoard(w io.Writer, grid *[board.Size][board.Size]string, legend string) error {
 	var sb strings.Builder
 
 	sb.WriteString("  ")
@@ -53,7 +75,7 @@ func RenderBoard(w io.Writer, b *board.Board) error {
 		sb.WriteString("\n")
 	}
 
-	sb.WriteString("\n" + Legend + "\n")
+	sb.WriteString("\n" + legend + "\n")
 
 	_, err := w.Write([]byte(sb.String()))
 	return err
