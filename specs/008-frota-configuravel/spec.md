@@ -1,6 +1,6 @@
 # 008 — Frota configurável
 
-- **Status:** Em andamento
+- **Status:** Concluída
 - **Roadmap:** #008 (onda 2)
 - **Depende de:** 002 (tabuleiro e frota), 004 (terminal), 005 (posicionamento aleatório, para saber se uma frota cabe)
 
@@ -55,4 +55,21 @@ Todas decididas em 2026-10-24:
 
 ## Encerramento
 
-Preenchido na fase 5: desvios em relação ao plano e o que ficou para o roadmap.
+Concluída em 2026-10-24, nas tarefas T1–T6. Os 10 critérios de aceitação são cobertos por testes em `internal/board/fleet_test.go` (CA-5 a CA-8), `internal/terminal/fleet_test.go` (CA-1, CA-2, CA-4 e CA-9) e `cmd/init_test.go` (CA-3 e CA-10). A cobertura ficou em 99,4% em `internal/board` e 100% em `internal/terminal` (100% em `fleet.go` nos dois pacotes) e 88,9% em `cmd`. No `cmd`, ficaram sem teste só o `-h` e a falha de escrita do `RenderBoard`.
+
+Executando o programa:
+
+- `go run .` e `go run . --frota S=2,P=1` mostram o tabuleiro e terminam com código 0.
+- `go run . --frota E=30` mostra `Não foi possível posicionar essa frota no tabuleiro.` em `stderr` e termina com código 1.
+- `go run . --frota X=1` mostra a mensagem de formato inválido em `stderr` e termina com código 1.
+
+**Desvios em relação ao plano:**
+
+- O `ValidateFleet` precisou de um `//nolint:gosec` na linha que cria o `*rand.Rand` com a semente fixa. O `gosec` acusou o G404 (gerador fraco) em `fleet.go`, embora não tenha acusado o `random.go` na 005. A semente fixa é a decisão da spec e a checagem não tem relação com segurança.
+- Na T3, o `ParseFleet` já recusava o par sem `=`, a letra desconhecida e o número inválido, com erros comuns. A T4 trocou esses erros pelo `ErrInvalidFleetFormat` e acrescentou a recusa da letra repetida. O texto vazio cai no caso do par sem `=`.
+- O `ParseFleet` procura a letra percorrendo o `shipSymbols`, num helper `shipTypeBySymbol`, em vez de montar um mapa inverso. As mensagens do `FleetErrorMessage` ficam numa tabela (`fleetErrorMessages`) percorrida com `errors.Is`.
+- O `cmd.Run` trata o `-h` com código 0, como o `flag.ExitOnError` faz. O plano só falava do código 2 para opção inválida. Um teste novo (`TestRun_UnknownOption`) confere o código 2 e o uso da opção em `stderr`.
+- Uma falha ao escrever o tabuleiro também sai em `stderr`, pelo `FleetErrorMessage` (`Erro: ...`), com código 1.
+- Os testes do `cmd` usam os helpers `fleetRender` e `fleetRun`. Além dos casos do plano, cobrem `--frota=S=2,P=1`, `--frota ""`, `S=-1` e `S=0`.
+
+**Para o roadmap:** a #006 e a #007 recebem a frota validada pelo `cmd.Run` (hoje só usada para montar o tabuleiro vazio) e devem passá-la ao `RandomBoard` e ao laço da partida. O `README.md` e o `CLAUDE.md` podem passar a citar a opção `--frota` e a nova assinatura de `cmd.Run` (o `cmd.Init()` saiu).
