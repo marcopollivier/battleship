@@ -1,24 +1,20 @@
+// Package cmd wires the game domain to the terminal.
 package cmd
 
-import "fmt"
+import (
+	"io"
+	"os"
 
-func Init() {
-	var board [10][10]string
+	"github.com/marcopollivier/battleship/internal/board"
+	"github.com/marcopollivier/battleship/internal/terminal"
+)
 
-	for i := 0; i < 10; i++ {
-		for j := 0; j < 10; j++ {
-			board[i][j] = "~"
-		}
-	}
+// Run writes the game screen to w.
+func Run(w io.Writer) error {
+	return terminal.RenderBoard(w, board.NewBoard(board.DefaultFleet()))
+}
 
-	fmt.Println("   A B C D E F G H I J")
-	for i := 0; i < 10; i++ {
-		label := fmt.Sprintf("%2d ", i+1)
-		fmt.Print(label)
-		for j := 0; j < 10; j++ {
-			fmt.Print(board[i][j] + " ")
-		}
-		fmt.Println()
-	}
-
+// Init runs the game on standard output.
+func Init() error {
+	return Run(os.Stdout)
 }
