@@ -1,6 +1,6 @@
 # 005 — Posicionamento aleatório
 
-- **Status:** Em andamento
+- **Status:** Concluída
 - **Roadmap:** #005 (onda 1)
 - **Depende de:** 002 (tabuleiro e frota)
 
@@ -39,4 +39,14 @@ Todas decididas em 2026-10-24:
 
 ## Encerramento
 
-Preenchido na fase 5: desvios em relação ao plano e o que ficou para o roadmap.
+Concluída em 2026-10-24, nas tarefas T1–T4. Os 6 critérios de aceitação são cobertos por testes em `internal/board/random_test.go`, e o `ValidOrientations` por `TestValidOrientations` em `internal/board/ship_test.go`. O pacote ficou com 99,2% de cobertura (100% em `random.go`), e os testes da 005 rodam em menos de 0,1 s, incluindo as 1.000 sementes do CA-2 e do CA-5 e o CA-6.
+
+**Desvios em relação ao plano:**
+
+- Os limites de tentativas e recomeços e o `ErrFleetDoesNotFit` entraram já na T2, porque a própria T2 pede "tentativas e recomeços". Com isso, os testes da T3 (CA-3, CA-4, CA-5) e o caso dos 30 Encouraçados da T4 (CA-6) passaram de primeira e ficaram como proteção contra regressão. Na T3, foi conferido que o teste do CA-5 falha quando o sorteio usa uma orientação só.
+- A T4 ficou com o caso do tipo desconhecido, previsto no plano: sem a checagem, `rand.IntN(0)` entrava em `panic`. Agora o `RandomBoard` retorna `ErrFleetDoesNotFit` antes de qualquer tentativa.
+- O helper `orientationOf` ganhou um teste próprio (`TestOrientationOf`), para garantir que o CA-5 confere as orientações certas.
+- O `random.go` também importa `cmp`, da biblioteca padrão, para ordenar os navios por tamanho.
+- O risco previsto com o `gosec` (G404) não aconteceu: o `golangci-lint` não acusou o uso de `math/rand/v2`, e nenhum `//nolint` foi necessário. O CA-6 terminou em cerca de 0,02 s, então os limites do plano (200 tentativas por navio, 50 recomeços) foram mantidos.
+
+**Para o roadmap:** a #006 precisa criar o `*rand.Rand` a partir do relógio ou da semente informada pelo jogador e chamar `RandomBoard(DefaultFleet(), rng)`. A #007 pode usar o `ValidOrientations` para mostrar ao jogador as orientações de cada navio.
