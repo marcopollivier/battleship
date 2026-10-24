@@ -97,3 +97,14 @@ func TestBoard_Ships_ReturnsCopy(t *testing.T) {
 		t.Errorf("changing the result of Ships() changed the board: cell is %v, want A1", got)
 	}
 }
+
+// CA-7: a ship cannot share a cell with another ship.
+func TestBoard_Place_Overlap(t *testing.T) {
+	b := NewBoard(DefaultFleet())
+	place(t, b, placement{Cruiser, "A1", Horizontal})
+
+	assertRejected(t, b, placement{Destroyer, "B1", Vertical}, ErrOverlap)
+	if n := len(b.Ships()); n != 1 {
+		t.Errorf("Ships() has %d ships, want only the cruiser", n)
+	}
+}
