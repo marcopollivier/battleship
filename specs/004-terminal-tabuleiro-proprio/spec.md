@@ -1,6 +1,6 @@
 # 004 — Terminal: tabuleiro próprio
 
-- **Status:** Em andamento
+- **Status:** Concluída
 - **Roadmap:** #004 (onda 1)
 - **Depende de:** 001 (coordenadas), 002 (tabuleiro e frota)
 
@@ -65,4 +65,15 @@ Todas decididas em 2026-10-24:
 
 ## Encerramento
 
-Preenchido na fase 5: desvios em relação ao plano e o que ficou para o roadmap.
+Concluída em 2026-10-24, nas tarefas T1–T4. Os 6 critérios de aceitação são cobertos por testes em `internal/terminal/names_test.go`, `internal/terminal/render_test.go` e `cmd/init_test.go`. A cobertura é de 100% no `internal/terminal` e de 50% no `cmd`: o `Init()` só repassa `os.Stdout` para o `Run`, que é o que o teste exercita. O `go run .` imprime exatamente a saída do CA-1.
+
+**Desvios em relação ao plano:**
+
+- O rótulo das fileiras usa `fmt.Fprintf(&sb, "%2d", ...)` em vez de `sb.WriteString(fmt.Sprintf(...))`, porque o `staticcheck` (QF1012) acusa a segunda forma. O formato `%2d` é o mesmo.
+- A letra de cada navio saiu numa função interna `shipSymbol`, com teste próprio para o `?` de um tipo desconhecido. Pelo `Place` esse caso nunca acontece, porque um tipo fora da frota é barrado antes.
+- O `cmd` ganhou um comentário de pacote, e o `render_test.go` ganhou um ajudante `cellAt` para ler uma casa da saída pelo nome (`E5`), usado no CA-3.
+
+**Para o roadmap:**
+
+- O `CLAUDE.md` ainda descreve o `cmd/init.go` como quem monta o tabuleiro `[10][10]string`. Precisa ser atualizado para citar o `internal/terminal`.
+- Cores no terminal, como já previsto em "Fora de escopo".
