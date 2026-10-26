@@ -17,7 +17,7 @@ func render(t *testing.T, b *board.Board) string {
 	return sb.String()
 }
 
-// CA-1: an empty board is drawn like the old program, without trailing
+// CA-7 (spec 009, was CA-1 of spec 004): an empty board is drawn like the old program, without trailing
 // spaces, followed by a blank line and the legend.
 func TestRenderBoard_Empty(t *testing.T) {
 	want := `   A B C D E F G H I J
@@ -32,7 +32,7 @@ func TestRenderBoard_Empty(t *testing.T) {
  9 ~ ~ ~ ~ ~ ~ ~ ~ ~ ~
 10 ~ ~ ~ ~ ~ ~ ~ ~ ~ ~
 
-Legenda: ~ água, S Submarino, D Destroyer, C Cruzador, E Encouraçado, P Porta-Aviões
+Legenda: ~ água, S Submarino, D Destroyer, C Cruzador, E Encouraçado, P Porta-Aviões, X atingido, o tiro na água
 `
 	got := render(t, board.NewBoard(board.DefaultFleet()))
 	if got != want {
@@ -105,7 +105,7 @@ func TestRenderBoard_Ships(t *testing.T) {
 	})
 }
 
-// CA-6: a complete board shows every ship with its letter, and everything
+// CA-7 (spec 009, was CA-6 of spec 004): a complete board shows every ship with its letter, and everything
 // above the legend is ASCII.
 func TestRenderBoard_FullFleet(t *testing.T) {
 	b := boardWith(t,
@@ -134,7 +134,7 @@ func TestRenderBoard_FullFleet(t *testing.T) {
  9 ~ ~ ~ ~ ~ ~ ~ ~ ~ ~
 10 ~ ~ ~ ~ ~ ~ ~ ~ ~ ~
 
-Legenda: ~ água, S Submarino, D Destroyer, C Cruzador, E Encouraçado, P Porta-Aviões
+Legenda: ~ água, S Submarino, D Destroyer, C Cruzador, E Encouraçado, P Porta-Aviões, X atingido, o tiro na água
 `
 	got := render(t, b)
 	if got != want {
@@ -155,5 +155,26 @@ Legenda: ~ água, S Submarino, D Destroyer, C Cruzador, E Encouraçado, P Porta-
 func TestShipSymbol_Unknown(t *testing.T) {
 	if got := shipSymbol(board.ShipType(99)); got != "?" {
 		t.Errorf("shipSymbol(ShipType(99)) = %q, want %q", got, "?")
+	}
+}
+
+// CA-6 (spec 009): the own board marks received shots, with X on a hit ship
+// cell and o on a missed water cell, and keeps the other ship letters.
+func TestRenderBoard_ReceivedShots(t *testing.T) {
+	b := attackExampleBoard(t)
+	attackFire(t, b, "J10", "E1")
+	got := render(t, b)
+
+	want := map[string]string{"J10": "o", "E1": "X", "F1": "E", "G1": "E", "H1": "E", "I10": "~", "A1": "P"}
+	for cell, symbol := range want {
+		if s := cellAt(t, got, cell); s != symbol {
+			t.Errorf("cell %s = %q, want %q", cell, s, symbol)
+		}
+	}
+	if !strings.HasSuffix(got, "\n\n"+Legend+"\n") {
+		t.Errorf("output does not end with a blank line and the legend:\n%s", got)
+	}
+	if want := "Legenda: ~ água, S Submarino, D Destroyer, C Cruzador, E Encouraçado, P Porta-Aviões, X atingido, o tiro na água"; Legend != want {
+		t.Errorf("Legend = %q, want %q", Legend, want)
 	}
 }
