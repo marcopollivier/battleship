@@ -176,3 +176,39 @@ func TestBoard_Complete(t *testing.T) {
 		t.Error("board with all 8 ships is not complete")
 	}
 }
+
+// Remaining lists the ships still to place, largest first.
+func TestBoard_Remaining(t *testing.T) {
+	b := NewBoard(DefaultFleet())
+	want := []ShipType{AircraftCarrier, Battleship, Cruiser, Destroyer, Destroyer, Submarine, Submarine, Submarine}
+	if got := b.Remaining(); !slices.Equal(got, want) {
+		t.Errorf("Remaining() on an empty board = %v, want %v", got, want)
+	}
+
+	place(t, b, placement{Destroyer, "A1", Horizontal}, placement{AircraftCarrier, "E5", Down})
+	want = []ShipType{Battleship, Cruiser, Destroyer, Submarine, Submarine, Submarine}
+	if got := b.Remaining(); !slices.Equal(got, want) {
+		t.Errorf("Remaining() after a destroyer and the carrier = %v, want %v", got, want)
+	}
+}
+
+// CA-7 (spec 012): Clear removes every ship, so the whole fleet is missing again.
+func TestBoard_Clear(t *testing.T) {
+	b := NewBoard([]FleetEntry{{Type: Submarine, Count: 1}})
+	place(t, b, placement{Submarine, "A1", Horizontal})
+	if _, err := b.Fire(Coord{}); err != nil {
+		t.Fatalf("Fire(A1): %v", err)
+	}
+
+	b.Clear()
+	if n := len(b.Ships()); n != 0 {
+		t.Errorf("Ships() after Clear has %d ships, want 0", n)
+	}
+	if got := b.Cell(Coord{}); got != CellUntouched {
+		t.Errorf("Cell(A1) after Clear = %v, want CellUntouched", got)
+	}
+	if got := b.Remaining(); !slices.Equal(got, []ShipType{Submarine}) {
+		t.Errorf("Remaining() after Clear = %v, want [Submarine]", got)
+	}
+	place(t, b, placement{Submarine, "A1", Horizontal})
+}

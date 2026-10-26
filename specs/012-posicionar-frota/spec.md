@@ -1,6 +1,6 @@
 # 012 — Posicionar a própria frota
 
-- **Status:** Aprovada
+- **Status:** Em andamento
 - **Roadmap:** #012 (onda 5)
 - **Depende de:** 007 (jogador contra a máquina)
 

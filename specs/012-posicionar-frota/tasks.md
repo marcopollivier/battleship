@@ -1,11 +1,11 @@
 # 012 — Tarefas
 
 - **Plano:** [plan.md](plan.md)
-- **Status:** Rascunho
+- **Status:** Aprovado
 
 Cada tarefa é um commit: teste falhando → implementação → `make pre-commit` → commit.
 
-- [ ] **T1** — `Board.Remaining` e `Board.Clear`. (cobre CA-7 no domínio; prepara CA-2)
+- [x] **T1** — `Board.Remaining` e `Board.Clear`. (cobre CA-7 no domínio; prepara CA-2)
 - [ ] **T2** — `FillRandom`, e o `RandomBoard` passando a usá-lo sem mudar os tabuleiros sorteados. (cobre CA-5 e CA-6 no domínio)
 - [ ] **T3** — `parsePlacement`: casa, orientação pelo nome ou pela primeira letra, Submarino sem orientação. (cobre CA-3, CA-4 formato e orientação)
 - [ ] **T4** — Fase de posicionamento no `PlayVsMachine`: instruções, tabuleiro e pedido de cada navio, `Frota posicionada!` e início da partida. (cobre CA-1, CA-2)

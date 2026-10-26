@@ -88,6 +88,30 @@ func (b *Board) Complete() bool {
 	return true
 }
 
+// Remaining returns the ships of the fleet that are not placed yet, one
+// entry per ship, largest first.
+func (b *Board) Remaining() []ShipType {
+	placed := map[ShipType]int{}
+	for _, s := range b.ships {
+		placed[s.Type]++
+	}
+	var remaining []ShipType
+	for _, t := range shipsBySize(b.fleet) {
+		if placed[t] > 0 {
+			placed[t]--
+			continue
+		}
+		remaining = append(remaining, t)
+	}
+	return remaining
+}
+
+// Clear removes every ship and every shot from the board.
+func (b *Board) Clear() {
+	b.ships = nil
+	b.shots = map[Coord]bool{}
+}
+
 func (b *Board) fleetCount(t ShipType) int {
 	count := 0
 	for _, entry := range b.fleet {
