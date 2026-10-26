@@ -66,17 +66,39 @@ func (g *machineGame) placeFleet(scanner *bufio.Scanner) bool {
 		g.render(RenderBoard, g.player)
 		g.write("\n")
 		if !g.placeShip(scanner, remaining[0]) {
+			if g.err == nil {
+				g.write("Você desistiu antes da partida.\n")
+			}
 			return false
 		}
 	}
 }
 
-// placeShip asks for the position of one ship of type t until it is placed.
+// Commands accepted instead of a position, in any letter case.
+const (
+	randomCommand  = "aleatorio"
+	restartCommand = "recomecar"
+)
+
+// placeShip asks for the position of one ship of type t until it is placed,
+// or until a command fills or clears the board. It reports false if the
+// player gave up or a write failed.
 func (g *machineGame) placeShip(scanner *bufio.Scanner, t board.ShipType) bool {
 	for {
 		line, ok := g.prompt(scanner, placementPrompt(t))
 		if !ok {
 			return false
+		}
+		switch strings.ToLower(strings.TrimSpace(line)) {
+		case randomCommand:
+			if err := board.FillRandom(g.player, g.rng); err != nil {
+				g.write("Não foi possível sortear o resto da frota. Mude a posição dos navios com recomecar.\n")
+				continue
+			}
+			return true
+		case restartCommand:
+			g.player.Clear()
+			return true
 		}
 		c, o, err := parsePlacement(line, t)
 		if err == nil {

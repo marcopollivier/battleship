@@ -193,3 +193,86 @@ func TestJoinOr(t *testing.T) {
 		}
 	}
 }
+
+const (
+	placementCarrierPrompt    = "Porta-Aviões, 5 casas (cima, baixo, esquerda, direita): "
+	placementBattleshipPrompt = "Encouraçado, 4 casas (horizontal, vertical): "
+)
+
+// placementWithCarrier returns an empty default-fleet board and the same
+// board with the carrier at B1 pointing down, as "B1 baixo" places it.
+func placementWithCarrier(t *testing.T) (empty, withCarrier *board.Board) {
+	t.Helper()
+	empty = board.NewBoard(board.DefaultFleet())
+	withCarrier = board.NewBoard(board.DefaultFleet())
+	if err := withCarrier.Place(board.AircraftCarrier, board.Coord{Col: 1}, board.Down); err != nil {
+		t.Fatalf("Place: %v", err)
+	}
+	return empty, withCarrier
+}
+
+// CA-5: "aleatorio" keeps the ships already placed, draws the rest with the
+// game's random source and starts the game.
+func TestPlayVsMachine_PlacementRandom(t *testing.T) {
+	empty, replay := placementWithCarrier(t)
+	want := placementIntro + placementAsk(t, empty, placementCarrierPrompt) + placementAsk(t, replay, placementBattleshipPrompt)
+	if err := board.FillRandom(replay, rand.New(rand.NewPCG(1, 0))); err != nil {
+		t.Fatalf("FillRandom: %v", err)
+	}
+	want += "Frota posicionada!\n\n" + machineScreen(t, replay, machineEnemyBoard(t))
+
+	if got := placementPlay(t, "B1 baixo\nAleatorio\n"); !strings.HasPrefix(got, want) {
+		t.Errorf("PlayVsMachine() =\n%s\nwant prefix\n%s", got, want)
+	}
+}
+
+// CA-6: when the rest of the fleet does not fit, "aleatorio" says so and
+// asks for the same ship. At most 25 submarines fit on the board.
+func TestPlayVsMachine_PlacementRandomDoesNotFit(t *testing.T) {
+	const prompt = "Submarino, 1 casa: "
+	fleet := []board.FleetEntry{{Type: board.Submarine, Count: 26}}
+	want := placementIntro + placementAsk(t, board.NewBoard(fleet), prompt) +
+		"Não foi possível sortear o resto da frota. Mude a posição dos navios com recomecar.\n" + prompt
+
+	var sb strings.Builder
+	err := PlayVsMachine(strings.NewReader("aleatorio\n"), &sb, board.NewBoard(fleet), machineEnemyBoard(t), rand.New(rand.NewPCG(1, 0)))
+	if err != nil {
+		t.Fatalf("PlayVsMachine: %v", err)
+	}
+	if got := sb.String(); !strings.HasPrefix(got, want) {
+		t.Errorf("PlayVsMachine() =\n%s\nwant prefix\n%s", got, want)
+	}
+}
+
+// CA-7: "recomecar" removes every ship and asks for the carrier again.
+func TestPlayVsMachine_PlacementRestart(t *testing.T) {
+	empty, withCarrier := placementWithCarrier(t)
+	want := placementIntro + placementAsk(t, empty, placementCarrierPrompt) +
+		placementAsk(t, withCarrier, placementBattleshipPrompt) +
+		placementAsk(t, empty, placementCarrierPrompt)
+
+	if got := placementPlay(t, "B1 baixo\nRECOMECAR\n"); !strings.HasPrefix(got, want) {
+		t.Errorf("PlayVsMachine() =\n%s\nwant prefix\n%s", got, want)
+	}
+}
+
+// CA-8: "sair" or the end of the input gives up before the game.
+func TestPlayVsMachine_PlacementGiveUp(t *testing.T) {
+	empty, withCarrier := placementWithCarrier(t)
+	asked := placementIntro + placementAsk(t, empty, placementCarrierPrompt) + placementAsk(t, withCarrier, placementBattleshipPrompt)
+	tests := []struct {
+		name  string
+		input string
+		want  string
+	}{
+		{"sair", "B1 baixo\nsair\n", asked + "Você desistiu antes da partida.\n"},
+		{"end of input", "B1 baixo\n", asked + "\nVocê desistiu antes da partida.\n"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := placementPlay(t, tt.input); got != tt.want {
+				t.Errorf("PlayVsMachine() =\n%s\nwant\n%s", got, tt.want)
+			}
+		})
+	}
+}
