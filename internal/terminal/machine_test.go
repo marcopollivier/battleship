@@ -1,6 +1,8 @@
 package terminal
 
 import (
+	"errors"
+	"io"
 	"math/rand/v2"
 	"strings"
 	"testing"
@@ -185,4 +187,51 @@ func TestPlayVsMachine_MachineWins(t *testing.T) {
 	if got := machinePlay(t, strings.Join(waters, "\n")+"\n", seed); got != want {
 		t.Errorf("PlayVsMachine() =\n%s\nwant\n%s", got, want)
 	}
+}
+
+// CA-7: "sair" or the end of the input gives up and reveals the enemy fleet.
+func TestPlayVsMachine_GiveUp(t *testing.T) {
+	t.Run("sair at the start", func(t *testing.T) {
+		player, enemy := machinePlayerBoard(t), machineEnemyBoard(t)
+		want := machineScreen(t, player, enemy) +
+			"Você desistiu depois de 0 disparos. A frota inimiga era:\n\n" + soloReveal(t, enemy)
+		if got := machinePlay(t, "Sair\n", 1); got != want {
+			t.Errorf("PlayVsMachine() =\n%s\nwant\n%s", got, want)
+		}
+	})
+
+	t.Run("end of input after a miss", func(t *testing.T) {
+		const seed = 1
+		player, enemy := machinePlayerBoard(t), machineEnemyBoard(t)
+		want := machineScreen(t, player, enemy) + soloTurn(t, enemy, "A10", "Água.") + "\n"
+		lines, won := machineTurn(t, player, rand.New(rand.NewPCG(seed, 0)))
+		if won {
+			t.Fatalf("the machine wins in its first turn with seed %d; pick another seed", seed)
+		}
+		want += lines + "\n" + machineScreen(t, player, enemy) +
+			"\nVocê desistiu depois de 1 disparo. A frota inimiga era:\n\n" + soloReveal(t, enemy)
+		if got := machinePlay(t, "A10", seed); got != want {
+			t.Errorf("PlayVsMachine() =\n%s\nwant\n%s", got, want)
+		}
+	})
+}
+
+// Errors that are not a mistake of the player end the game and are returned.
+func TestPlayVsMachine_Errors(t *testing.T) {
+	rng := func() *rand.Rand { return rand.New(rand.NewPCG(1, 0)) }
+
+	t.Run("machine shoots at an incomplete board", func(t *testing.T) {
+		incomplete := board.NewBoard(board.DefaultFleet())
+		err := PlayVsMachine(strings.NewReader("A10\n"), io.Discard, incomplete, machineEnemyBoard(t), rng())
+		if !errors.Is(err, board.ErrIncompleteBoard) {
+			t.Errorf("PlayVsMachine() error = %v, want ErrIncompleteBoard", err)
+		}
+	})
+
+	t.Run("write fails", func(t *testing.T) {
+		err := PlayVsMachine(strings.NewReader("A10\n"), &soloFailingWriter{}, machinePlayerBoard(t), machineEnemyBoard(t), rng())
+		if !errors.Is(err, errSoloWrite) {
+			t.Errorf("PlayVsMachine() error = %v, want %v", err, errSoloWrite)
+		}
+	})
 }

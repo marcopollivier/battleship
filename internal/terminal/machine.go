@@ -10,8 +10,9 @@ import (
 
 // PlayVsMachine runs a game against the machine: the player shoots at enemy
 // with shots read from in, the machine shoots at player with cells drawn
-// from rng, and whoever hits shoots again. It writes the game to out and
-// returns an error if reading or writing fails.
+// from rng, and whoever hits shoots again. The player gives up with "sair"
+// or the end of the input. It writes the game to out and returns an error if
+// reading or writing fails.
 func PlayVsMachine(in io.Reader, out io.Writer, player, enemy *board.Board, rng *rand.Rand) error {
 	g := &machineGame{playerAttack: playerAttack{out: out, target: enemy}, player: player, rng: rng}
 	g.showScreen()
@@ -19,6 +20,7 @@ func PlayVsMachine(in io.Reader, out io.Writer, player, enemy *board.Board, rng 
 	for {
 		line, ok := g.prompt(scanner)
 		if !ok {
+			g.giveUp("A frota inimiga era:")
 			return g.err
 		}
 		shot, ok := g.shoot(line)
