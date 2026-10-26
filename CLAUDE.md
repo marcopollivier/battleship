@@ -4,13 +4,13 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project
 
-A terminal Battleship ("Batalha Naval") game in Go (module `github.com/marcopollivier/battleship`, Go 1.24, no external dependencies). It is at an early stage: today it only validates an optional `--frota` fleet and renders an empty 10x10 board. The README (in Portuguese) is the game spec.
+A terminal Battleship ("Batalha Naval") game in Go (module `github.com/marcopollivier/battleship`, Go 1.24, no external dependencies). Today it plays a solo game: the player attacks a randomly placed fleet from the terminal. The README (in Portuguese) is the game spec.
 
 ## Commands
 
 All are Makefile targets (`make help` lists them):
 
-- `make run`: `go run ./main.go`
+- `make run`: `go run ./main.go`, which starts a solo game (options: `--frota S=2,P=1`, `--semente 42`)
 - `make build`: builds the binary to `bin/battleship`
 - `make test`: `go test -v ./...`
 - Run a single test: `go test -v -run TestName ./cmd/`
@@ -45,7 +45,8 @@ Two layers, and the domain never imports the terminal:
   - `attack.go`: `RenderAttackBoard`, the opponent's board showing only shots fired, and sunk ships.
   - `messages.go`: `ShotMessage`, the result of a shot.
   - `fleet.go`: `ParseFleet`, which reads the `--frota` text (such as `S=2,D=1,P=1`), and `FleetErrorMessage`.
-- **`cmd/` and `main.go`: wiring.** `cmd.Run(args, stdout, stderr) int` parses the command-line options and returns the exit code: 0 on success or `-h`, 1 on a fleet error, and 2 on an unknown option. `main.go` passes it to `os.Exit`.
+  - `solo.go`: `PlaySolo(in, out, board)`, the solo game loop: reads one shot per line until every ship is sunk or the player types `sair` or closes the input.
+- **`cmd/` and `main.go`: wiring.** `cmd.Run(args, stdin, stdout, stderr) int` parses `--frota` and `--semente`, draws the board with `RandomBoard` seeded by the seed (a new one each run unless given), runs `PlaySolo` and prints the seed. It returns the exit code: 0 at the end of a game or on `-h`, 1 on a fleet error, and 2 on an invalid option. `main.go` passes it to `os.Exit`.
 
 ## Game rules (from README)
 
@@ -64,7 +65,7 @@ Two layers, and the domain never imports the terminal:
 
 - Line ships can be placed horizontally or vertically. The T-shaped Porta-Aviões can be placed in any of its 4 rotations. Ships may not overlap or touch, not even diagonally.
 
-Planned features (README TODO): attacking a randomly generated board, placing your own ships and playing against the computer, and choosing how many ships to play with.
+Planned feature (README TODO): placing your own ships and playing against the computer (#007).
 
 ## Conventions
 

@@ -75,8 +75,33 @@ AKA: Couraçado
 
 **Descrição**: Um porta-aviões é um navio de guerra cujo papel principal é servir de base aérea móvel. Permite, portanto, que uma força naval possa projetar o seu poderio aéreo a grandes distâncias, sem a necessidade de depender de aeroportos para os seus aviões. **Fonte:** [Wikipedia](https://pt.wikipedia.org/wiki/Porta-avi%C3%B5es)
 
+## Como jogar
+
+Com Go instalado, rode `make run` (ou `go run .`). O computador arma um tabuleiro aleatório, e você ataca até afundar a frota inteira:
+
+```
+Disparo: b7
+Água.
+...
+Disparo: e1
+Afundou o Encouraçado!
+...
+Você afundou toda a frota em 47 disparos!
+Semente: 1729901234
+```
+
+- Digite uma coordenada por vez, como `B7` ou `j10`.
+- Digite `sair` (ou aperte Ctrl+D) para desistir e ver onde estavam os navios.
+
+As opções vão depois de `go run .`, como em `go run . --frota S=2,P=1 --semente 42`:
+
+Opção | Exemplo | O que faz
+----- | ------- | ---------
+`--frota` | `--frota S=2,D=1,P=1` | Escolhe quantos navios de cada tipo, pelas letras da legenda: `S` Submarino, `D` Destroyer, `C` Cruzador, `E` Encouraçado, `P` Porta-Aviões. Sem a opção, vale a frota da cartela.
+`--semente` | `--semente 42` | Repete o tabuleiro de uma partida anterior. A semente aparece no fim de cada partida.
+
 ## TODO - Evolução do projeto
 
-- Permitir que uma pessoa ataque um tabuleiro armado aleatoriamente
-- Permirir que arme seu próprio tabuleiro e jogue contra a máquina e jogadas aleatórias
-- Permitir que que a pessoa definam a quantidade de navios que ela quer jogar
+- [x] Permitir que uma pessoa ataque um tabuleiro armado aleatoriamente
+- [ ] Permitir que arme seu próprio tabuleiro e jogue contra a máquina e jogadas aleatórias
+- [x] Permitir que a pessoa defina a quantidade de navios que ela quer jogar
