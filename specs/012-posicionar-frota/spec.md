@@ -1,6 +1,6 @@
 # 012 — Posicionar a própria frota
 
-- **Status:** Em andamento
+- **Status:** Concluída
 - **Roadmap:** #012 (onda 5)
 - **Depende de:** 007 (jogador contra a máquina)
 
@@ -99,4 +99,20 @@ Todas decididas em 2026-10-26:
 
 ## Encerramento
 
-Preenchido na fase 5: desvios em relação ao plano e o que ficou para o roadmap.
+Concluída em 2026-10-26, nas tarefas T1–T7. Os 10 critérios de aceitação são cobertos por testes em `internal/board/board_test.go` e `random_test.go` (CA-5 a CA-7 no domínio), `internal/terminal/placement_test.go` (CA-1 a CA-8) e `cmd/init_test.go` (CA-1, CA-8 a CA-10). A cobertura ficou em 99,5% em `internal/board`, 96,7% em `internal/terminal` e 88,6% em `cmd`. Com o item de armar o próprio tabuleiro, o TODO do README ficou todo marcado.
+
+O `RandomBoard` passou a usar o `FillRandom` e continua sorteando os mesmos tabuleiros: antes da troca, os tabuleiros das sementes 0 a 29 foram guardados e comparados depois, sem diferença.
+
+Executando `go run . --semente 42` com `B1 baixo`, `E1 x`, `E1 h`, `aleatorio` e `sair`: o Porta-Aviões entra em B1, `E1 x` mostra a mensagem de orientação inválida e pede o Encouraçado de novo, `E1 h` o posiciona, `aleatorio` sorteia o resto, e a partida começa com os navios do jogador nesses lugares.
+
+**Desvios em relação ao plano:**
+
+- Um teste da 007 mudou: `TestPlayVsMachine_Errors` passava um tabuleiro incompleto para o jogador, para forçar um erro no disparo da máquina. Agora um tabuleiro incompleto significa "posicione a frota", então o teste passa o tabuleiro incompleto para a máquina e confere o erro no disparo do jogador. O erro no disparo da máquina ficou sem teste, porque não acontece com tabuleiros completos.
+- O CA-6 usa uma frota de 26 Submarinos (no máximo 25 cabem no tabuleiro), em vez de navios grandes que se bloqueiam. É o jeito mais simples de garantir que o resto não cabe.
+- O texto das instruções virou uma soma de linhas, com um `//nolint:misspell` na linha de "Comandos": o lint verifica a grafia em inglês e acusa a palavra em português.
+- As mensagens de orientação inválida usam uma função interna, `joinOr`, para escrever a lista com "ou" antes da última.
+
+**Para o roadmap:**
+
+- Um aviso, durante o posicionamento, de que o resto da frota não cabe mais. Hoje o jogador descobre ao tentar `aleatorio` ou ao ver um navio sem lugar, e usa `recomecar`.
+- Desfazer só o último navio, no lugar de recomeçar tudo.

@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project
 
-A terminal Battleship ("Batalha Naval") game in Go (module `github.com/marcopollivier/battleship`, Go 1.24, no external dependencies). Today it plays against the machine, with both fleets placed at random, or a solo game (`--modo solo`) where the player only attacks a random board. The README (in Portuguese) is the game spec.
+A terminal Battleship ("Batalha Naval") game in Go (module `github.com/marcopollivier/battleship`, Go 1.24, no external dependencies). Today it plays against the machine, after the player places their own fleet, or a solo game (`--modo solo`) where the player only attacks a random board. The README (in Portuguese) is the game spec.
 
 ## Commands
 
@@ -34,9 +34,9 @@ Two layers, and the domain never imports the terminal:
 - **`internal/board`: the game domain.** It has no I/O and its names are in English.
   - `coord.go`: `Coord` (zero-based `Col`, `Row`) and `ParseCoord`, which turns `"A1"` into a `Coord`.
   - `ship.go`: `ShipType`, `Orientation`, `DefaultFleet`, `ShipCells` and `ValidOrientations`.
-  - `board.go`: `Board` with `Place`, which validates fleet limit, orientation, bounds, overlap and adjacency in that order and leaves the board unchanged on error.
+  - `board.go`: `Board` with `Place`, which validates fleet limit, orientation, bounds, overlap and adjacency in that order and leaves the board unchanged on error; `Remaining` (ships still to place, largest first) and `Clear`.
   - `shot.go`: `Fire`, `Cell` and `AllSunk`.
-  - `random.go`: `RandomBoard`, which takes an injected `*rand.Rand`.
+  - `random.go`: `RandomBoard` and `FillRandom` (places only the missing ships), which take an injected `*rand.Rand`.
   - `machine.go`: `RandomShot`, the machine's next shot, drawn among the cells not shot yet.
   - `fleet.go`: `ValidateFleet`, which rejects negative counts, empty fleets and fleets that do not fit on the board.
   - Errors are sentinel values wrapped with `%w`; check them with `errors.Is`.
@@ -47,8 +47,9 @@ Two layers, and the domain never imports the terminal:
   - `messages.go`: `ShotMessage`, the result of a shot.
   - `fleet.go`: `ParseFleet`, which reads the `--frota` text (such as `S=2,D=1,P=1`), and `FleetErrorMessage`.
   - `solo.go`: `PlaySolo(in, out, board)`, the solo game loop: reads one shot per line until every ship is sunk or the player types `sair` or closes the input. Its `playerAttack` type is the player's turn, shared with `machine.go`.
-  - `machine.go`: `PlayVsMachine(in, out, player, enemy, rng)`, the game against the machine: whoever hits shoots again.
-- **`cmd/` and `main.go`: wiring.** `cmd.Run(args, stdin, stdout, stderr) int` parses `--modo`, `--frota` and `--semente`. One `*rand.Rand` seeded by the seed (a new one each run unless given) draws the player's board, then the machine's, then the machine's shots; `Run` runs `PlayVsMachine` (or `PlaySolo`) and prints the seed. It returns the exit code: 0 at the end of a game or on `-h`, 1 on a fleet error, and 2 on an invalid option. `main.go` passes it to `os.Exit`.
+  - `machine.go`: `PlayVsMachine(in, out, player, enemy, rng)`, the game against the machine: whoever hits shoots again. If `player` is not complete, it first runs the placing phase.
+  - `placement.go`: the placing phase (`casa orientação` lines, `aleatorio`, `recomecar`, `sair`). It runs inside `PlayVsMachine` so one `bufio.Scanner` reads all the input.
+- **`cmd/` and `main.go`: wiring.** `cmd.Run(args, stdin, stdout, stderr) int` parses `--modo`, `--frota` and `--semente`. One `*rand.Rand` seeded by the seed (a new one each run unless given) draws the machine's board, then the ships the player draws with `aleatorio`, then the machine's shots; `Run` runs `PlayVsMachine` (or `PlaySolo`) and prints the seed. It returns the exit code: 0 at the end of a game or on `-h`, 1 on a fleet error, and 2 on an invalid option. `main.go` passes it to `os.Exit`.
 
 ## Game rules (from README)
 
@@ -67,7 +68,6 @@ Two layers, and the domain never imports the terminal:
 
 - Line ships can be placed horizontally or vertically. The T-shaped Porta-Aviões can be placed in any of its 4 rotations. Ships may not overlap or touch, not even diagonally.
 
-Planned feature (README TODO): placing your own ships before the game against the machine (#012).
 
 ## Conventions
 
