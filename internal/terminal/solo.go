@@ -26,7 +26,7 @@ func PlaySolo(in io.Reader, out io.Writer, b *board.Board) error {
 	g.showBoard()
 	scanner := bufio.NewScanner(in)
 	for {
-		line, ok := g.prompt(scanner)
+		line, ok := g.prompt(scanner, shotPrompt)
 		if !ok {
 			g.giveUp("A frota era:")
 			return g.err
@@ -54,11 +54,11 @@ type playerAttack struct {
 	err    error
 }
 
-// prompt asks for a shot and returns the line the player typed. It returns
+// prompt writes text and returns the line the player typed. It returns
 // false when the player gives up, with "sair" or the end of the input, or
 // when reading or writing fails.
-func (g *playerAttack) prompt(scanner *bufio.Scanner) (string, bool) {
-	g.write(shotPrompt)
+func (g *playerAttack) prompt(scanner *bufio.Scanner, text string) (string, bool) {
+	g.write(text)
 	if g.err != nil {
 		return "", false
 	}

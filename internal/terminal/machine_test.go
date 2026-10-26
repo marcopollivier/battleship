@@ -220,9 +220,9 @@ func TestPlayVsMachine_GiveUp(t *testing.T) {
 func TestPlayVsMachine_Errors(t *testing.T) {
 	rng := func() *rand.Rand { return rand.New(rand.NewPCG(1, 0)) }
 
-	t.Run("machine shoots at an incomplete board", func(t *testing.T) {
+	t.Run("player shoots at an incomplete enemy board", func(t *testing.T) {
 		incomplete := board.NewBoard(board.DefaultFleet())
-		err := PlayVsMachine(strings.NewReader("A10\n"), io.Discard, incomplete, machineEnemyBoard(t), rng())
+		err := PlayVsMachine(strings.NewReader("A10\n"), io.Discard, machinePlayerBoard(t), incomplete, rng())
 		if !errors.Is(err, board.ErrIncompleteBoard) {
 			t.Errorf("PlayVsMachine() error = %v, want ErrIncompleteBoard", err)
 		}

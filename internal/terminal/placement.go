@@ -1,6 +1,7 @@
 package terminal
 
 import (
+	"bufio"
 	"errors"
 	"fmt"
 	"slices"
@@ -45,4 +46,62 @@ func orientationByName(name string) (board.Orientation, bool) {
 		}
 	}
 	return 0, false
+}
+
+// placementInstructions explain how to place the fleet.
+const placementInstructions = "Posicione a sua frota. Para cada navio, digite a casa e a orientação, por exemplo E5 vertical.\n" +
+	"A casa é a primeira do navio (a de cima ou a da esquerda). No Porta-Aviões, é o meio da barra do T.\n" +
+	"Comandos: aleatorio sorteia o resto da frota, recomecar tira todos os navios, sair desiste.\n" //nolint:misspell // Portuguese text for the player
+
+// placeFleet asks for the missing ships of the player's board, largest
+// first, and reports false if the player gave up or a write failed.
+func (g *machineGame) placeFleet(scanner *bufio.Scanner) bool {
+	g.write(placementInstructions + "\n")
+	for {
+		remaining := g.player.Remaining()
+		if len(remaining) == 0 {
+			g.write("Frota posicionada!\n\n")
+			return g.err == nil
+		}
+		g.render(RenderBoard, g.player)
+		g.write("\n")
+		if !g.placeShip(scanner, remaining[0]) {
+			return false
+		}
+	}
+}
+
+// placeShip asks for the position of one ship of type t until it is placed.
+func (g *machineGame) placeShip(scanner *bufio.Scanner, t board.ShipType) bool {
+	for {
+		line, ok := g.prompt(scanner, placementPrompt(t))
+		if !ok {
+			return false
+		}
+		c, o, err := parsePlacement(line, t)
+		if err == nil {
+			err = g.player.Place(t, c, o)
+		}
+		if err == nil {
+			return true
+		}
+	}
+}
+
+// placementPrompt asks for a ship, such as "Destroyer, 2 casas (horizontal,
+// vertical): ". One-cell ships list no orientation.
+func placementPrompt(t board.ShipType) string {
+	if t.Size() == 1 {
+		return ShipName(t) + ", 1 casa: "
+	}
+	return fmt.Sprintf("%s, %d casas (%s): ", ShipName(t), t.Size(), strings.Join(orientationList(t), ", "))
+}
+
+// orientationList names the orientations that apply to t, in Portuguese.
+func orientationList(t board.ShipType) []string {
+	var names []string
+	for _, o := range board.ValidOrientations(t) {
+		names = append(names, OrientationName(o))
+	}
+	return names
 }

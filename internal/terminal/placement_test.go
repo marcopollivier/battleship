@@ -2,6 +2,8 @@ package terminal
 
 import (
 	"errors"
+	"math/rand/v2"
+	"strings"
 	"testing"
 
 	"github.com/marcopollivier/battleship/internal/board"
@@ -65,5 +67,78 @@ func TestParsePlacement_Invalid(t *testing.T) {
 				t.Errorf("parsePlacement(%q, %v) error = %v, want %v", tt.line, tt.shipType, err, tt.want)
 			}
 		})
+	}
+}
+
+const placementIntro = "Posicione a sua frota. Para cada navio, digite a casa e a orientação, por exemplo E5 vertical.\n" +
+	"A casa é a primeira do navio (a de cima ou a da esquerda). No Porta-Aviões, é o meio da barra do T.\n" +
+	"Comandos: aleatorio sorteia o resto da frota, recomecar tira todos os navios, sair desiste.\n" + //nolint:misspell // Portuguese text for the player
+	"\n"
+
+// placementExample is the example board from spec 003 as the player types it.
+var placementExample = []struct {
+	shipType board.ShipType
+	line     string
+	prompt   string
+}{
+	{board.AircraftCarrier, "B1 baixo", "Porta-Aviões, 5 casas (cima, baixo, esquerda, direita): "},
+	{board.Battleship, "E1 h", "Encouraçado, 4 casas (horizontal, vertical): "},
+	{board.Cruiser, "J1 v", "Cruzador, 3 casas (horizontal, vertical): "},
+	{board.Destroyer, "A5 horizontal", "Destroyer, 2 casas (horizontal, vertical): "},
+	{board.Destroyer, "E3 h", "Destroyer, 2 casas (horizontal, vertical): "},
+	{board.Submarine, "H5", "Submarino, 1 casa: "},
+	{board.Submarine, "A8", "Submarino, 1 casa: "},
+	{board.Submarine, "E8", "Submarino, 1 casa: "},
+}
+
+// placementPlay runs PlayVsMachine with an empty default-fleet board for the
+// player and returns what it wrote.
+func placementPlay(t *testing.T, input string) string {
+	t.Helper()
+	var sb strings.Builder
+	player := board.NewBoard(board.DefaultFleet())
+	err := PlayVsMachine(strings.NewReader(input), &sb, player, machineEnemyBoard(t), rand.New(rand.NewPCG(1, 0)))
+	if err != nil {
+		t.Fatalf("PlayVsMachine: %v", err)
+	}
+	return sb.String()
+}
+
+// placementAsk is the board followed by the prompt for the next ship.
+func placementAsk(t *testing.T, b *board.Board, prompt string) string {
+	t.Helper()
+	return soloReveal(t, b) + "\n" + prompt
+}
+
+// CA-1: placing starts with the instructions, the empty board and the
+// aircraft carrier with its four orientations.
+func TestPlayVsMachine_PlacementStart(t *testing.T) {
+	want := placementIntro + placementAsk(t, board.NewBoard(board.DefaultFleet()), placementExample[0].prompt)
+	if got := placementPlay(t, ""); !strings.HasPrefix(got, want) {
+		t.Errorf("PlayVsMachine() =\n%s\nwant prefix\n%s", got, want)
+	}
+}
+
+// CA-2: the ships are asked largest first, each after the board, and the
+// game starts with the ships where the player put them.
+func TestPlayVsMachine_PlaceFleet(t *testing.T) {
+	replay := board.NewBoard(board.DefaultFleet())
+	want := placementIntro
+	var input []string
+	for _, p := range placementExample {
+		want += placementAsk(t, replay, p.prompt)
+		c, o, err := parsePlacement(p.line, p.shipType)
+		if err != nil {
+			t.Fatalf("parsePlacement(%q): %v", p.line, err)
+		}
+		if err := replay.Place(p.shipType, c, o); err != nil {
+			t.Fatalf("Place(%q): %v", p.line, err)
+		}
+		input = append(input, p.line)
+	}
+	want += "Frota posicionada!\n\n" + machineScreen(t, replay, machineEnemyBoard(t))
+
+	if got := placementPlay(t, strings.Join(input, "\n")+"\n"); !strings.HasPrefix(got, want) {
+		t.Errorf("PlayVsMachine() =\n%s\nwant prefix\n%s", got, want)
 	}
 }
