@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project
 
-A terminal Battleship ("Batalha Naval") game in Go (module `github.com/marcopollivier/battleship`, Go 1.24, no external dependencies). It is at an early stage: today it only renders an empty 10x10 board. The README (in Portuguese) is the game spec.
+A terminal Battleship ("Batalha Naval") game in Go (module `github.com/marcopollivier/battleship`, Go 1.24, no external dependencies). It is at an early stage: today it only validates an optional `--frota` fleet and renders an empty 10x10 board. The README (in Portuguese) is the game spec.
 
 ## Commands
 
@@ -37,9 +37,15 @@ Two layers, and the domain never imports the terminal:
   - `board.go`: `Board` with `Place`, which validates fleet limit, orientation, bounds, overlap and adjacency in that order and leaves the board unchanged on error.
   - `shot.go`: `Fire`, `Cell` and `AllSunk`.
   - `random.go`: `RandomBoard`, which takes an injected `*rand.Rand`.
+  - `fleet.go`: `ValidateFleet`, which rejects negative counts, empty fleets and fleets that do not fit on the board.
   - Errors are sentinel values wrapped with `%w`; check them with `errors.Is`.
-- **`internal/terminal`: presentation.** It reads the domain and writes to an `io.Writer`. Text shown to the player is in Portuguese (`ShipName`, `OrientationName`, `RenderBoard`).
-- **`cmd/` and `main.go`: wiring.** `cmd.Run(io.Writer)` builds the screen, and `main.go` prints errors to stderr and exits with status 1.
+- **`internal/terminal`: presentation.** It reads the domain and writes to an `io.Writer`. Text shown to the player is in Portuguese.
+  - `names.go`: `ShipName` and `OrientationName`.
+  - `render.go`: `RenderBoard`, the player's own board with ships and received shots.
+  - `attack.go`: `RenderAttackBoard`, the opponent's board showing only shots fired, and sunk ships.
+  - `messages.go`: `ShotMessage`, the result of a shot.
+  - `fleet.go`: `ParseFleet`, which reads the `--frota` text (such as `S=2,D=1,P=1`), and `FleetErrorMessage`.
+- **`cmd/` and `main.go`: wiring.** `cmd.Run(args, stdout, stderr) int` parses the command-line options and returns the exit code: 0 on success or `-h`, 1 on a fleet error, and 2 on an unknown option. `main.go` passes it to `os.Exit`.
 
 ## Game rules (from README)
 
