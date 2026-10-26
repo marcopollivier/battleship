@@ -1,12 +1,12 @@
 # 007 — Jogador contra a máquina
 
-- **Status:** Rascunho
+- **Status:** Aprovada
 - **Roadmap:** #007 (onda 4)
 - **Depende de:** 006 (modo solo)
 
 ## Problema
 
-O segundo item do TODO do README é jogar contra a máquina, como no bloco de papel: cada lado tem a sua frota, os dois atiram alternadamente, e quem acerta atira de novo. Hoje o jogador só ataca um tabuleiro que não atira de volta (006). Esta spec cria a partida contra a máquina. A frota do jogador é sorteada; posicionar a própria frota à mão fica para uma spec seguinte (questão 1).
+O segundo item do TODO do README é jogar contra a máquina, como no bloco de papel: cada lado tem a sua frota, os dois atiram alternadamente, e quem acerta atira de novo. Hoje o jogador só ataca um tabuleiro que não atira de volta (006). Esta spec cria a partida contra a máquina. A frota do jogador é sorteada; posicionar a própria frota à mão fica para a #012 (questão 1).
 
 ## Regras
 
@@ -66,7 +66,7 @@ Nos critérios abaixo, os testes leem as casas dos navios dos dois tabuleiros so
 
 ## Fora de escopo
 
-- O jogador posicionar a própria frota (questão 1).
+- O jogador posicionar a própria frota (#012).
 - Uma máquina com estratégia, por exemplo atirar em volta de um acerto.
 - Os dois tabuleiros lado a lado, e limpar a tela entre os turnos.
 - Dois jogadores humanos no mesmo terminal.
@@ -74,15 +74,15 @@ Nos critérios abaixo, os testes leem as casas dos navios dos dois tabuleiros so
 
 ## Questões em aberto
 
-As respostas propostas abaixo estão nas regras e nos critérios. Se alguma mudar, a spec muda junto.
+Todas decididas em 2026-10-26:
 
-- [ ] **1. Dividir a 007:** o roadmap junta "posicionar a própria frota" e "jogar contra a máquina". Juntas, as duas passam de ~8 tarefas. Proposta: esta spec faz a partida contra a máquina, com a frota do jogador sorteada, e uma spec nova, a 012, faz o posicionamento manual. Assim a 007 já entrega uma partida completa. As duas ficam em ondas seguidas, porque a 012 encaixa o posicionamento na partida da 007.
-- [ ] **2. Modo padrão:** a partida contra a máquina vira o padrão, e o modo solo passa para `--modo solo`.
-- [ ] **3. Quem começa:** sempre o jogador.
-- [ ] **4. Máquina sem estratégia:** cada tiro é sorteado entre as casas ainda não atingidas, como diz o README ("jogadas aleatórias").
-- [ ] **5. Tela:** os dois tabuleiros um abaixo do outro, com a tela inteira só quando o turno volta para o jogador. Os disparos da máquina aparecem como linhas de texto.
-- [ ] **6. Mensagens:** os textos de disparo da máquina, de vitória, de derrota, de desistência e de modo inválido.
-- [ ] **7. Derrota revela a frota inimiga:** sim, como na desistência.
+- [x] **1. Dividir a 007:** o roadmap junta "posicionar a própria frota" e "jogar contra a máquina". Juntas, as duas passam de ~8 tarefas. Proposta: esta spec faz a partida contra a máquina, com a frota do jogador sorteada, e uma spec nova, a 012, faz o posicionamento manual. Assim a 007 já entrega uma partida completa. As duas ficam em ondas seguidas, porque a 012 encaixa o posicionamento na partida da 007.
+- [x] **2. Modo padrão:** a partida contra a máquina vira o padrão, e o modo solo passa para `--modo solo`.
+- [x] **3. Quem começa:** sempre o jogador.
+- [x] **4. Máquina sem estratégia:** cada tiro é sorteado entre as casas ainda não atingidas, como diz o README ("jogadas aleatórias").
+- [x] **5. Tela:** os dois tabuleiros um abaixo do outro, com a tela inteira só quando o turno volta para o jogador. Os disparos da máquina aparecem como linhas de texto.
+- [x] **6. Mensagens:** os textos de disparo da máquina, de vitória, de derrota, de desistência e de modo inválido.
+- [x] **7. Derrota revela a frota inimiga:** sim, como na desistência.
 
 ## Encerramento
 
