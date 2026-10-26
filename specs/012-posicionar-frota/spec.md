@@ -1,6 +1,6 @@
 # 012 — Posicionar a própria frota
 
-- **Status:** Rascunho
+- **Status:** Aprovada
 - **Roadmap:** #012 (onda 5)
 - **Depende de:** 007 (jogador contra a máquina)
 
@@ -88,14 +88,14 @@ O README pede que o jogador "arme seu próprio tabuleiro" antes de jogar contra 
 
 ## Questões em aberto
 
-As respostas propostas abaixo estão nas regras e nos critérios. Se alguma mudar, a spec muda junto.
+Todas decididas em 2026-10-26:
 
-- [ ] **1. Posicionar é o padrão:** no modo contra a máquina, o posicionamento manual sempre acontece, e quem não quiser digita `aleatorio` no primeiro navio. A alternativa é deixar a frota sorteada como padrão e ligar o posicionamento com uma opção (`--posicionar`).
-- [ ] **2. Ordem e casa de referência:** do maior para o menor; a casa é a primeira do navio (de cima ou da esquerda), e no Porta-Aviões é o meio da barra do T, como no domínio (002).
-- [ ] **3. Entrada:** `casa orientação` numa linha, orientação pelo nome ou pela primeira letra, e o Submarino sem orientação.
-- [ ] **4. Comandos:** `aleatorio` (sorteia só o que falta), `recomecar` (começa de novo) e `sair`. Os comandos são escritos sem acento, para facilitar a digitação.
-- [ ] **5. Semente:** passa a sortear o tabuleiro da máquina primeiro, mudando a ordem da 007.
-- [ ] **6. Mensagens:** os textos das instruções, dos pedidos, dos erros e dos comandos.
+- [x] **1. Posicionar é o padrão:** no modo contra a máquina, o posicionamento manual sempre acontece, e quem não quiser digita `aleatorio` no primeiro navio. A alternativa é deixar a frota sorteada como padrão e ligar o posicionamento com uma opção (`--posicionar`).
+- [x] **2. Ordem e casa de referência:** do maior para o menor; a casa é a primeira do navio (de cima ou da esquerda), e no Porta-Aviões é o meio da barra do T, como no domínio (002).
+- [x] **3. Entrada:** `casa orientação` numa linha, orientação pelo nome ou pela primeira letra, e o Submarino sem orientação.
+- [x] **4. Comandos:** `aleatorio` (sorteia só o que falta), `recomecar` (começa de novo) e `sair`. Os comandos são escritos sem acento, para facilitar a digitação.
+- [x] **5. Semente:** passa a sortear o tabuleiro da máquina primeiro, mudando a ordem da 007.
+- [x] **6. Mensagens:** os textos das instruções, dos pedidos, dos erros e dos comandos.
 
 ## Encerramento
 
