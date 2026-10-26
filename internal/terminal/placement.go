@@ -85,6 +85,32 @@ func (g *machineGame) placeShip(scanner *bufio.Scanner, t board.ShipType) bool {
 		if err == nil {
 			return true
 		}
+		message, ok := placementErrorMessage(err, t)
+		if !ok {
+			g.err = err
+			return false
+		}
+		g.write(message + "\n")
+	}
+}
+
+// placementErrorMessage returns the Portuguese message for a placement of a
+// ship of type t refused with err, and false if err is not a mistake of the
+// player.
+func placementErrorMessage(err error, t board.ShipType) (string, bool) {
+	switch {
+	case errors.Is(err, errInvalidPlacement), errors.Is(err, board.ErrInvalidFormat):
+		return "Posição inválida: digite a casa e a orientação, por exemplo E5 vertical.", true
+	case errors.Is(err, board.ErrInvalidOrientation):
+		return "Orientação inválida para o " + ShipName(t) + ": use " + joinOr(orientationList(t)) + ".", true
+	case errors.Is(err, board.ErrOutOfBounds):
+		return "Fora do tabuleiro: o " + ShipName(t) + " não cabe nessa posição.", true
+	case errors.Is(err, board.ErrOverlap):
+		return "Posição ocupada: o " + ShipName(t) + " ficaria em cima de outro navio.", true
+	case errors.Is(err, board.ErrAdjacent):
+		return "Muito perto: os navios não podem se encostar, nem pela diagonal.", true
+	default:
+		return "", false
 	}
 }
 
@@ -104,4 +130,13 @@ func orientationList(t board.ShipType) []string {
 		names = append(names, OrientationName(o))
 	}
 	return names
+}
+
+// joinOr lists names with commas and "ou" before the last one, such as
+// "cima, baixo, esquerda ou direita".
+func joinOr(names []string) string {
+	if len(names) < 2 {
+		return strings.Join(names, "")
+	}
+	return strings.Join(names[:len(names)-1], ", ") + " ou " + names[len(names)-1]
 }

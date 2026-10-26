@@ -142,3 +142,54 @@ func TestPlayVsMachine_PlaceFleet(t *testing.T) {
 		t.Errorf("PlayVsMachine() =\n%s\nwant prefix\n%s", got, want)
 	}
 }
+
+// CA-4: each invalid placement shows its message and asks for the same ship
+// again, without the board.
+func TestPlayVsMachine_PlacementErrors(t *testing.T) {
+	const (
+		carrierPrompt    = "Porta-Aviões, 5 casas (cima, baixo, esquerda, direita): "
+		battleshipPrompt = "Encouraçado, 4 casas (horizontal, vertical): "
+		badFormat        = "Posição inválida: digite a casa e a orientação, por exemplo E5 vertical.\n"
+	)
+	replay := board.NewBoard(board.DefaultFleet())
+	want := placementIntro + placementAsk(t, replay, carrierPrompt) +
+		"Orientação inválida para o Porta-Aviões: use cima, baixo, esquerda ou direita.\n" + carrierPrompt
+	if err := replay.Place(board.AircraftCarrier, board.Coord{Col: 1}, board.Down); err != nil {
+		t.Fatalf("Place: %v", err)
+	}
+	want += placementAsk(t, replay, battleshipPrompt) +
+		badFormat + battleshipPrompt +
+		badFormat + battleshipPrompt +
+		badFormat + battleshipPrompt +
+		"Orientação inválida para o Encouraçado: use horizontal ou vertical.\n" + battleshipPrompt +
+		"Fora do tabuleiro: o Encouraçado não cabe nessa posição.\n" + battleshipPrompt +
+		"Fora do tabuleiro: o Encouraçado não cabe nessa posição.\n" + battleshipPrompt +
+		"Posição ocupada: o Encouraçado ficaria em cima de outro navio.\n" + battleshipPrompt +
+		"Muito perto: os navios não podem se encostar, nem pela diagonal.\n" + battleshipPrompt
+	if err := replay.Place(board.Battleship, board.Coord{Col: 4}, board.Horizontal); err != nil {
+		t.Fatalf("Place: %v", err)
+	}
+	want += placementAsk(t, replay, "Cruzador, 3 casas (horizontal, vertical): ")
+
+	input := "C3 horizontal\nB1 baixo\nE5\nE5 vertical sim\n5E vertical\nE5 diagonal\nJ9 vertical\nK1 h\nA2 h\nD1 v\nE1 h\n"
+	if got := placementPlay(t, input); !strings.HasPrefix(got, want) {
+		t.Errorf("PlayVsMachine() =\n%s\nwant prefix\n%s", got, want)
+	}
+}
+
+func TestJoinOr(t *testing.T) {
+	tests := []struct {
+		names []string
+		want  string
+	}{
+		{nil, ""},
+		{[]string{"cima"}, "cima"},
+		{[]string{"horizontal", "vertical"}, "horizontal ou vertical"},
+		{[]string{"cima", "baixo", "esquerda", "direita"}, "cima, baixo, esquerda ou direita"},
+	}
+	for _, tt := range tests {
+		if got := joinOr(tt.names); got != tt.want {
+			t.Errorf("joinOr(%q) = %q, want %q", tt.names, got, tt.want)
+		}
+	}
+}
