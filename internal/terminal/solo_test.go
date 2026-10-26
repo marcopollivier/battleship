@@ -1,6 +1,7 @@
 package terminal
 
 import (
+	"errors"
 	"strings"
 	"testing"
 
@@ -91,5 +92,34 @@ func TestPlaySolo_Win(t *testing.T) {
 	got := soloPlay(t, attackExampleBoard(t), strings.Join(cells, "\n")+"\nA10\n")
 	if got != want.String() {
 		t.Errorf("PlaySolo() =\n%s\nwant\n%s", got, want.String())
+	}
+}
+
+// CA-3: invalid input shows a message and asks again, without a board and
+// without counting as a shot.
+func TestPlaySolo_InvalidInput(t *testing.T) {
+	replay := attackExampleBoard(t)
+	want := soloStart(t, replay) +
+		soloTurn(t, replay, "J10", "Água.") + "\n" + soloPrompt +
+		"Coordenada inválida: use uma letra de A a J e um número de 1 a 10, por exemplo B7.\n" + soloPrompt +
+		"Coordenada inválida: use uma letra de A a J e um número de 1 a 10, por exemplo B7.\n" + soloPrompt +
+		"Fora do tabuleiro: use uma letra de A a J e um número de 1 a 10.\n" + soloPrompt +
+		"Fora do tabuleiro: use uma letra de A a J e um número de 1 a 10.\n" + soloPrompt +
+		"Você já atirou em J10.\n" + soloPrompt +
+		soloTurn(t, replay, "E1", "Acerto!") + "\n" + soloPrompt
+
+	got := soloPlay(t, attackExampleBoard(t), "J10\n7B\n\nK1\nA11\n j10\nE1\n")
+	if !strings.HasPrefix(got, want) {
+		t.Errorf("PlaySolo() =\n%s\nwant prefix\n%s", got, want)
+	}
+}
+
+// An error that is not a mistake of the player, such as shooting at an
+// incomplete board, ends the game and is returned.
+func TestPlaySolo_UnexpectedError(t *testing.T) {
+	var sb strings.Builder
+	err := PlaySolo(strings.NewReader("A1\n"), &sb, board.NewBoard(board.DefaultFleet()))
+	if !errors.Is(err, board.ErrIncompleteBoard) {
+		t.Errorf("PlaySolo() error = %v, want ErrIncompleteBoard", err)
 	}
 }

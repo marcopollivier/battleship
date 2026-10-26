@@ -2,6 +2,7 @@ package terminal
 
 import (
 	"bufio"
+	"errors"
 	"fmt"
 	"io"
 
@@ -47,21 +48,48 @@ type soloGame struct {
 	err   error
 }
 
-// shoot fires at the cell in line and shows the result.
+// shoot fires at the cell in line and shows the result. Invalid input only
+// shows a message and does not count as a shot.
 func (g *soloGame) shoot(line string) {
 	c, err := board.ParseCoord(line)
 	if err != nil {
-		g.err = err
+		g.reject(err, c)
 		return
 	}
 	shot, err := g.board.Fire(c)
 	if err != nil {
-		g.err = err
+		g.reject(err, c)
 		return
 	}
 	g.shots++
 	g.write(ShotMessage(shot) + "\n\n")
 	g.showBoard()
+}
+
+// reject shows the message for an invalid shot at c. An error with no
+// message for the player is kept in g.err and ends the game.
+func (g *soloGame) reject(err error, c board.Coord) {
+	message, ok := shotErrorMessage(err, c)
+	if !ok {
+		g.err = err
+		return
+	}
+	g.write(message + "\n")
+}
+
+// shotErrorMessage returns the Portuguese message for a shot at c that was
+// refused with err, and false if err is not a mistake of the player.
+func shotErrorMessage(err error, c board.Coord) (string, bool) {
+	switch {
+	case errors.Is(err, board.ErrInvalidFormat):
+		return "Coordenada inválida: use uma letra de A a J e um número de 1 a 10, por exemplo B7.", true
+	case errors.Is(err, board.ErrOutOfBounds):
+		return "Fora do tabuleiro: use uma letra de A a J e um número de 1 a 10.", true
+	case errors.Is(err, board.ErrAlreadyShot):
+		return "Você já atirou em " + c.String() + ".", true
+	default:
+		return "", false
+	}
 }
 
 // showBoard writes the attack board followed by a blank line.
