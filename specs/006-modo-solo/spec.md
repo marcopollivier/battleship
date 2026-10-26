@@ -1,6 +1,6 @@
 # 006 — Modo solo
 
-- **Status:** Rascunho
+- **Status:** Aprovada
 - **Roadmap:** #006 (onda 3)
 - **Depende de:** 003 (disparo), 005 (posicionamento aleatório), 008 (frota configurável), 009 (tabuleiro de ataque)
 
@@ -14,7 +14,7 @@ O primeiro item do TODO do README é deixar uma pessoa atacar um tabuleiro armad
 
 - Ao rodar o programa, a partida começa direto, sem menu.
 - O computador sorteia um tabuleiro com a frota escolhida: a frota padrão, ou a do `--frota` (008).
-- O sorteio usa o relógio como semente. Com a opção `--semente N` (um número inteiro), o jogador repete exatamente o mesmo tabuleiro.
+- Cada execução sorteia uma semente nova, então cada partida tem um tabuleiro diferente. Com a opção `--semente N` (um número inteiro não negativo), o jogador repete exatamente o mesmo tabuleiro.
 - O programa mostra o tabuleiro de ataque (009), todo com `.`, e pede o primeiro disparo.
 
 **Cada disparo:**
@@ -32,14 +32,14 @@ O primeiro item do TODO do README é deixar uma pessoa atacar um tabuleiro armad
 
 **Fim da partida:**
 
-- Quando o último navio afunda, o programa mostra a mensagem do afundamento, o tabuleiro de ataque final e `Você afundou toda a frota em N disparos!`, onde N conta só os disparos válidos. O programa termina com código 0.
+- Quando o último navio afunda, o programa mostra a mensagem do afundamento, o tabuleiro de ataque final e `Você afundou toda a frota em N disparos!`, onde N conta só os disparos válidos. Com N igual a 1, a mensagem usa o singular (`1 disparo`), aqui e na desistência. O programa termina com código 0.
 - O jogador desiste digitando `sair` (maiúscula ou minúscula) ou fechando a entrada (Ctrl+D). O programa mostra `Você desistiu depois de N disparos. A frota era:`, o tabuleiro próprio do computador (004/009, com navios e disparos) e termina com código 0.
 - Ao fim da partida, por vitória ou desistência, o programa mostra `Semente: N`, para que o jogador possa repetir o tabuleiro com `--semente N`.
 
 **Opções de linha de comando:**
 
 - `--frota` continua como na 008. Uma frota recusada termina o programa antes da partida, como hoje.
-- `--semente` com um valor que não é inteiro termina o programa com código 2, como qualquer opção inválida (008).
+- `--semente` com um valor que não é inteiro não negativo termina o programa com código 2, como qualquer opção inválida (008).
 
 ## Critérios de aceitação
 
@@ -52,7 +52,7 @@ Nos critérios abaixo, "uma partida com a semente S" é uma partida com a frota 
 - **CA-5:** Dada uma partida, quando o jogador digita `sair` ou `SAIR`, ou a entrada termina, então o programa mostra `Você desistiu depois de N disparos. A frota era:`, o tabuleiro próprio do computador e `Semente: S`, e termina com código 0.
 - **CA-6:** Dadas duas partidas com `--semente 42`, quando elas começam, então os dois tabuleiros sorteados são iguais.
 - **CA-7:** Dado o programa iniciado com `--frota S=2`, quando o jogador afunda os 2 Submarinos, então a partida termina com vitória.
-- **CA-8:** Dado o programa iniciado com `--semente abc`, quando ele roda, então termina com código 2 sem começar a partida.
+- **CA-8:** Dado o programa iniciado com `--semente abc` ou `--semente -1`, quando ele roda, então termina com código 2 sem começar a partida.
 
 ## Fora de escopo
 
@@ -65,14 +65,14 @@ Nos critérios abaixo, "uma partida com a semente S" é uma partida com a frota 
 
 ## Questões em aberto
 
-As respostas propostas abaixo estão nas regras e nos critérios. Se alguma mudar, a spec muda junto.
+Todas decididas em 2026-10-26:
 
-- [ ] **1. Partida direto ao rodar:** o programa começa a partida sem menu, substituindo a tela atual do tabuleiro vazio. Quando a #007 chegar, ela decide como escolher entre os modos.
-- [ ] **2. Semente:** relógio por padrão, `--semente N` para repetir, e a semente aparece no fim da partida (nota da 005 no roadmap).
-- [ ] **3. Tela:** o tabuleiro de ataque é reimpresso depois de cada disparo válido, sem limpar a tela. Entradas inválidas só mostram a mensagem.
-- [ ] **4. Desistência:** `sair` ou Ctrl+D, revelando a frota do computador. Código de saída 0 nos dois casos.
-- [ ] **5. Mensagens:** os textos das tabelas de erro e de fim de partida.
-- [ ] **6. Contagem:** N conta só os disparos válidos (água, acerto e afundado).
+- [x] **1. Partida direto ao rodar:** o programa começa a partida sem menu, substituindo a tela atual do tabuleiro vazio. Quando a #007 chegar, ela decide como escolher entre os modos.
+- [x] **2. Semente:** sorteada a cada execução por padrão, `--semente N` para repetir, e a semente aparece no fim da partida (nota da 005 no roadmap).
+- [x] **3. Tela:** o tabuleiro de ataque é reimpresso depois de cada disparo válido, sem limpar a tela. Entradas inválidas só mostram a mensagem.
+- [x] **4. Desistência:** `sair` ou Ctrl+D, revelando a frota do computador. Código de saída 0 nos dois casos.
+- [x] **5. Mensagens:** os textos das tabelas de erro e de fim de partida.
+- [x] **6. Contagem:** N conta só os disparos válidos (água, acerto e afundado).
 
 ## Encerramento
 
