@@ -1,6 +1,6 @@
 # 006 — Modo solo
 
-- **Status:** Em andamento
+- **Status:** Concluída
 - **Roadmap:** #006 (onda 3)
 - **Depende de:** 003 (disparo), 005 (posicionamento aleatório), 008 (frota configurável), 009 (tabuleiro de ataque)
 
@@ -76,4 +76,20 @@ Todas decididas em 2026-10-26:
 
 ## Encerramento
 
-Preenchido na fase 5: desvios em relação ao plano e o que ficou para o roadmap.
+Concluída em 2026-10-26, nas tarefas T1–T5. Os 8 critérios de aceitação são cobertos por testes em `internal/terminal/solo_test.go` (CA-1 a CA-5) e `cmd/init_test.go` (CA-1, CA-4 a CA-8). A cobertura ficou em 99,4% em `internal/board` (que não mudou), 99,3% em `internal/terminal` e 84,2% em `cmd`. No `cmd`, ficaram sem teste o `-h` e três caminhos de erro que não acontecem com entrada válida: o `RandomBoard` falhar depois do `ValidateFleet`, o `PlaySolo` falhar e a escrita da semente falhar.
+
+Executando o programa com `--semente 42` e a entrada `b7`, `k1`, `b7`, `sair`, a partida mostra água em B7, as mensagens de fora do tabuleiro e de casa repetida, a desistência com `1 disparo`, a frota revelada e `Semente: 42`, com código de saída 0.
+
+**Desvios em relação ao plano:**
+
+- Os testes do terminal usam o tabuleiro de exemplo da 003 (`attackExampleBoard`), com as casas dos navios fixas, em vez de um tabuleiro sorteado com semente. Os testes do `cmd` usam o tabuleiro sorteado, como previsto.
+- `PlaySolo` também retorna um erro de leitura da entrada, além dos de escrita e dos erros do domínio que não são engano do jogador.
+- `shotErrorMessage` retorna também um `bool`, que diz se o erro é um engano do jogador.
+- Os testes cobrem, além dos critérios, a vitória com `1 disparo`, o erro de tabuleiro incompleto e falhas de leitura e escrita.
+- Na T4, o teste e o código do `cmd` foram escritos no mesmo passo, sem rodar o teste falhando antes.
+- O README ganhou a seção "Como jogar", e a lista de TODO virou uma lista de tarefas, com os itens da #006 e da #008 marcados.
+
+**Para o roadmap:**
+
+- A #007 precisa decidir como o jogador escolhe entre o modo solo e o jogo contra a máquina, já que hoje o programa começa direto no modo solo.
+- O `make run` não repassa opções. Se for útil, o Makefile pode aceitar `make run ARGS="--semente 42"`.
