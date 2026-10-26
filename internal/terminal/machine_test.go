@@ -87,3 +87,102 @@ func TestPlayVsMachine_PlayerWins(t *testing.T) {
 		t.Errorf("PlayVsMachine() =\n%s\nwant\n%s", got, want)
 	}
 }
+
+// machineTurn replays a machine turn on player with rng: it fires until a
+// miss or until the player's fleet is sunk, and returns the lines
+// PlayVsMachine should write and whether the machine won.
+func machineTurn(t *testing.T, player *board.Board, rng *rand.Rand) (string, bool) {
+	t.Helper()
+	var sb strings.Builder
+	for {
+		c, err := board.RandomShot(player, rng)
+		if err != nil {
+			t.Fatalf("RandomShot: %v", err)
+		}
+		shot, err := player.Fire(c)
+		if err != nil {
+			t.Fatalf("Fire(%v): %v", c, err)
+		}
+		message := ShotMessage(shot)
+		if shot.Result == board.Sunk {
+			message = "Afundou o seu " + ShipName(shot.Ship) + "!"
+		}
+		sb.WriteString("A máquina atirou em " + c.String() + ": " + message + "\n")
+		if player.AllSunk() {
+			return sb.String(), true
+		}
+		if shot.Result == board.Miss {
+			return sb.String(), false
+		}
+	}
+}
+
+// machineWaterCells lists the cells of b with no ship, in board order.
+func machineWaterCells(b *board.Board) []string {
+	ships := map[board.Coord]bool{}
+	for _, s := range b.Ships() {
+		for _, c := range s.Cells {
+			ships[c] = true
+		}
+	}
+	var cells []string
+	for row := range board.Size {
+		for col := range board.Size {
+			if c := (board.Coord{Col: col, Row: row}); !ships[c] {
+				cells = append(cells, c.String())
+			}
+		}
+	}
+	return cells
+}
+
+// CA-3: after the player's miss the machine shoots until it misses, one line
+// per shot, and then the full screen comes back.
+func TestPlayVsMachine_MachineTurn(t *testing.T) {
+	const seed = 1
+	player, enemy := machinePlayerBoard(t), machineEnemyBoard(t)
+	rng := rand.New(rand.NewPCG(seed, 0))
+	want := machineScreen(t, player, enemy) + soloTurn(t, enemy, "A10", "Água.") + "\n"
+	lines, won := machineTurn(t, player, rng)
+	if won {
+		t.Fatalf("the machine wins in its first turn with seed %d; pick another seed", seed)
+	}
+	want += lines + "\n" + machineScreen(t, player, enemy)
+
+	if got := machinePlay(t, "A10\n", seed); !strings.HasPrefix(got, want) {
+		t.Errorf("PlayVsMachine() =\n%s\nwant prefix\n%s", got, want)
+	}
+}
+
+// CA-6: when the player only hits water, the machine eventually sinks the
+// player's fleet, wins, and the enemy fleet is revealed.
+func TestPlayVsMachine_MachineWins(t *testing.T) {
+	const seed = 3
+	player, enemy := machinePlayerBoard(t), machineEnemyBoard(t)
+	rng := rand.New(rand.NewPCG(seed, 0))
+	waters := machineWaterCells(enemy)
+
+	want := machineScreen(t, player, enemy)
+	won, machineShots := false, 0
+	for _, cell := range waters {
+		want += soloTurn(t, enemy, cell, "Água.") + "\n"
+		lines, machineWon := machineTurn(t, player, rng)
+		want += lines
+		machineShots += strings.Count(lines, "\n")
+		if machineWon {
+			won = true
+			want += "\nSua frota:\n" + soloReveal(t, player) +
+				"\nA máquina venceu! Ela afundou a sua frota em " + shotCount(machineShots) + ". A frota inimiga era:\n\n" +
+				soloReveal(t, enemy)
+			break
+		}
+		want += "\n" + machineScreen(t, player, enemy)
+	}
+	if !won {
+		t.Fatalf("the machine does not win with seed %d before the player runs out of water", seed)
+	}
+
+	if got := machinePlay(t, strings.Join(waters, "\n")+"\n", seed); got != want {
+		t.Errorf("PlayVsMachine() =\n%s\nwant\n%s", got, want)
+	}
+}

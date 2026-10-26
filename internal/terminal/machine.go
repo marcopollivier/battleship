@@ -21,7 +21,8 @@ func PlayVsMachine(in io.Reader, out io.Writer, player, enemy *board.Board, rng 
 		if !ok {
 			return g.err
 		}
-		if _, ok := g.shoot(line); !ok {
+		shot, ok := g.shoot(line)
+		if !ok {
 			if g.err != nil {
 				return g.err
 			}
@@ -31,6 +32,15 @@ func PlayVsMachine(in io.Reader, out io.Writer, player, enemy *board.Board, rng 
 			g.write("Você venceu! Afundou a frota inimiga em " + shotCount(g.shots) + ".\n")
 			return g.err
 		}
+		if shot.Result != board.Miss {
+			continue
+		}
+		if g.machineTurn() {
+			g.machineWins()
+			return g.err
+		}
+		g.write("\n")
+		g.showScreen()
 	}
 }
 
@@ -38,8 +48,53 @@ func PlayVsMachine(in io.Reader, out io.Writer, player, enemy *board.Board, rng 
 // enemy board, plus the player's own board that the machine shoots at.
 type machineGame struct {
 	playerAttack
-	player *board.Board
-	rng    *rand.Rand
+	player       *board.Board
+	rng          *rand.Rand
+	machineShots int
+}
+
+// machineTurn makes the machine shoot at the player's board until it misses,
+// one line per shot, and reports whether it sank the player's whole fleet.
+func (g *machineGame) machineTurn() bool {
+	for g.err == nil {
+		c, err := board.RandomShot(g.player, g.rng)
+		if err != nil {
+			g.err = err
+			return false
+		}
+		shot, err := g.player.Fire(c)
+		if err != nil {
+			g.err = err
+			return false
+		}
+		g.machineShots++
+		g.write("A máquina atirou em " + c.String() + ": " + machineShotMessage(shot) + "\n")
+		if g.player.AllSunk() {
+			return true
+		}
+		if shot.Result == board.Miss {
+			return false
+		}
+	}
+	return false
+}
+
+// machineWins ends the game showing the player's sunk fleet and revealing
+// the enemy fleet.
+func (g *machineGame) machineWins() {
+	g.write("\nSua frota:\n")
+	g.render(RenderBoard, g.player)
+	g.write("\nA máquina venceu! Ela afundou a sua frota em " + shotCount(g.machineShots) + ". A frota inimiga era:\n\n")
+	g.render(RenderBoard, g.target)
+}
+
+// machineShotMessage is the result of a machine shot, naming the player's
+// ship when it sinks, such as "Afundou o seu Cruzador!".
+func machineShotMessage(s board.Shot) string {
+	if s.Result == board.Sunk {
+		return "Afundou o seu " + ShipName(s.Ship) + "!"
+	}
+	return ShotMessage(s)
 }
 
 // showScreen writes the player's board and the attack board, each with its title.
