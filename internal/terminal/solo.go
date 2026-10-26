@@ -5,16 +5,21 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"strings"
 
 	"github.com/marcopollivier/battleship/internal/board"
 )
 
-// shotPrompt asks the player for the next shot.
-const shotPrompt = "Disparo: "
+const (
+	// shotPrompt asks the player for the next shot.
+	shotPrompt = "Disparo: "
+	// quitCommand gives up the game, in any letter case.
+	quitCommand = "sair"
+)
 
 // PlaySolo runs a solo game: it reads shots from in, one per line, and
 // writes the attack board and messages to out until every ship of b is sunk
-// or the input ends. It returns an error if writing to out or reading from in
+// or the player gives up, with "sair" or the end of the input. It returns an error if writing to out or reading from in
 // fails.
 func PlaySolo(in io.Reader, out io.Writer, b *board.Board) error {
 	g := &soloGame{out: out, board: b}
@@ -26,14 +31,25 @@ func PlaySolo(in io.Reader, out io.Writer, b *board.Board) error {
 			return g.err
 		}
 		if !scanner.Scan() {
-			return scanner.Err()
+			if err := scanner.Err(); err != nil {
+				return err
+			}
+			// The terminal does not echo a newline for Ctrl+D.
+			g.write("\n")
+			g.giveUp()
+			return g.err
 		}
-		g.shoot(scanner.Text())
+		line := scanner.Text()
+		if strings.EqualFold(strings.TrimSpace(line), quitCommand) {
+			g.giveUp()
+			return g.err
+		}
+		g.shoot(line)
 		if g.err != nil {
 			return g.err
 		}
 		if g.board.AllSunk() {
-			g.write(fmt.Sprintf("Você afundou toda a frota em %d disparos!\n", g.shots))
+			g.write("Você afundou toda a frota em " + shotCount(g.shots) + "!\n")
 			return g.err
 		}
 	}
@@ -64,6 +80,22 @@ func (g *soloGame) shoot(line string) {
 	g.shots++
 	g.write(ShotMessage(shot) + "\n\n")
 	g.showBoard()
+}
+
+// giveUp ends the game revealing the fleet and the shots it received.
+func (g *soloGame) giveUp() {
+	g.write("Você desistiu depois de " + shotCount(g.shots) + ". A frota era:\n\n")
+	if g.err == nil {
+		g.err = RenderBoard(g.out, g.board)
+	}
+}
+
+// shotCount writes n shots in Portuguese, such as "1 disparo" or "2 disparos".
+func shotCount(n int) string {
+	if n == 1 {
+		return "1 disparo"
+	}
+	return fmt.Sprintf("%d disparos", n)
 }
 
 // reject shows the message for an invalid shot at c. An error with no

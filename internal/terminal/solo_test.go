@@ -2,8 +2,10 @@ package terminal
 
 import (
 	"errors"
+	"io"
 	"strings"
 	"testing"
+	"testing/iotest"
 
 	"github.com/marcopollivier/battleship/internal/board"
 )
@@ -121,5 +123,99 @@ func TestPlaySolo_UnexpectedError(t *testing.T) {
 	err := PlaySolo(strings.NewReader("A1\n"), &sb, board.NewBoard(board.DefaultFleet()))
 	if !errors.Is(err, board.ErrIncompleteBoard) {
 		t.Errorf("PlaySolo() error = %v, want ErrIncompleteBoard", err)
+	}
+}
+
+// soloReveal is the own board RenderBoard draws for b, revealing its ships.
+func soloReveal(t *testing.T, b *board.Board) string {
+	t.Helper()
+	var sb strings.Builder
+	if err := RenderBoard(&sb, b); err != nil {
+		t.Fatalf("RenderBoard: %v", err)
+	}
+	return sb.String()
+}
+
+// CA-5: "sair" in any case, or the end of the input, gives up and reveals
+// the fleet with the shots received so far.
+func TestPlaySolo_GiveUp(t *testing.T) {
+	afterShot := func(t *testing.T, replay *board.Board) string {
+		return soloStart(t, replay) + soloTurn(t, replay, "J10", "Água.") + "\n" + soloPrompt
+	}
+	tests := []struct {
+		name  string
+		input string
+		want  func(t *testing.T, replay *board.Board) string
+	}{
+		{"sair after one shot", "J10\nsair\n", func(t *testing.T, replay *board.Board) string {
+			return afterShot(t, replay) + "Você desistiu depois de 1 disparo. A frota era:\n\n"
+		}},
+		{"SAIR with spaces and no shots", " SAIR \n", func(t *testing.T, replay *board.Board) string {
+			return soloStart(t, replay) + "Você desistiu depois de 0 disparos. A frota era:\n\n"
+		}},
+		{"end of input after two shots", "J10\nE1", func(t *testing.T, replay *board.Board) string {
+			return afterShot(t, replay) + soloTurn(t, replay, "E1", "Acerto!") + "\n" + soloPrompt +
+				"\nVocê desistiu depois de 2 disparos. A frota era:\n\n"
+		}},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			replay := attackExampleBoard(t)
+			want := tt.want(t, replay)
+			want += soloReveal(t, replay)
+
+			got := soloPlay(t, attackExampleBoard(t), tt.input)
+			if got != want {
+				t.Errorf("PlaySolo() =\n%s\nwant\n%s", got, want)
+			}
+		})
+	}
+}
+
+// A win with a single shot uses the singular.
+func TestPlaySolo_WinOneShot(t *testing.T) {
+	b := board.NewBoard([]board.FleetEntry{{Type: board.Submarine, Count: 1}})
+	if err := b.Place(board.Submarine, board.Coord{}, board.Horizontal); err != nil {
+		t.Fatalf("Place: %v", err)
+	}
+	got := soloPlay(t, b, "A1\n")
+	if want := "Você afundou toda a frota em 1 disparo!\n"; !strings.HasSuffix(got, want) {
+		t.Errorf("PlaySolo() =\n%s\nwant suffix %q", got, want)
+	}
+}
+
+// soloFailingWriter fails every write after the first limit bytes.
+type soloFailingWriter struct{ limit int }
+
+func (w *soloFailingWriter) Write(p []byte) (int, error) {
+	if len(p) > w.limit {
+		return 0, errSoloWrite
+	}
+	w.limit -= len(p)
+	return len(p), nil
+}
+
+var errSoloWrite = errors.New("write failed")
+
+// Failures to read the input or write the screen end the game with that error.
+func TestPlaySolo_IOErrors(t *testing.T) {
+	errRead := errors.New("read failed")
+	tests := []struct {
+		name string
+		in   io.Reader
+		out  io.Writer
+		want error
+	}{
+		{"read", iotest.ErrReader(errRead), io.Discard, errRead},
+		{"write at start", strings.NewReader("J10\n"), &soloFailingWriter{}, errSoloWrite},
+		{"write after a shot", strings.NewReader("J10\n"), &soloFailingWriter{limit: 400}, errSoloWrite},
+		{"write when giving up", strings.NewReader("sair\n"), &soloFailingWriter{limit: 400}, errSoloWrite},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if err := PlaySolo(tt.in, tt.out, attackExampleBoard(t)); !errors.Is(err, tt.want) {
+				t.Errorf("PlaySolo() error = %v, want %v", err, tt.want)
+			}
+		})
 	}
 }
