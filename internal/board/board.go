@@ -3,6 +3,7 @@ package board
 import (
 	"errors"
 	"fmt"
+	"maps"
 	"slices"
 )
 
@@ -104,6 +105,11 @@ func (b *Board) Remaining() []ShipType {
 		remaining = append(remaining, t)
 	}
 	return remaining
+}
+
+// clone returns a copy of b that can be changed without changing b.
+func (b *Board) clone() *Board {
+	return &Board{fleet: slices.Clone(b.fleet), ships: b.Ships(), shots: maps.Clone(b.shots)}
 }
 
 // Clear removes every ship and every shot from the board.
