@@ -77,31 +77,37 @@ AKA: Couraçado
 
 ## Como jogar
 
-Com Go instalado, rode `make run` (ou `go run .`). O computador arma um tabuleiro aleatório, e você ataca até afundar a frota inteira:
+Com Go instalado, rode `make run` (ou `go run .`). O computador arma a sua frota e a dele em tabuleiros aleatórios. Você atira primeiro; quem acerta atira de novo, e quem erra passa a vez. Ganha quem afundar primeiro a frota inteira do outro:
 
 ```
 Disparo: b7
 Água.
 ...
+A máquina atirou em H3: Acerto!
+A máquina atirou em D4: Água.
+...
 Disparo: e1
 Afundou o Encouraçado!
 ...
-Você afundou toda a frota em 47 disparos!
+Você venceu! Afundou a frota inimiga em 52 disparos.
 Semente: 1729901234
 ```
 
+A cada vez que o turno volta para você, a tela mostra `Sua frota:` (seus navios e os tiros da máquina) e `Frota inimiga:` (os seus tiros).
+
 - Digite uma coordenada por vez, como `B7` ou `j10`.
-- Digite `sair` (ou aperte Ctrl+D) para desistir e ver onde estavam os navios.
+- Digite `sair` (ou aperte Ctrl+D) para desistir e ver onde estavam os navios inimigos.
 
 As opções vão depois de `go run .`, como em `go run . --frota S=2,P=1 --semente 42`:
 
 Opção | Exemplo | O que faz
 ----- | ------- | ---------
 `--frota` | `--frota S=2,D=1,P=1` | Escolhe quantos navios de cada tipo, pelas letras da legenda: `S` Submarino, `D` Destroyer, `C` Cruzador, `E` Encouraçado, `P` Porta-Aviões. Sem a opção, vale a frota da cartela.
-`--semente` | `--semente 42` | Repete o tabuleiro de uma partida anterior. A semente aparece no fim de cada partida.
+`--semente` | `--semente 42` | Repete uma partida anterior: os tabuleiros e os tiros da máquina. A semente aparece no fim de cada partida.
+`--modo` | `--modo solo` | `maquina` (padrão) joga contra a máquina; `solo` só ataca um tabuleiro sorteado, sem a máquina atirar de volta.
 
 ## TODO - Evolução do projeto
 
 - [x] Permitir que uma pessoa ataque um tabuleiro armado aleatoriamente
-- [ ] Permitir que arme seu próprio tabuleiro e jogue contra a máquina e jogadas aleatórias
+- [ ] Permitir que arme seu próprio tabuleiro e jogue contra a máquina e jogadas aleatórias (jogar contra a máquina já funciona; falta armar o próprio tabuleiro)
 - [x] Permitir que a pessoa defina a quantidade de navios que ela quer jogar

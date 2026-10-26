@@ -1,6 +1,6 @@
 # 007 — Jogador contra a máquina
 
-- **Status:** Em andamento
+- **Status:** Concluída
 - **Roadmap:** #007 (onda 4)
 - **Depende de:** 006 (modo solo)
 
@@ -86,4 +86,19 @@ Todas decididas em 2026-10-26:
 
 ## Encerramento
 
-Preenchido na fase 5: desvios em relação ao plano e o que ficou para o roadmap.
+Concluída em 2026-10-26, nas tarefas T1–T6. Os 10 critérios de aceitação são cobertos por testes em `internal/board/machine_test.go` (CA-4), `internal/terminal/machine_test.go` (CA-1 a CA-3, CA-5 a CA-7) e `cmd/init_test.go` (CA-1, CA-5, CA-6, CA-8 a CA-10). A cobertura ficou em 99,5% em `internal/board`, 97,0% em `internal/terminal` e 87,2% em `cmd`. Os testes da 006 em `internal/terminal/solo_test.go` não mudaram e continuam passando.
+
+Executando `go run . --semente 42` com a entrada `a1`, `b2`, `sair`: a tela mostra `Sua frota:` e `Frota inimiga:`, o tiro em A1 cai na água, a máquina acerta H3 e erra D4, a tela inteira volta com os tiros dela no tabuleiro do jogador, e a partida segue até a desistência.
+
+**Desvios em relação ao plano:**
+
+- O `soloGame` da 006 virou `playerAttack`, porque passou a ser o lado do jogador nos dois modos. O `machineGame` o embute. Além de `shoot` dizer o resultado e `giveUp` receber o texto final, o `playerAttack` ganhou `prompt` (pedido, `sair` e fim da entrada) e `render` (desenhar um tabuleiro respeitando um erro de escrita anterior).
+- No `cmd`, os erros da partida passaram a ser mostrados com `FleetErrorMessage`, como os de frota. Para um erro que não é de frota, a saída é a mesma de antes (`Erro: ...`). O sorteio e a partida ficaram numa função interna, `play`.
+- O `--modo` é validado antes da frota, então `--modo xyz --frota X=1` mostra só o erro de modo.
+- Os testes do terminal usam tabuleiros pequenos montados à mão (um Destroyer e um Submarino na máquina, um Submarino no jogador) e repetem os disparos da máquina numa réplica, com a mesma semente, para montar a saída esperada.
+- O README ganhou a opção `--modo` na tabela, o novo exemplo de partida, e o item do TODO de jogar contra a máquina diz o que ainda falta (armar o próprio tabuleiro).
+
+**Para o roadmap:**
+
+- A #012 encaixa o posicionamento manual no `play` do `cmd`: hoje o tabuleiro do jogador vem do `RandomBoard`, e é ele que a 012 troca. A ordem de sorteio (jogador, máquina, disparos) precisa continuar a mesma para a semente repetir a partida, ou a 012 decide outra regra.
+- Uma máquina com estratégia (atirar em volta de um acerto) só precisa trocar o `RandomShot`. Pode virar um item do backlog, se for de interesse.

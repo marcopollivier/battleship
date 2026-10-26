@@ -43,9 +43,9 @@ func emptyAttackBoard(t *testing.T) string {
 	return sb.String()
 }
 
-// CA-4: shooting every ship cell wins, and the seed is shown at the end.
+// Solo mode (spec 006): shooting every ship cell wins, and the seed is shown at the end.
 func TestRun_Win(t *testing.T) {
-	code, stdout, stderr := run(seedShots(t, board.DefaultFleet(), 42), "--semente", "42")
+	code, stdout, stderr := run(seedShots(t, board.DefaultFleet(), 42), "--modo", "solo", "--semente", "42")
 	if code != 0 {
 		t.Errorf("Run() code = %d, want 0 (stderr %q)", code, stderr)
 	}
@@ -54,10 +54,10 @@ func TestRun_Win(t *testing.T) {
 	}
 }
 
-// CA-1 and CA-5: without --semente the game starts with the empty attack
-// board, and giving up shows the fleet and the seed that was drawn.
+// Solo mode (spec 006): without --semente the game starts with the empty
+// attack board, and giving up shows the fleet and the seed that was drawn.
 func TestRun_GiveUp(t *testing.T) {
-	code, stdout, stderr := run("sair\n")
+	code, stdout, stderr := run("sair\n", "--modo", "solo")
 	if code != 0 {
 		t.Errorf("Run() code = %d, want 0 (stderr %q)", code, stderr)
 	}
@@ -72,23 +72,24 @@ func TestRun_GiveUp(t *testing.T) {
 	}
 }
 
-// CA-6: the same seed draws the same board.
+// CA-8: the same seed repeats the whole game, both boards and every machine shot.
 func TestRun_SameSeed(t *testing.T) {
-	_, first, _ := run("sair\n", "--semente", "42")
-	_, second, _ := run("sair\n", "--semente", "42")
+	const input = "A1\nB2\nC3\nsair\n"
+	_, first, _ := run(input, "--semente", "42")
+	_, second, _ := run(input, "--semente", "42")
 	if first != second {
 		t.Errorf("two runs with --semente 42 differ:\n%s\n---\n%s", first, second)
 	}
-	if _, other, _ := run("sair\n", "--semente", "43"); other == first {
+	if _, other, _ := run(input, "--semente", "43"); other == first {
 		t.Error("runs with --semente 42 and 43 drew the same board")
 	}
 }
 
-// CA-7: the game uses the fleet chosen with --frota; rejected fleets end the
+// The game uses the fleet chosen with --frota; rejected fleets end the
 // program before the game, with the reason on stderr and exit code 1.
 func TestRun_Fleet(t *testing.T) {
 	twoSubs := []board.FleetEntry{{Type: board.Submarine, Count: 2}}
-	code, stdout, stderr := run(seedShots(t, twoSubs, 7), "--frota", "S=2", "--semente", "7")
+	code, stdout, stderr := run(seedShots(t, twoSubs, 7), "--modo", "solo", "--frota", "S=2", "--semente", "7")
 	if code != 0 {
 		t.Errorf("Run(--frota S=2) code = %d, want 0 (stderr %q)", code, stderr)
 	}
@@ -123,7 +124,7 @@ func TestRun_Fleet(t *testing.T) {
 	}
 }
 
-// CA-8 and unknown options: the flag package rejects them with exit code 2
+// Invalid --semente values and unknown options: the flag package rejects them with exit code 2
 // and the game does not start.
 func TestRun_InvalidOption(t *testing.T) {
 	for _, args := range [][]string{{"--semente", "abc"}, {"--semente", "-1"}, {"--nope"}} {
@@ -137,5 +138,109 @@ func TestRun_InvalidOption(t *testing.T) {
 		if !strings.Contains(stderr, "-semente") {
 			t.Errorf("Run(%q) stderr = %q, want the usage with -semente", args, stderr)
 		}
+	}
+}
+
+// machineBoards returns the player's and the machine's boards the program
+// draws in machine mode for fleet and seed.
+func machineBoards(t *testing.T, fleet []board.FleetEntry, seed uint64) (player, enemy *board.Board) {
+	t.Helper()
+	rng := newRNG(seed)
+	player, err := board.RandomBoard(fleet, rng)
+	if err != nil {
+		t.Fatalf("RandomBoard (player): %v", err)
+	}
+	enemy, err = board.RandomBoard(fleet, rng)
+	if err != nil {
+		t.Fatalf("RandomBoard (enemy): %v", err)
+	}
+	return player, enemy
+}
+
+// machineCells lists the cells of b with or without a ship, one per line.
+func machineCells(b *board.Board, withShip bool) string {
+	ships := map[board.Coord]bool{}
+	for _, s := range b.Ships() {
+		for _, c := range s.Cells {
+			ships[c] = true
+		}
+	}
+	var cells []string
+	for row := range board.Size {
+		for col := range board.Size {
+			if c := (board.Coord{Col: col, Row: row}); ships[c] == withShip {
+				cells = append(cells, c.String())
+			}
+		}
+	}
+	return strings.Join(cells, "\n") + "\n"
+}
+
+// CA-1 and CA-9: without --modo the game is against the machine, and
+// --modo solo, in any case, is the solo game.
+func TestRun_Mode(t *testing.T) {
+	tests := []struct {
+		name       string
+		args       []string
+		wantPrefix string
+	}{
+		{"default", nil, "Sua frota:\n"},
+		{"maquina", []string{"--modo", "MAQUINA"}, "Sua frota:\n"},
+		{"solo", []string{"--modo", "Solo"}, emptyAttackBoard(t) + "\nDisparo: "},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			code, stdout, stderr := run("sair\n", tt.args...)
+			if code != 0 {
+				t.Errorf("Run(%q) code = %d, want 0 (stderr %q)", tt.args, code, stderr)
+			}
+			if !strings.HasPrefix(stdout, tt.wantPrefix) {
+				t.Errorf("Run(%q) stdout =\n%s\nwant prefix\n%s", tt.args, stdout, tt.wantPrefix)
+			}
+		})
+	}
+}
+
+// CA-5: sinking the machine's fleet wins, with the seed at the end.
+func TestRun_PlayerWins(t *testing.T) {
+	oneSub := []board.FleetEntry{{Type: board.Submarine, Count: 1}}
+	_, enemy := machineBoards(t, oneSub, 5)
+	code, stdout, stderr := run(machineCells(enemy, true), "--frota", "S=1", "--semente", "5")
+	if code != 0 {
+		t.Errorf("Run() code = %d, want 0 (stderr %q)", code, stderr)
+	}
+	if want := "Você venceu! Afundou a frota inimiga em 1 disparo.\nSemente: 5\n"; !strings.HasSuffix(stdout, want) {
+		t.Errorf("Run() stdout =\n%s\nwant suffix\n%s", stdout, want)
+	}
+}
+
+// CA-6: when the player only hits water, the machine wins and the enemy
+// fleet is revealed before the seed.
+func TestRun_MachineWins(t *testing.T) {
+	oneSub := []board.FleetEntry{{Type: board.Submarine, Count: 1}}
+	_, enemy := machineBoards(t, oneSub, 5)
+	code, stdout, stderr := run(machineCells(enemy, false), "--frota", "S=1", "--semente", "5")
+	if code != 0 {
+		t.Errorf("Run() code = %d, want 0 (stderr %q)", code, stderr)
+	}
+	if !strings.Contains(stdout, "A máquina venceu! Ela afundou a sua frota em ") {
+		t.Errorf("Run() stdout =\n%s\nwant the machine to win", stdout)
+	}
+	if !strings.HasSuffix(stdout, "Semente: 5\n") {
+		t.Errorf("Run() stdout does not end with the seed:\n%s", stdout)
+	}
+}
+
+// CA-10: an unknown mode is an option error, with exit code 2.
+func TestRun_InvalidMode(t *testing.T) {
+	code, stdout, stderr := run("sair\n", "--modo", "xyz")
+	if code != 2 {
+		t.Errorf("Run(--modo xyz) code = %d, want 2", code)
+	}
+	if stdout != "" {
+		t.Errorf("Run(--modo xyz) stdout = %q, want empty", stdout)
+	}
+	if want := "Modo inválido: use maquina ou solo.\n"; stderr != want {
+		t.Errorf("Run(--modo xyz) stderr = %q, want %q", stderr, want)
 	}
 }
