@@ -1,6 +1,6 @@
 # 007 — Jogador contra a máquina
 
-- **Status:** Aprovada
+- **Status:** Em andamento
 - **Roadmap:** #007 (onda 4)
 - **Depende de:** 006 (modo solo)
 

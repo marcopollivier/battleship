@@ -1,11 +1,11 @@
 # 007 — Tarefas
 
 - **Plano:** [plan.md](plan.md)
-- **Status:** Rascunho
+- **Status:** Aprovado
 
 Cada tarefa é um commit: teste falhando → implementação → `make pre-commit` → commit.
 
-- [ ] **T1** — Criar `internal/board/machine.go` com `RandomShot` e `ErrNoCellsLeft`. (cobre CA-4)
+- [x] **T1** — Criar `internal/board/machine.go` com `RandomShot` e `ErrNoCellsLeft`. (cobre CA-4)
 - [ ] **T2** — Refatorar o `soloGame` para dizer o resultado de cada disparo e receber o texto da desistência, sem mudar o modo solo (os testes da 006 passam sem alteração). (preparação)
 - [ ] **T3** — Criar `internal/terminal/machine.go` com `PlayVsMachine`: tela inteira, turno do jogador com tiro extra depois de acerto, e vitória do jogador. (cobre CA-1, CA-2, CA-5 no terminal)
 - [ ] **T4** — Turno da máquina com as linhas de disparo, volta da tela inteira e vitória da máquina. (cobre CA-3, CA-6 no terminal)
