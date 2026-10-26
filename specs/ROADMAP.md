@@ -15,17 +15,17 @@ Features da mesma onda não dependem umas das outras e são tocadas em paralelo 
 | 005 | Posicionamento aleatório da frota | TODO do README | 002 | 1 | Concluída |
 | 009 | Terminal, tabuleiro de ataque: desenhar os disparos feitos no tabuleiro do oponente e as mensagens de resultado em português | Divisão da 004 | 003, 004 | 2 | Concluída |
 | 008 | Frota configurável pelo jogador | TODO do README | 002, 004 | 2 | Concluída |
-| 006 | Modo solo: atacar um tabuleiro gerado aleatoriamente | TODO do README | 003, 005, 009 | 3 | Spec |
-| 007 | Jogador vs. máquina: posicionar a própria frota e jogar contra jogadas aleatórias, com turno extra após acerto | TODO do README | 006 | 4 | Backlog |
+| 006 | Modo solo: atacar um tabuleiro gerado aleatoriamente | TODO do README | 003, 005, 009 | 3 | Concluída |
+| 007 | Jogador vs. máquina: posicionar a própria frota e jogar contra jogadas aleatórias, com turno extra após acerto | TODO do README | 006 | 4 | Spec |
 | 010 | Cores no terminal: água, navios e disparos em cores diferentes | Fora de escopo da 004 | 009 | — | Backlog |
+| 011 | `make run` repassar opções ao jogo (`make run ARGS="--semente 42"`) | Encerramento da 006 | 006 | — | Backlog |
 
 ## Notas das specs concluídas
 
 Pendências que specs anteriores deixaram para as próximas:
 
-- **#006:** criar o `*rand.Rand` a partir do relógio por padrão, com opção de o jogador informar a semente para repetir uma partida (decisão da 005).
-- **#006:** usar a frota escolhida com `--frota` (008) na partida; hoje uma frota válida só mostra o tabuleiro vazio.
 - **#007:** usar `board.ValidOrientations` para mostrar as orientações possíveis de cada navio ao jogador (005).
+- **#007:** decidir como o jogador escolhe entre o modo solo e o jogo contra a máquina; hoje o programa começa direto no modo solo (006).
 
 ## Questões em aberto do jogo
 
