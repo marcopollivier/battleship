@@ -1,6 +1,6 @@
 # 006 — Modo solo
 
-- **Status:** Aprovada
+- **Status:** Em andamento
 - **Roadmap:** #006 (onda 3)
 - **Depende de:** 003 (disparo), 005 (posicionamento aleatório), 008 (frota configurável), 009 (tabuleiro de ataque)
 
