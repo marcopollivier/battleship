@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"math/rand/v2"
+	"strings"
 
 	"github.com/marcopollivier/battleship/internal/board"
 	"github.com/marcopollivier/battleship/internal/terminal"
@@ -16,20 +17,32 @@ import (
 const (
 	fleetFlag = "frota"
 	seedFlag  = "semente"
+	modeFlag  = "modo"
 )
 
-// Run runs a solo game with the command-line args (without the program name),
+// Values of the mode option.
+const (
+	machineMode = "maquina"
+	soloMode    = "solo"
+)
+
+// Run runs a game, against the machine or solo, with the command-line args (without the program name),
 // reading shots from stdin, writing the game to stdout and errors to stderr.
 // It returns the exit code.
 func Run(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
 	fs := flag.NewFlagSet("battleship", flag.ContinueOnError)
 	fs.SetOutput(stderr)
 	fleetText := fs.String(fleetFlag, "", "frota no formato letra=quantidade separados por vírgula, por exemplo S=2,D=1,P=1 (padrão: a frota da cartela)")
-	seed := fs.Uint64(seedFlag, 0, "número que define o tabuleiro sorteado, para repetir uma partida (padrão: um número novo a cada execução)")
+	seed := fs.Uint64(seedFlag, 0, "número que define os tabuleiros e os disparos da máquina, para repetir uma partida (padrão: um número novo a cada execução)")
+	mode := fs.String(modeFlag, machineMode, "maquina para jogar contra a máquina, ou solo para só atacar um tabuleiro sorteado")
 	if err := fs.Parse(args); err != nil {
 		if errors.Is(err, flag.ErrHelp) {
 			return 0
 		}
+		return 2
+	}
+	if !strings.EqualFold(*mode, machineMode) && !strings.EqualFold(*mode, soloMode) {
+		fmt.Fprintln(stderr, "Modo inválido: use maquina ou solo.")
 		return 2
 	}
 
@@ -41,13 +54,8 @@ func Run(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
 	if !flagGiven(fs, seedFlag) {
 		*seed = rand.Uint64() //nolint:gosec // a game seed, not security-sensitive
 	}
-	b, err := board.RandomBoard(fleet, newRNG(*seed))
-	if err != nil {
+	if err := play(*mode, fleet, newRNG(*seed), stdin, stdout); err != nil {
 		fmt.Fprintln(stderr, terminal.FleetErrorMessage(err))
-		return 1
-	}
-	if err := terminal.PlaySolo(stdin, stdout, b); err != nil {
-		fmt.Fprintln(stderr, "Erro:", err)
 		return 1
 	}
 	if _, err := fmt.Fprintf(stdout, "Semente: %d\n", *seed); err != nil {
@@ -56,7 +64,25 @@ func Run(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
 	return 0
 }
 
-// newRNG returns the random source that draws the board for seed.
+// play draws the boards for fleet with rng and runs a game in mode. Against
+// the machine, the player's board is drawn first, then the machine's, and rng
+// then draws the machine's shots.
+func play(mode string, fleet []board.FleetEntry, rng *rand.Rand, stdin io.Reader, stdout io.Writer) error {
+	first, err := board.RandomBoard(fleet, rng)
+	if err != nil {
+		return err
+	}
+	if strings.EqualFold(mode, soloMode) {
+		return terminal.PlaySolo(stdin, stdout, first)
+	}
+	enemy, err := board.RandomBoard(fleet, rng)
+	if err != nil {
+		return err
+	}
+	return terminal.PlayVsMachine(stdin, stdout, first, enemy, rng)
+}
+
+// newRNG returns the random source that draws the boards for seed.
 func newRNG(seed uint64) *rand.Rand {
 	return rand.New(rand.NewPCG(seed, 0)) //nolint:gosec // a game board, not security-sensitive
 }

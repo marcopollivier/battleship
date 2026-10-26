@@ -4,13 +4,13 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project
 
-A terminal Battleship ("Batalha Naval") game in Go (module `github.com/marcopollivier/battleship`, Go 1.24, no external dependencies). Today it plays a solo game: the player attacks a randomly placed fleet from the terminal. The README (in Portuguese) is the game spec.
+A terminal Battleship ("Batalha Naval") game in Go (module `github.com/marcopollivier/battleship`, Go 1.24, no external dependencies). Today it plays against the machine, with both fleets placed at random, or a solo game (`--modo solo`) where the player only attacks a random board. The README (in Portuguese) is the game spec.
 
 ## Commands
 
 All are Makefile targets (`make help` lists them):
 
-- `make run`: `go run ./main.go`, which starts a solo game (options: `--frota S=2,P=1`, `--semente 42`)
+- `make run`: `go run ./main.go`, which starts a game against the machine (options: `--modo solo`, `--frota S=2,P=1`, `--semente 42`)
 - `make build`: builds the binary to `bin/battleship`
 - `make test`: `go test -v ./...`
 - Run a single test: `go test -v -run TestName ./cmd/`
@@ -37,6 +37,7 @@ Two layers, and the domain never imports the terminal:
   - `board.go`: `Board` with `Place`, which validates fleet limit, orientation, bounds, overlap and adjacency in that order and leaves the board unchanged on error.
   - `shot.go`: `Fire`, `Cell` and `AllSunk`.
   - `random.go`: `RandomBoard`, which takes an injected `*rand.Rand`.
+  - `machine.go`: `RandomShot`, the machine's next shot, drawn among the cells not shot yet.
   - `fleet.go`: `ValidateFleet`, which rejects negative counts, empty fleets and fleets that do not fit on the board.
   - Errors are sentinel values wrapped with `%w`; check them with `errors.Is`.
 - **`internal/terminal`: presentation.** It reads the domain and writes to an `io.Writer`. Text shown to the player is in Portuguese.
@@ -45,8 +46,9 @@ Two layers, and the domain never imports the terminal:
   - `attack.go`: `RenderAttackBoard`, the opponent's board showing only shots fired, and sunk ships.
   - `messages.go`: `ShotMessage`, the result of a shot.
   - `fleet.go`: `ParseFleet`, which reads the `--frota` text (such as `S=2,D=1,P=1`), and `FleetErrorMessage`.
-  - `solo.go`: `PlaySolo(in, out, board)`, the solo game loop: reads one shot per line until every ship is sunk or the player types `sair` or closes the input.
-- **`cmd/` and `main.go`: wiring.** `cmd.Run(args, stdin, stdout, stderr) int` parses `--frota` and `--semente`, draws the board with `RandomBoard` seeded by the seed (a new one each run unless given), runs `PlaySolo` and prints the seed. It returns the exit code: 0 at the end of a game or on `-h`, 1 on a fleet error, and 2 on an invalid option. `main.go` passes it to `os.Exit`.
+  - `solo.go`: `PlaySolo(in, out, board)`, the solo game loop: reads one shot per line until every ship is sunk or the player types `sair` or closes the input. Its `playerAttack` type is the player's turn, shared with `machine.go`.
+  - `machine.go`: `PlayVsMachine(in, out, player, enemy, rng)`, the game against the machine: whoever hits shoots again.
+- **`cmd/` and `main.go`: wiring.** `cmd.Run(args, stdin, stdout, stderr) int` parses `--modo`, `--frota` and `--semente`. One `*rand.Rand` seeded by the seed (a new one each run unless given) draws the player's board, then the machine's, then the machine's shots; `Run` runs `PlayVsMachine` (or `PlaySolo`) and prints the seed. It returns the exit code: 0 at the end of a game or on `-h`, 1 on a fleet error, and 2 on an invalid option. `main.go` passes it to `os.Exit`.
 
 ## Game rules (from README)
 
@@ -65,7 +67,7 @@ Two layers, and the domain never imports the terminal:
 
 - Line ships can be placed horizontally or vertically. The T-shaped Porta-Aviões can be placed in any of its 4 rotations. Ships may not overlap or touch, not even diagonally.
 
-Planned feature (README TODO): placing your own ships and playing against the computer (#007).
+Planned feature (README TODO): placing your own ships before the game against the machine (#012).
 
 ## Conventions
 
