@@ -9,4 +9,4 @@ Cada tarefa é um commit: teste falhando → implementação → `make pre-commi
 - [x] **T2** — Cores do tabuleiro próprio. (cobre CA-1, CA-3)
 - [x] **T3** — Cores do tabuleiro de ataque. (cobre CA-2, CA-3)
 - [x] **T4** — `PlaySolo` e `PlayVsMachine`, incluindo o posicionamento, recebem o `Style` e desenham todos os tabuleiros com ele. (cobre CA-7)
-- [ ] **T5** — `cmd`: opção `--cores`, cores ligadas por padrão; README (tabela de opções) e `CLAUDE.md`. (cobre CA-4, CA-5, CA-6)
+- [x] **T5** — `cmd`: opção `--cores`, cores ligadas por padrão; README (tabela de opções) e `CLAUDE.md`. (cobre CA-4, CA-5, CA-6)

@@ -33,11 +33,11 @@ func seedShots(t *testing.T, fleet []board.FleetEntry, seed uint64) string {
 	return strings.Join(cells, "\n") + "\n"
 }
 
-// emptyAttackBoard is the attack board before any shot.
-func emptyAttackBoard(t *testing.T) string {
+// emptyAttackBoard is the attack board before any shot, drawn with style.
+func emptyAttackBoard(t *testing.T, style terminal.Style) string {
 	t.Helper()
 	var sb strings.Builder
-	if err := terminal.RenderAttackBoard(&sb, board.NewBoard(board.DefaultFleet()), terminal.Plain); err != nil {
+	if err := terminal.RenderAttackBoard(&sb, board.NewBoard(board.DefaultFleet()), style); err != nil {
 		t.Fatalf("RenderAttackBoard: %v", err)
 	}
 	return sb.String()
@@ -57,11 +57,11 @@ func TestRun_Win(t *testing.T) {
 // Solo mode (spec 006): without --semente the game starts with the empty
 // attack board, and giving up shows the fleet and the seed that was drawn.
 func TestRun_GiveUp(t *testing.T) {
-	code, stdout, stderr := run("sair\n", "--modo", "solo")
+	code, stdout, stderr := run("sair\n", "--modo", "solo", "--cores", "nao")
 	if code != 0 {
 		t.Errorf("Run() code = %d, want 0 (stderr %q)", code, stderr)
 	}
-	if want := emptyAttackBoard(t) + "\nDisparo: "; !strings.HasPrefix(stdout, want) {
+	if want := emptyAttackBoard(t, terminal.Plain) + "\nDisparo: "; !strings.HasPrefix(stdout, want) {
 		t.Errorf("Run() stdout =\n%s\nwant prefix\n%s", stdout, want)
 	}
 	if !strings.Contains(stdout, "Você desistiu depois de 0 disparos. A frota era:") {
@@ -183,7 +183,7 @@ func TestRun_Mode(t *testing.T) {
 	}{
 		{"default", nil, "Posicione a sua frota."},
 		{"maquina", []string{"--modo", "MAQUINA"}, "Posicione a sua frota."},
-		{"solo", []string{"--modo", "Solo"}, emptyAttackBoard(t) + "\nDisparo: "},
+		{"solo", []string{"--modo", "Solo", "--cores", "nao"}, emptyAttackBoard(t, terminal.Plain) + "\nDisparo: "},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -239,6 +239,65 @@ func TestRun_InvalidMode(t *testing.T) {
 	}
 	if want := "Modo inválido: use maquina ou solo.\n"; stderr != want {
 		t.Errorf("Run(--modo xyz) stderr = %q, want %q", stderr, want)
+	}
+}
+
+// CA-4 and CA-5 (spec 010): the boards are colored by default and with
+// --cores sim in any case, even with the output going to a buffer instead of
+// a terminal; --cores nao leaves no color code in the whole game.
+func TestRun_Colors(t *testing.T) {
+	tests := []struct {
+		name  string
+		args  []string
+		style terminal.Style
+	}{
+		{"default", nil, terminal.Colored},
+		{"sim", []string{"--cores", "sim"}, terminal.Colored},
+		{"SIM", []string{"--cores", "SIM"}, terminal.Colored},
+		{"nao", []string{"--cores", "nao"}, terminal.Plain},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			args := append([]string{"--modo", "solo", "--semente", "42"}, tt.args...)
+			code, stdout, stderr := run("A1\nsair\n", args...)
+			if code != 0 {
+				t.Errorf("Run(%q) code = %d, want 0 (stderr %q)", args, code, stderr)
+			}
+			if want := emptyAttackBoard(t, tt.style) + "\nDisparo: "; !strings.HasPrefix(stdout, want) {
+				t.Errorf("Run(%q) stdout =\n%s\nwant prefix\n%s", args, stdout, want)
+			}
+			if colored := strings.Contains(stdout, "\x1b"); colored != (tt.style == terminal.Colored) {
+				t.Errorf("Run(%q) stdout has color codes = %v, want %v", args, colored, !colored)
+			}
+		})
+	}
+
+	// Against the machine, the same seed plays the same game with or without colors.
+	const input = "aleatorio\nA1\nB2\nsair\n"
+	_, plain, _ := run(input, "--semente", "42", "--cores", "nao")
+	if strings.Contains(plain, "\x1b") {
+		t.Errorf("Run(--cores nao) against the machine has color codes:\n%s", plain)
+	}
+	_, colored, _ := run(input, "--semente", "42")
+	if got := regexp.MustCompile("\x1b\\[[0-9;]*m").ReplaceAllString(colored, ""); got != plain {
+		t.Errorf("colored game without codes =\n%s\nwant\n%s", got, plain)
+	}
+}
+
+// CA-6 (spec 010): an unknown --cores value is an option error, with exit
+// code 2, checked before the fleet.
+func TestRun_InvalidColors(t *testing.T) {
+	for _, args := range [][]string{{"--cores", "xyz"}, {"--cores", "xyz", "--frota", "X=1"}} {
+		code, stdout, stderr := run("sair\n", args...)
+		if code != 2 {
+			t.Errorf("Run(%q) code = %d, want 2", args, code)
+		}
+		if stdout != "" {
+			t.Errorf("Run(%q) stdout = %q, want empty", args, stdout)
+		}
+		if want := "Cores inválidas: use sim ou nao.\n"; stderr != want {
+			t.Errorf("Run(%q) stderr = %q, want %q", args, stderr, want)
+		}
 	}
 }
 

@@ -10,7 +10,7 @@ A terminal Battleship ("Batalha Naval") game in Go (module `github.com/marcopoll
 
 All are Makefile targets (`make help` lists them):
 
-- `make run`: `go run ./main.go`, which starts a game against the machine (options: `--modo solo`, `--frota S=2,P=1`, `--semente 42`)
+- `make run`: `go run ./main.go`, which starts a game against the machine (options: `--modo solo`, `--frota S=2,P=1`, `--semente 42`, `--cores nao`)
 - `make build`: builds the binary to `bin/battleship`
 - `make test`: `go test -v ./...`
 - Run a single test: `go test -v -run TestName ./cmd/`
@@ -42,14 +42,16 @@ Two layers, and the domain never imports the terminal:
   - Errors are sentinel values wrapped with `%w`; check them with `errors.Is`.
 - **`internal/terminal`: presentation.** It reads the domain and writes to an `io.Writer`. Text shown to the player is in Portuguese.
   - `names.go`: `ShipName` and `OrientationName`.
-  - `render.go`: `RenderBoard`, the player's own board with ships and received shots.
-  - `attack.go`: `RenderAttackBoard`, the opponent's board showing only shots fired, and sunk ships.
+  - `color.go`: `Style` (`Plain`, the zero value, or `Colored`) and `paint`, which wraps a board symbol in its ANSI color code and a reset when the style is `Colored`.
+  - `render.go`: `RenderBoard(w, board, style)`, the player's own board with ships and received shots.
+  - `attack.go`: `RenderAttackBoard(w, board, style)`, the opponent's board showing only shots fired, and sunk ships.
+  - Both renderers paint each cell while building the grid; `writeBoard` adds the header, row numbers and legend, which stay uncolored.
   - `messages.go`: `ShotMessage`, the result of a shot.
   - `fleet.go`: `ParseFleet`, which reads the `--frota` text (such as `S=2,D=1,P=1`), and `FleetErrorMessage`.
-  - `solo.go`: `PlaySolo(in, out, board)`, the solo game loop: reads one shot per line until every ship is sunk or the player types `sair` or closes the input. Its `playerAttack` type is the player's turn, shared with `machine.go`.
-  - `machine.go`: `PlayVsMachine(in, out, player, enemy, rng)`, the game against the machine: whoever hits shoots again. If `player` is not complete, it first runs the placing phase.
+  - `solo.go`: `PlaySolo(in, out, board, style)`, the solo game loop: reads one shot per line until every ship is sunk or the player types `sair` or closes the input. Its `playerAttack` type is the player's turn, shared with `machine.go`, and keeps the `Style` every board of the game is drawn with.
+  - `machine.go`: `PlayVsMachine(in, out, player, enemy, rng, style)`, the game against the machine: whoever hits shoots again. If `player` is not complete, it first runs the placing phase.
   - `placement.go`: the placing phase (`casa orientação` lines, `aleatorio`, `recomecar`, `sair`). It runs inside `PlayVsMachine` so one `bufio.Scanner` reads all the input.
-- **`cmd/` and `main.go`: wiring.** `cmd.Run(args, stdin, stdout, stderr) int` parses `--modo`, `--frota` and `--semente`. One `*rand.Rand` seeded by the seed (a new one each run unless given) draws the machine's board, then the ships the player draws with `aleatorio`, then the machine's shots; `Run` runs `PlayVsMachine` (or `PlaySolo`) and prints the seed. It returns the exit code: 0 at the end of a game or on `-h`, 1 on a fleet error, and 2 on an invalid option. `main.go` passes it to `os.Exit`.
+- **`cmd/` and `main.go`: wiring.** `cmd.Run(args, stdin, stdout, stderr) int` parses `--modo`, `--cores` (`sim`, the default, or `nao`; colors stay on even when the output is not a terminal), `--frota` and `--semente`, checking the mode, then the colors, then the fleet. One `*rand.Rand` seeded by the seed (a new one each run unless given) draws the machine's board, then the ships the player draws with `aleatorio`, then the machine's shots; `Run` runs `PlayVsMachine` (or `PlaySolo`) and prints the seed. It returns the exit code: 0 at the end of a game or on `-h`, 1 on a fleet error, and 2 on an invalid option. `main.go` passes it to `os.Exit`.
 
 ## Game rules (from README)
 
