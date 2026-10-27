@@ -1,6 +1,6 @@
 # 014 — Posicionamento mais fácil
 
-- **Status:** Aprovada
+- **Status:** Em andamento
 - **Roadmap:** #014 (onda 7)
 - **Depende de:** 012 (posicionar a própria frota)
 
