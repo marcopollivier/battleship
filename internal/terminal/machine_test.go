@@ -298,7 +298,7 @@ func TestPlayVsMachine_Colored(t *testing.T) {
 	want := "Sua frota:\n" + renderColored(t, RenderBoard, player) +
 		"\nFrota inimiga:\n" + renderColored(t, RenderAttackBoard, enemy) + "\n" + soloPrompt
 	attackFire(t, enemy, "E5")
-	want += "Acerto!\n\n" + renderColored(t, RenderAttackBoard, enemy) + "\n" + soloPrompt +
+	want += colored("1;31", "Acerto!") + "\n\n" + renderColored(t, RenderAttackBoard, enemy) + "\n" + soloPrompt +
 		"Você desistiu depois de 1 disparo. A frota inimiga era:\n\n" + renderColored(t, RenderBoard, enemy)
 
 	if got := machinePlayStyle(t, "E5\nsair\n", 1, Colored); got != want {
@@ -312,4 +312,50 @@ func TestPlayVsMachine_Colored(t *testing.T) {
 		t.Fatalf("the machine does not win with seed %d", seed)
 	}
 	assertBoardsColored(t, got, machinePlay(t, input, seed))
+	assertUncolored(t, got, "Sua frota:", "Frota inimiga:", soloPrompt, "A máquina atirou em ", " A frota inimiga era:")
+}
+
+// machineScriptPlay runs PlayVsMachine with colors on player and the
+// default enemy board, with input and the machine shooting at cells in
+// order, and returns what it wrote.
+func machineScriptPlay(t *testing.T, input string, player *board.Board, cells ...string) string {
+	t.Helper()
+	var sb strings.Builder
+	err := PlayVsMachine(strings.NewReader(input), &sb, player, machineEnemyBoard(t),
+		rand.New(rand.NewPCG(1, 0)), Colored, machineScript(t, cells...))
+	if err != nil {
+		t.Fatalf("PlayVsMachine: %v", err)
+	}
+	return sb.String()
+}
+
+// CA-2 (spec 015): with Colored, only the result after "A máquina atirou
+// em A1: " has a color, the color of the shot result.
+func TestPlayVsMachine_ColoredMachineShots(t *testing.T) {
+	player := machineBoard(t,
+		placement{board.Destroyer, "A1", board.Horizontal},
+		placement{board.Submarine, "J10", board.Horizontal},
+	)
+	got := machineScriptPlay(t, "A10\n", player, "A1", "B1", "C5")
+	want := "A máquina atirou em A1: " + colored("1;31", "Acerto!") + "\n" +
+		"A máquina atirou em B1: " + colored("1;31", "Afundou o seu Destroyer!") + "\n" +
+		"A máquina atirou em C5: " + colored("36", "Água.") + "\n"
+	if !strings.Contains(got, want) {
+		t.Errorf("PlayVsMachine() =\n%s\nwant it to contain\n%q", got, want)
+	}
+}
+
+// CA-3 (spec 015): with Colored, the player's win is bold green, and the
+// machine's win bold red up to its period, before the uncolored reveal.
+func TestPlayVsMachine_ColoredEnd(t *testing.T) {
+	won := machineScriptPlay(t, "E5\nF5\nJ10\n", machinePlayerBoard(t))
+	if want := "\n" + colored("1;32", "Você venceu! Afundou a frota inimiga em 3 disparos.") + "\n"; !strings.HasSuffix(won, want) {
+		t.Errorf("PlayVsMachine() =\n%s\nwant suffix %q", won, want)
+	}
+
+	lost := machineScriptPlay(t, "A10\n", machinePlayerBoard(t), "A1")
+	want := "\n" + colored("1;31", "A máquina venceu! Ela afundou a sua frota em 1 disparo.") + " A frota inimiga era:\n\n"
+	if !strings.Contains(lost, want) {
+		t.Errorf("PlayVsMachine() =\n%s\nwant it to contain %q", lost, want)
+	}
 }

@@ -54,8 +54,8 @@ const placementInstructions = "Posicione a sua frota. Para cada navio, digite a 
 	"Comandos: aleatorio sorteia o resto da frota, desfazer tira o último navio, recomecar tira todos os navios, sair desiste.\n" //nolint:misspell // Portuguese text for the player
 
 // placementWarning is shown before the board while the ships still missing
-// no longer fit on it. It does not stop the player.
-const placementWarning = "Atenção: o resto da frota não cabe mais no tabuleiro. Use desfazer ou recomecar.\n" //nolint:misspell // Portuguese text for the player
+// no longer fit on it, in yellow. It does not stop the player.
+const placementWarning = "Atenção: o resto da frota não cabe mais no tabuleiro. Use desfazer ou recomecar." //nolint:misspell // Portuguese text for the player
 
 // placeFleet asks for the missing ships of the player's board, largest
 // first, and reports false if the player gave up or a write failed.
@@ -68,7 +68,7 @@ func (g *machineGame) placeFleet(scanner *bufio.Scanner) bool {
 			return g.err == nil
 		}
 		if len(g.player.Ships()) > 0 && !board.Fits(g.player) {
-			g.write(placementWarning)
+			g.write(g.style.paint(placementWarning, warnColor) + "\n")
 		}
 		g.render(RenderBoard, g.player)
 		g.write("\n")
@@ -89,8 +89,9 @@ const (
 )
 
 // placeShip asks for the position of one ship of type t until it is placed,
-// or until a command fills the board or removes ships from it. It reports false if the
-// player gave up or a write failed.
+// or until a command fills the board or removes ships from it. Invalid
+// positions and a random draw that does not fit show a message in yellow. It
+// reports false if the player gave up or a write failed.
 func (g *machineGame) placeShip(scanner *bufio.Scanner, t board.ShipType) bool {
 	for {
 		line, ok := g.prompt(scanner, placementPrompt(t))
@@ -100,7 +101,7 @@ func (g *machineGame) placeShip(scanner *bufio.Scanner, t board.ShipType) bool {
 		switch strings.ToLower(strings.TrimSpace(line)) {
 		case randomCommand:
 			if err := board.FillRandom(g.player, g.rng); err != nil {
-				g.write("Não foi possível sortear o resto da frota. Mude a posição dos navios com recomecar.\n")
+				g.write(g.style.paint("Não foi possível sortear o resto da frota. Mude a posição dos navios com recomecar.", warnColor) + "\n")
 				continue
 			}
 			return true
@@ -110,7 +111,7 @@ func (g *machineGame) placeShip(scanner *bufio.Scanner, t board.ShipType) bool {
 			if g.player.RemoveLast() {
 				return true
 			}
-			g.write("Não há navio para desfazer.\n")
+			g.write(g.style.paint("Não há navio para desfazer.", warnColor) + "\n")
 			continue
 		case restartCommand:
 			g.player.Clear()
@@ -128,7 +129,7 @@ func (g *machineGame) placeShip(scanner *bufio.Scanner, t board.ShipType) bool {
 			g.err = err
 			return false
 		}
-		g.write(message + "\n")
+		g.write(g.style.paint(message, warnColor) + "\n")
 	}
 }
 

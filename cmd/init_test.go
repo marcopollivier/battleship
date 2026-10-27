@@ -2,6 +2,8 @@ package cmd
 
 import (
 	"fmt"
+	"io"
+	"os"
 	"regexp"
 	"strings"
 	"testing"
@@ -46,7 +48,7 @@ func emptyAttackBoard(t *testing.T, style terminal.Style) string {
 
 // Solo mode (spec 006): shooting every ship cell wins, and the seed is shown at the end.
 func TestRun_Win(t *testing.T) {
-	code, stdout, stderr := run(seedShots(t, board.DefaultFleet(), 42), "--modo", "solo", "--semente", "42")
+	code, stdout, stderr := run(seedShots(t, board.DefaultFleet(), 42), "--modo", "solo", "--semente", "42", "--cores", "nao")
 	if code != 0 {
 		t.Errorf("Run() code = %d, want 0 (stderr %q)", code, stderr)
 	}
@@ -115,8 +117,8 @@ func TestRun_SameSeed(t *testing.T) {
 
 // levelGame returns what the program writes for a game against the machine
 // with the default fleet, seed and input, when the machine shoots with
-// strategy and the boards drawn with colors, the default: the boards and the
-// shots come from one random source, as in play.
+// strategy and the boards drawn with colors, as --cores sim asks: the boards
+// and the shots come from one random source, as in play.
 func levelGame(t *testing.T, input string, seed uint64, strategy board.ShotStrategy) string {
 	t.Helper()
 	rng := newRNG(seed)
@@ -157,7 +159,7 @@ func TestRun_Level(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			code, stdout, stderr := run(input, append([]string{"--semente", "42"}, tt.args...)...)
+			code, stdout, stderr := run(input, append([]string{"--semente", "42", "--cores", "sim"}, tt.args...)...)
 			if code != 0 {
 				t.Errorf("Run(%q) code = %d, want 0 (stderr %q)", tt.args, code, stderr)
 			}
@@ -189,7 +191,7 @@ func TestRun_InvalidLevel(t *testing.T) {
 // program before the game, with the reason on stderr and exit code 1.
 func TestRun_Fleet(t *testing.T) {
 	twoSubs := []board.FleetEntry{{Type: board.Submarine, Count: 2}}
-	code, stdout, stderr := run(seedShots(t, twoSubs, 7), "--modo", "solo", "--frota", "S=2", "--semente", "7")
+	code, stdout, stderr := run(seedShots(t, twoSubs, 7), "--modo", "solo", "--frota", "S=2", "--semente", "7", "--cores", "nao")
 	if code != 0 {
 		t.Errorf("Run(--frota S=2) code = %d, want 0 (stderr %q)", code, stderr)
 	}
@@ -301,7 +303,7 @@ func TestRun_Mode(t *testing.T) {
 func TestRun_PlayerWins(t *testing.T) {
 	oneSub := []board.FleetEntry{{Type: board.Submarine, Count: 1}}
 	enemy := machineEnemy(t, oneSub, 5)
-	code, stdout, stderr := run(randomPlacement+machineCells(enemy, true), "--frota", "S=1", "--semente", "5")
+	code, stdout, stderr := run(randomPlacement+machineCells(enemy, true), "--frota", "S=1", "--semente", "5", "--cores", "nao")
 	if code != 0 {
 		t.Errorf("Run() code = %d, want 0 (stderr %q)", code, stderr)
 	}
@@ -341,16 +343,17 @@ func TestRun_InvalidMode(t *testing.T) {
 	}
 }
 
-// CA-4 and CA-5 (spec 010): the boards are colored by default and with
-// --cores sim in any case, even with the output going to a buffer instead of
-// a terminal; --cores nao leaves no color code in the whole game.
+// CA-4 and CA-5 (spec 010), CA-6 and CA-7 (spec 015): with the output going
+// to a buffer instead of a terminal, the default auto leaves no color code,
+// --cores sim in any case colors the game, and --cores nao never does.
 func TestRun_Colors(t *testing.T) {
 	tests := []struct {
 		name  string
 		args  []string
 		style terminal.Style
 	}{
-		{"default", nil, terminal.Colored},
+		{"default", nil, terminal.Plain},
+		{"auto", []string{"--cores", "AUTO"}, terminal.Plain},
 		{"sim", []string{"--cores", "sim"}, terminal.Colored},
 		{"SIM", []string{"--cores", "SIM"}, terminal.Colored},
 		{"nao", []string{"--cores", "nao"}, terminal.Plain},
@@ -377,14 +380,14 @@ func TestRun_Colors(t *testing.T) {
 	if strings.Contains(plain, "\x1b") {
 		t.Errorf("Run(--cores nao) against the machine has color codes:\n%s", plain)
 	}
-	_, colored, _ := run(input, "--semente", "42")
+	_, colored, _ := run(input, "--semente", "42", "--cores", "sim")
 	if got := regexp.MustCompile("\x1b\\[[0-9;]*m").ReplaceAllString(colored, ""); got != plain {
 		t.Errorf("colored game without codes =\n%s\nwant\n%s", got, plain)
 	}
 }
 
-// CA-6 (spec 010): an unknown --cores value is an option error, with exit
-// code 2, checked before the fleet.
+// CA-6 (spec 010) and CA-8 (spec 015): an unknown --cores value is an
+// option error, with exit code 2, checked before the fleet.
 func TestRun_InvalidColors(t *testing.T) {
 	for _, args := range [][]string{{"--cores", "xyz"}, {"--cores", "xyz", "--frota", "X=1"}} {
 		code, stdout, stderr := run("sair\n", args...)
@@ -394,7 +397,7 @@ func TestRun_InvalidColors(t *testing.T) {
 		if stdout != "" {
 			t.Errorf("Run(%q) stdout = %q, want empty", args, stdout)
 		}
-		if want := "Cores inválidas: use sim ou nao.\n"; stderr != want {
+		if want := "Cores inválidas: use sim, nao ou auto.\n"; stderr != want {
 			t.Errorf("Run(%q) stderr = %q, want %q", args, stderr, want)
 		}
 	}
@@ -411,5 +414,66 @@ func TestRun_PlacementGiveUp(t *testing.T) {
 	}
 	if want := "Você desistiu antes da partida.\nSemente: 7\n"; !strings.HasSuffix(stdout, want) {
 		t.Errorf("Run() stdout =\n%s\nwant suffix\n%s", stdout, want)
+	}
+}
+
+// CA-6 and CA-7 (spec 015): auto colors only a terminal with NO_COLOR empty,
+// sim always colors and nao never does, in any case; other values are invalid.
+func TestChooseStyle(t *testing.T) {
+	tests := []struct {
+		colors  string
+		tty     bool
+		noColor string
+		want    terminal.Style
+		ok      bool
+	}{
+		{"auto", true, "", terminal.Colored, true},
+		{"AUTO", true, "", terminal.Colored, true},
+		{"auto", false, "", terminal.Plain, true},
+		{"auto", true, "1", terminal.Plain, true},
+		{"auto", false, "1", terminal.Plain, true},
+		{"sim", false, "1", terminal.Colored, true},
+		{"Sim", true, "", terminal.Colored, true},
+		{"nao", true, "", terminal.Plain, true},
+		{"NAO", false, "1", terminal.Plain, true},
+		{"xyz", true, "", terminal.Plain, false},
+		{"", true, "", terminal.Plain, false},
+	}
+	for _, tt := range tests {
+		got, ok := chooseStyle(tt.colors, tt.tty, tt.noColor)
+		if got != tt.want || ok != tt.ok {
+			t.Errorf("chooseStyle(%q, %v, %q) = %v, %v, want %v, %v", tt.colors, tt.tty, tt.noColor, got, ok, tt.want, tt.ok)
+		}
+	}
+}
+
+// CA-6 (spec 015): a buffer and a pipe are not terminals; a character
+// device, such as the null device, is taken as one.
+func TestIsTerminal(t *testing.T) {
+	r, w, err := os.Pipe()
+	if err != nil {
+		t.Fatalf("Pipe: %v", err)
+	}
+	defer r.Close()
+	defer w.Close()
+	null, err := os.OpenFile(os.DevNull, os.O_WRONLY, 0)
+	if err != nil {
+		t.Fatalf("OpenFile(%s): %v", os.DevNull, err)
+	}
+	defer null.Close()
+
+	tests := []struct {
+		name string
+		w    io.Writer
+		want bool
+	}{
+		{"buffer", &strings.Builder{}, false},
+		{"pipe", w, false},
+		{"null device", null, true},
+	}
+	for _, tt := range tests {
+		if got := isTerminal(tt.w); got != tt.want {
+			t.Errorf("isTerminal(%s) = %v, want %v", tt.name, got, tt.want)
+		}
 	}
 }

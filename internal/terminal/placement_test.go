@@ -373,4 +373,54 @@ func TestPlayVsMachine_PlacementColored(t *testing.T) {
 		t.Errorf("PlayVsMachine() =\n%s\nwant prefix\n%s", got, want)
 	}
 	assertBoardsColored(t, got, placementPlay(t, input))
+	assertUncolored(t, got, placementInstructions, placementCarrierPrompt, placementBattleshipPrompt, "Frota posicionada!")
+}
+
+// CA-4 (spec 015): with Colored, an invalid position and a random draw that
+// does not fit are yellow, followed by the uncolored prompt.
+func TestPlayVsMachine_PlacementColoredErrors(t *testing.T) {
+	got := placementPlayStyle(t, "xyz\nB1 baixo\nA1 horizontal\nsair\n", Colored)
+	for _, want := range []string{
+		colored("33", "Posição inválida: digite a casa e a orientação, por exemplo E5 vertical.") + "\n" + placementCarrierPrompt,
+		colored("33", "Posição ocupada: o Encouraçado ficaria em cima de outro navio.") + "\n" + placementBattleshipPrompt,
+	} {
+		if !strings.Contains(got, want) {
+			t.Errorf("PlayVsMachine() =\n%s\nwant it to contain %q", got, want)
+		}
+	}
+
+	const prompt = "Submarino, 1 casa: "
+	fleet := []board.FleetEntry{{Type: board.Submarine, Count: 26}}
+	var sb strings.Builder
+	err := PlayVsMachine(strings.NewReader("aleatorio\n"), &sb, board.NewBoard(fleet), machineEnemyBoard(t), rand.New(rand.NewPCG(1, 0)), Colored, board.RandomShot)
+	if err != nil {
+		t.Fatalf("PlayVsMachine: %v", err)
+	}
+	want := prompt + colored("33", "Não foi possível sortear o resto da frota. Mude a posição dos navios com recomecar.") + "\n" + prompt
+	if got := sb.String(); !strings.Contains(got, want) {
+		t.Errorf("PlayVsMachine() =\n%s\nwant it to contain %q", got, want)
+	}
+}
+
+// CA-4 (spec 015) for the messages of spec 014: desfazer on an empty board
+// and the warning that the rest of the fleet no longer fits are yellow.
+func TestPlayVsMachine_PlacementColoredUndoAndWarning(t *testing.T) {
+	got := placementPlayStyle(t, "desfazer\nsair\n", Colored)
+	if want := colored("33", "Não há navio para desfazer.") + "\n" + placementCarrierPrompt; !strings.Contains(got, want) {
+		t.Errorf("PlayVsMachine() =\n%s\nwant it to contain %q", got, want)
+	}
+
+	// Six battleships leave only row 10, and the seventh at D10 leaves no
+	// room for the cruiser.
+	fleet := []board.FleetEntry{{Type: board.Battleship, Count: 7}, {Type: board.Cruiser, Count: 1}}
+	input := "A2 h\nF2 h\nA5 h\nF5 h\nA8 h\nF8 h\nD10 h\nsair\n"
+	var sb strings.Builder
+	err := PlayVsMachine(strings.NewReader(input), &sb, board.NewBoard(fleet), machineEnemyBoard(t), rand.New(rand.NewPCG(1, 0)), Colored, board.RandomShot)
+	if err != nil {
+		t.Fatalf("PlayVsMachine: %v", err)
+	}
+	warning := colored("33", "Atenção: o resto da frota não cabe mais no tabuleiro. Use desfazer ou recomecar.") + "\n" //nolint:misspell // Portuguese text for the player
+	if got := sb.String(); !strings.Contains(got, warning) {
+		t.Errorf("PlayVsMachine() =\n%s\nwant it to contain %q", got, warning)
+	}
 }

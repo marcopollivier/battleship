@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"math/rand/v2"
+	"os"
 	"strings"
 
 	"github.com/marcopollivier/battleship/internal/board"
@@ -37,8 +38,9 @@ const (
 
 // Values of the colors option.
 const (
-	colorsOn  = "sim"
-	colorsOff = "nao"
+	colorsOn   = "sim"
+	colorsOff  = "nao"
+	colorsAuto = "auto"
 )
 
 // Run runs a game, against the machine or solo, with the command-line args (without the program name),
@@ -51,7 +53,7 @@ func Run(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
 	seed := fs.Uint64(seedFlag, 0, "número que define os tabuleiros e os disparos da máquina, para repetir uma partida (padrão: um número novo a cada execução)")
 	mode := fs.String(modeFlag, machineMode, "maquina para jogar contra a máquina, ou solo para só atacar um tabuleiro sorteado")
 	level := fs.String(levelFlag, hardLevel, "dificil para a máquina cercar os navios que acerta, facil para ela sortear todos os tiros, ou mestre para ela atirar onde ainda cabem mais navios")
-	colors := fs.String(colorFlag, colorsOn, "sim para desenhar os tabuleiros com cores, ou nao para desenhar sem cores")
+	colors := fs.String(colorFlag, colorsAuto, "auto para usar cores só quando a saída é um terminal e NO_COLOR não está definida, sim para usar sempre, ou nao para nunca usar")
 	if err := fs.Parse(args); err != nil {
 		if errors.Is(err, flag.ErrHelp) {
 			return 0
@@ -62,9 +64,9 @@ func Run(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
 		fmt.Fprintln(stderr, "Modo inválido: use maquina ou solo.")
 		return 2
 	}
-	style, ok := chooseStyle(*colors)
+	style, ok := chooseStyle(*colors, isTerminal(stdout), os.Getenv("NO_COLOR"))
 	if !ok {
-		fmt.Fprintln(stderr, "Cores inválidas: use sim ou nao.")
+		fmt.Fprintln(stderr, "Cores inválidas: use sim, nao ou auto.")
 		return 2
 	}
 	strategy, ok := chooseStrategy(*level)
@@ -107,17 +109,34 @@ func play(mode string, fleet []board.FleetEntry, strategy board.ShotStrategy, rn
 	return terminal.PlayVsMachine(stdin, stdout, board.NewBoard(fleet), target, rng, style, strategy)
 }
 
-// chooseStyle returns the board style for the colors option, sim or nao in
-// any case, and false for any other value.
-func chooseStyle(colors string) (terminal.Style, bool) {
+// chooseStyle returns the board style for the colors option (sim, nao or
+// auto, in any case), given whether the output is a terminal and the value
+// of NO_COLOR, and false for any other option value. With auto, the game is
+// colored only on a terminal with NO_COLOR empty or unset.
+func chooseStyle(colors string, tty bool, noColor string) (terminal.Style, bool) {
 	switch {
 	case strings.EqualFold(colors, colorsOn):
 		return terminal.Colored, true
 	case strings.EqualFold(colors, colorsOff):
 		return terminal.Plain, true
+	case strings.EqualFold(colors, colorsAuto):
+		if tty && noColor == "" {
+			return terminal.Colored, true
+		}
+		return terminal.Plain, true
 	default:
 		return terminal.Plain, false
 	}
+}
+
+// isTerminal reports whether w is a character device, such as a terminal.
+func isTerminal(w io.Writer) bool {
+	f, ok := w.(*os.File)
+	if !ok {
+		return false
+	}
+	info, err := f.Stat()
+	return err == nil && info.Mode()&os.ModeCharDevice != 0
 }
 
 // chooseStrategy returns the machine's strategy for the level option, in
