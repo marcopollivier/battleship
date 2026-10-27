@@ -67,7 +67,7 @@ func TestRun_GiveUp(t *testing.T) {
 	if want := emptyAttackBoard(t, terminal.Plain) + "\nDisparo: "; !strings.HasPrefix(stdout, want) {
 		t.Errorf("Run() stdout =\n%s\nwant prefix\n%s", stdout, want)
 	}
-	if !strings.Contains(stdout, "Você desistiu depois de 0 disparos. A frota era:") {
+	if !strings.Contains(stdout, "\nVocê desistiu depois de 0 disparos.\n") {
 		t.Errorf("Run() stdout =\n%s\nwant the give up message", stdout)
 	}
 	if !regexp.MustCompile(`\nSemente: \d+\n$`).MatchString(stdout) {
