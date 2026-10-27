@@ -1,6 +1,6 @@
 # 023 — Navios afundados no próprio tabuleiro
 
-- **Status:** Rascunho
+- **Status:** Aprovada
 - **Roadmap:** #023 (onda 8), issue #33
 - **Depende de:** 015 (mais cores)
 
@@ -37,9 +37,11 @@ No tabuleiro próprio (004), toda casa de navio atingida aparece como `X`, estej
 
 ## Questões em aberto
 
-- [ ] **1. Símbolo:** `#`, que se lê bem sem cor. Alternativas: a letra do navio em minúscula (`s d c e p`), que diz qual navio foi, mas se confunde com as maiúsculas sem cor; ou `*`.
-- [ ] **2. Cor:** vermelho (o `sunkColor` da 010), igual ao navio afundado do tabuleiro de ataque.
-- [ ] **3. Legenda:** `# afundado`, logo depois de `X atingido`.
+Todas decididas em 2026-10-27, como propostas:
+
+- [x] **1. Símbolo:** `#`, que se lê bem sem cor. Alternativas: a letra do navio em minúscula (`s d c e p`), que diz qual navio foi, mas se confunde com as maiúsculas sem cor; ou `*`.
+- [x] **2. Cor:** vermelho (o `sunkColor` da 010), igual ao navio afundado do tabuleiro de ataque.
+- [x] **3. Legenda:** `# afundado`, logo depois de `X atingido`.
 
 ## Encerramento
 
