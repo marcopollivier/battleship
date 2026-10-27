@@ -179,4 +179,39 @@ func TestMasterShot_AfterSunk(t *testing.T) {
 	})
 }
 
+// masterTargetTest is a board of the example fleet after shots, and the
+// cells MasterShot may choose among.
+type masterTargetTest struct {
+	name  string
+	shots []string
+	want  []string
+}
+
+// CA-3: with hits on a ship still afloat, MasterShot shoots next to them,
+// toward the side where the ship has room, and at an end of a line of hits.
+func TestMasterShot_Target(t *testing.T) {
+	tests := []masterTargetTest{
+		{"middle of the board", []string{"E3"}, []string{"E2", "E4", "D3", "F3"}},
+		{"corner", []string{"J1"}, []string{"I1", "J2"}},
+		{"water on three sides", []string{"D3", "E2", "E4", "E3"}, []string{"F3"}},
+		{"next to the edge", []string{"J2"}, []string{"J3"}},
+		{"a neighbor touches a sunk ship", []string{"E1", "F1", "G1", "H1", "E3"}, []string{"D3", "E4", "F3"}},
+		{"horizontal line", []string{"F1", "G1"}, []string{"E1", "H1"}},
+		{"vertical line", []string{"J2", "J3"}, []string{"J1", "J4"}},
+		{"one end of the line is water", []string{"D1", "E1", "F1"}, []string{"G1"}},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			b := exampleBoard(t)
+			fire(t, b, tt.shots...)
+			got, want := masterChoices(t, b), smartCells(t, tt.want...)
+			for c := range got {
+				if !want[c] {
+					t.Errorf("MasterShot after %v chose %v, want one of %v", tt.shots, c, tt.want)
+				}
+			}
+		})
+	}
+}
+
 var _ ShotStrategy = MasterShot

@@ -88,18 +88,49 @@ func afloatShips(b *Board) []ShipType {
 	return afloat
 }
 
-// shipCounts returns, for each cell, how many positions of the ships could
-// cover it, given what ch shows.
+// shipCounts returns, for each cell, the weight of the positions of the
+// ships that could cover it, given what ch shows. With no hits on a ship
+// still afloat, every position weighs 1. With such hits, only the positions
+// that cover at least one of them count, and each weighs the number of hits
+// it covers, so the positions that follow a line of hits weigh the most.
 func shipCounts(ch *chart, ships []ShipType) map[Coord]int {
+	hunting := !ch.anyPendingHit()
 	counts := map[Coord]int{}
 	for _, t := range ships {
 		for _, cells := range shipPositions(ch, t) {
+			weight := 1
+			if !hunting {
+				weight = ch.pendingHits(cells)
+			}
 			for _, c := range cells {
-				counts[c]++
+				counts[c] += weight
 			}
 		}
 	}
 	return counts
+}
+
+// anyPendingHit reports whether ch shows a hit on a ship still afloat.
+func (ch *chart) anyPendingHit() bool {
+	for row := range Size {
+		for col := range Size {
+			if ch[row][col] == pendingHit {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+// pendingHits returns how many of cells are hits on a ship still afloat.
+func (ch *chart) pendingHits(cells []Coord) int {
+	n := 0
+	for _, c := range cells {
+		if ch.at(c) == pendingHit {
+			n++
+		}
+	}
+	return n
 }
 
 // shipPositions lists the cells of every position where a ship of type t
