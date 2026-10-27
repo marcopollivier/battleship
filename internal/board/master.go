@@ -18,8 +18,8 @@ func MasterShot(b *Board, rng *rand.Rand) (Coord, error) {
 			best = append(best, c)
 		}
 	}
-	// No count at all only happens on a board that does not match its
-	// fleet, or with no cells left.
+	// No count at all only happens when every ship has sunk, or on a board
+	// that does not match its fleet.
 	if top == 0 {
 		return SmartShot(b, rng)
 	}

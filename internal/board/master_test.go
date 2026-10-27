@@ -1,6 +1,7 @@
 package board
 
 import (
+	"errors"
 	"maps"
 	"slices"
 	"testing"
@@ -250,6 +251,22 @@ func TestMasterShot_Game(t *testing.T) {
 		games, masterAvg, smartAvg, float64(randomTotal)/games)
 	if masterAvg >= smartAvg {
 		t.Errorf("MasterShot took %.1f shots on average, want fewer than SmartShot's %.1f", masterAvg, smartAvg)
+	}
+}
+
+// With every ship sunk, no position counts: MasterShot falls back to
+// SmartShot, which shoots at any cell left, and with no cells left it
+// returns ErrNoCellsLeft.
+func TestMasterShot_FleetSunk(t *testing.T) {
+	b := NewBoard([]FleetEntry{{Type: Submarine, Count: 1}})
+	place(t, b, placement{Submarine, "A1", Horizontal})
+	smartShootAllBut(t, b, "B2")
+	if c, err := MasterShot(b, seeded(1)); err != nil || c.String() != "B2" {
+		t.Errorf("MasterShot() = %v, %v; want B2, the only cell left", c, err)
+	}
+	fire(t, b, "B2")
+	if _, err := MasterShot(b, seeded(1)); !errors.Is(err, ErrNoCellsLeft) {
+		t.Errorf("MasterShot on a fully shot board error = %v, want ErrNoCellsLeft", err)
 	}
 }
 
