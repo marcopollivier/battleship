@@ -1,6 +1,6 @@
 # 014 — Posicionamento mais fácil
 
-- **Status:** Rascunho
+- **Status:** Aprovada
 - **Roadmap:** #014 (onda 7)
 - **Depende de:** 012 (posicionar a própria frota)
 
@@ -54,11 +54,13 @@ No posicionamento da 012, um navio no lugar errado só sai com `recomecar`, que 
 
 ## Questões em aberto
 
-- [ ] **1. Nome do comando:** `desfazer`, sem acento como os outros comandos da 012.
-- [ ] **2. Desfazer sem navios:** mensagem `Não há navio para desfazer.`. A alternativa é ignorar o comando em silêncio e pedir o mesmo navio.
-- [ ] **3. O aviso só avisa:** o jogador continua livre, como proposto. A alternativa é recusar a posição que deixa o resto sem lugar, com uma mensagem no lugar do aviso, como uma posição inválida.
-- [ ] **4. Conferência exata:** o programa procura de verdade um jeito de encaixar o resto, e o aviso só aparece quando não há nenhum. Com a frota da cartela, essa busca é rápida. A alternativa é uma conferência aproximada (por exemplo, contar casas livres), que pode avisar sem necessidade ou deixar de avisar.
-- [ ] **5. Textos:** a linha nova das instruções, a mensagem de desfazer sem navios e o aviso.
+Todas decididas em 2026-10-27, como propostas:
+
+- [x] **1. Nome do comando:** `desfazer`, sem acento como os outros comandos da 012.
+- [x] **2. Desfazer sem navios:** mensagem `Não há navio para desfazer.`. A alternativa é ignorar o comando em silêncio e pedir o mesmo navio.
+- [x] **3. O aviso só avisa:** o jogador continua livre, como proposto. A alternativa é recusar a posição que deixa o resto sem lugar, com uma mensagem no lugar do aviso, como uma posição inválida.
+- [x] **4. Conferência exata:** o programa procura de verdade um jeito de encaixar o resto, e o aviso só aparece quando não há nenhum. Com a frota da cartela, essa busca é rápida. A alternativa é uma conferência aproximada (por exemplo, contar casas livres), que pode avisar sem necessidade ou deixar de avisar.
+- [x] **5. Textos:** a linha nova das instruções, a mensagem de desfazer sem navios e o aviso.
 
 ## Encerramento
 
