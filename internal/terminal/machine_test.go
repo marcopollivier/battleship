@@ -60,7 +60,7 @@ func machinePlay(t *testing.T, input string, seed uint64) string {
 func machinePlayStyle(t *testing.T, input string, seed uint64, style Style) string {
 	t.Helper()
 	var sb strings.Builder
-	err := PlayVsMachine(strings.NewReader(input), &sb, machinePlayerBoard(t), machineEnemyBoard(t), rand.New(rand.NewPCG(seed, 0)), style, board.RandomShot)
+	_, err := PlayVsMachine(strings.NewReader(input), &sb, machinePlayerBoard(t), machineEnemyBoard(t), rand.New(rand.NewPCG(seed, 0)), style, board.RandomShot)
 	if err != nil {
 		t.Fatalf("PlayVsMachine: %v", err)
 	}
@@ -247,7 +247,7 @@ func machineScript(t *testing.T, cells ...string) board.ShotStrategy {
 // Spec 013: the machine shoots where the ShotStrategy it receives chooses.
 func TestPlayVsMachine_Strategy(t *testing.T) {
 	var sb strings.Builder
-	err := PlayVsMachine(strings.NewReader("A10\nA9\n"), &sb, machinePlayerBoard(t), machineEnemyBoard(t),
+	_, err := PlayVsMachine(strings.NewReader("A10\nA9\n"), &sb, machinePlayerBoard(t), machineEnemyBoard(t),
 		rand.New(rand.NewPCG(1, 0)), Plain, machineScript(t, "B5", "A1"))
 	if err != nil {
 		t.Fatalf("PlayVsMachine: %v", err)
@@ -270,21 +270,21 @@ func TestPlayVsMachine_Errors(t *testing.T) {
 
 	t.Run("player shoots at an incomplete enemy board", func(t *testing.T) {
 		incomplete := board.NewBoard(board.DefaultFleet())
-		err := PlayVsMachine(strings.NewReader("A10\n"), io.Discard, machinePlayerBoard(t), incomplete, rng(), Plain, board.RandomShot)
+		_, err := PlayVsMachine(strings.NewReader("A10\n"), io.Discard, machinePlayerBoard(t), incomplete, rng(), Plain, board.RandomShot)
 		if !errors.Is(err, board.ErrIncompleteBoard) {
 			t.Errorf("PlayVsMachine() error = %v, want ErrIncompleteBoard", err)
 		}
 	})
 
 	t.Run("write fails", func(t *testing.T) {
-		err := PlayVsMachine(strings.NewReader("A10\n"), &soloFailingWriter{}, machinePlayerBoard(t), machineEnemyBoard(t), rng(), Plain, board.RandomShot)
+		_, err := PlayVsMachine(strings.NewReader("A10\n"), &soloFailingWriter{}, machinePlayerBoard(t), machineEnemyBoard(t), rng(), Plain, board.RandomShot)
 		if !errors.Is(err, errSoloWrite) {
 			t.Errorf("PlayVsMachine() error = %v, want %v", err, errSoloWrite)
 		}
 	})
 
 	t.Run("the strategy fails", func(t *testing.T) {
-		err := PlayVsMachine(strings.NewReader("A10\n"), io.Discard, machinePlayerBoard(t), machineEnemyBoard(t), rng(), Plain, machineScript(t))
+		_, err := PlayVsMachine(strings.NewReader("A10\n"), io.Discard, machinePlayerBoard(t), machineEnemyBoard(t), rng(), Plain, machineScript(t))
 		if !errors.Is(err, board.ErrNoCellsLeft) {
 			t.Errorf("PlayVsMachine() error = %v, want ErrNoCellsLeft", err)
 		}
@@ -321,7 +321,7 @@ func TestPlayVsMachine_Colored(t *testing.T) {
 func machineScriptPlay(t *testing.T, input string, player *board.Board, cells ...string) string {
 	t.Helper()
 	var sb strings.Builder
-	err := PlayVsMachine(strings.NewReader(input), &sb, player, machineEnemyBoard(t),
+	_, err := PlayVsMachine(strings.NewReader(input), &sb, player, machineEnemyBoard(t),
 		rand.New(rand.NewPCG(1, 0)), Colored, machineScript(t, cells...))
 	if err != nil {
 		t.Fatalf("PlayVsMachine: %v", err)
@@ -357,5 +357,43 @@ func TestPlayVsMachine_ColoredEnd(t *testing.T) {
 	want := "\n" + colored("1;31", "A máquina venceu! Ela afundou a sua frota em 1 disparo.") + " A frota inimiga era:\n\n"
 	if !strings.Contains(lost, want) {
 		t.Errorf("PlayVsMachine() =\n%s\nwant it to contain %q", lost, want)
+	}
+}
+
+// machineResult runs PlayVsMachine with input on player and the default
+// enemy board, the machine shooting at cells in order, and returns its result.
+func machineResult(t *testing.T, input string, player *board.Board, cells ...string) Result {
+	t.Helper()
+	got, err := PlayVsMachine(strings.NewReader(input), io.Discard, player, machineEnemyBoard(t),
+		rand.New(rand.NewPCG(1, 0)), Plain, machineScript(t, cells...))
+	if err != nil {
+		t.Fatalf("PlayVsMachine: %v", err)
+	}
+	return got
+}
+
+// Spec 025: PlayVsMachine tells how the game ended and how many valid shots
+// the player fired.
+func TestPlayVsMachine_Result(t *testing.T) {
+	tests := []struct {
+		name   string
+		input  string
+		player *board.Board
+		cells  []string
+		want   Result
+	}{
+		{"player wins", "Z99\nE5\nE5\nF5\nJ10\n", machinePlayerBoard(t), nil, Result{Outcome: PlayerWon, Shots: 3}},
+		{"machine wins", "A10\n", machinePlayerBoard(t), []string{"A1"}, Result{Outcome: MachineWon, Shots: 1}},
+		{"sair after a hit", "E5\nsair\n", machinePlayerBoard(t), nil, Result{Outcome: GaveUp, Shots: 1}},
+		{"end of input after a miss", "A10\nA9", machinePlayerBoard(t), []string{"B5", "C5"}, Result{Outcome: GaveUp, Shots: 2}},
+		{"sair before shooting", "sair\n", machinePlayerBoard(t), nil, Result{Outcome: GaveUp}},
+		{"sair while placing", "sair\n", board.NewBoard(board.DefaultFleet()), nil, Result{Outcome: GaveUp}},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := machineResult(t, tt.input, tt.player, tt.cells...); got != tt.want {
+				t.Errorf("PlayVsMachine() = %+v, want %+v", got, tt.want)
+			}
+		})
 	}
 }

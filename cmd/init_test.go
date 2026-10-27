@@ -127,7 +127,7 @@ func levelGame(t *testing.T, input string, seed uint64, strategy board.ShotStrat
 		t.Fatalf("RandomBoard: %v", err)
 	}
 	var sb strings.Builder
-	if err := terminal.PlayVsMachine(strings.NewReader(input), &sb, board.NewBoard(board.DefaultFleet()), enemy, rng, terminal.Colored, strategy); err != nil {
+	if _, err := terminal.PlayVsMachine(strings.NewReader(input), &sb, board.NewBoard(board.DefaultFleet()), enemy, rng, terminal.Colored, strategy); err != nil {
 		t.Fatalf("PlayVsMachine: %v", err)
 	}
 	return sb.String() + fmt.Sprintf("Semente: %d\n", seed)

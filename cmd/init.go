@@ -106,7 +106,8 @@ func play(mode string, fleet []board.FleetEntry, strategy board.ShotStrategy, rn
 	if strings.EqualFold(mode, soloMode) {
 		return terminal.PlaySolo(stdin, stdout, target, style)
 	}
-	return terminal.PlayVsMachine(stdin, stdout, board.NewBoard(fleet), target, rng, style, strategy)
+	_, err = terminal.PlayVsMachine(stdin, stdout, board.NewBoard(fleet), target, rng, style, strategy)
+	return err
 }
 
 // chooseStyle returns the board style for the colors option (sim, nao or
