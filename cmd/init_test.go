@@ -276,7 +276,7 @@ func TestRun_Mode(t *testing.T) {
 func TestRun_PlayerWins(t *testing.T) {
 	oneSub := []board.FleetEntry{{Type: board.Submarine, Count: 1}}
 	enemy := machineEnemy(t, oneSub, 5)
-	code, stdout, stderr := run(randomPlacement+machineCells(enemy, true), "--frota", "S=1", "--semente", "5")
+	code, stdout, stderr := run(randomPlacement+machineCells(enemy, true), "--frota", "S=1", "--semente", "5", "--cores", "nao")
 	if code != 0 {
 		t.Errorf("Run() code = %d, want 0 (stderr %q)", code, stderr)
 	}

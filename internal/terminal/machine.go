@@ -36,7 +36,7 @@ func PlayVsMachine(in io.Reader, out io.Writer, player, enemy *board.Board, rng 
 			continue
 		}
 		if enemy.AllSunk() {
-			g.write("Você venceu! Afundou a frota inimiga em " + shotCount(g.shots) + ".\n")
+			g.write(g.style.paint("Você venceu! Afundou a frota inimiga em "+shotCount(g.shots)+".", winColor) + "\n")
 			return g.err
 		}
 		if shot.Result != board.Miss {
@@ -76,7 +76,7 @@ func (g *machineGame) machineTurn() bool {
 			return false
 		}
 		g.machineShots++
-		g.write("A máquina atirou em " + c.String() + ": " + machineShotMessage(shot) + "\n")
+		g.write("A máquina atirou em " + c.String() + ": " + g.style.paint(machineShotMessage(shot), shotColor(shot.Result)) + "\n")
 		if g.player.AllSunk() {
 			return true
 		}
@@ -92,7 +92,7 @@ func (g *machineGame) machineTurn() bool {
 func (g *machineGame) machineWins() {
 	g.write("\nSua frota:\n")
 	g.render(RenderBoard, g.player)
-	g.write("\nA máquina venceu! Ela afundou a sua frota em " + shotCount(g.machineShots) + ". A frota inimiga era:\n\n")
+	g.write("\n" + g.style.paint("A máquina venceu! Ela afundou a sua frota em "+shotCount(g.machineShots)+".", hitColor) + " A frota inimiga era:\n\n")
 	g.render(RenderBoard, g.target)
 }
 
