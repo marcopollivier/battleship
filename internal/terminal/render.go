@@ -30,26 +30,27 @@ var shipSymbols = map[board.ShipType]string{
 }
 
 // RenderBoard writes the player's own board, including the shots it has
-// received, followed by a blank line and the legend.
+// received, followed by a blank line and the legend. With Colored, each cell
+// is drawn in the color of its symbol.
 func RenderBoard(w io.Writer, b *board.Board, style Style) error {
 	var grid [board.Size][board.Size]string
 	for row := range grid {
 		for col := range grid[row] {
-			grid[row][col] = water
+			grid[row][col] = style.paint(water, waterColor)
 		}
 	}
 	for _, ship := range b.Ships() {
 		for _, c := range ship.Cells {
-			grid[c.Row][c.Col] = shipSymbol(ship.Type)
+			grid[c.Row][c.Col] = style.paint(shipSymbol(ship.Type), shipColor)
 		}
 	}
 	for row := range grid {
 		for col := range grid[row] {
 			switch b.Cell(board.Coord{Col: col, Row: row}) {
 			case board.CellHit:
-				grid[row][col] = hitSymbol
+				grid[row][col] = style.paint(hitSymbol, hitColor)
 			case board.CellMiss:
-				grid[row][col] = missSymbol
+				grid[row][col] = style.paint(missSymbol, missColor)
 			}
 		}
 	}
