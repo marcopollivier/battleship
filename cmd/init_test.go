@@ -73,20 +73,41 @@ func TestRun_GiveUp(t *testing.T) {
 	}
 }
 
-// CA-9 (spec 012) and CA-7 (spec 013): with the same seed, level and input
-// the game repeats: the machine's board, the ships drawn with aleatorio and
-// every machine shot.
+// CA-9 (spec 012), CA-7 (spec 013), CA-7 (spec 014) and CA-7 (spec 018): with the same seed,
+// level and input the game repeats: the machine's board, the ships drawn
+// with aleatorio and every machine shot, also after desfazer and the warning
+// that the rest of the fleet no longer fits.
 func TestRun_SameSeed(t *testing.T) {
-	const input = "B1 baixo\naleatorio\nA1\nB2\nC3\nsair\n"
-	for _, level := range [][]string{nil, {"--nivel", "dificil"}, {"--nivel", "facil"}, {"--nivel", "mestre"}} {
-		t.Run(strings.Join(level, " "), func(t *testing.T) {
-			_, first, _ := run(input, append([]string{"--semente", "42"}, level...)...)
-			_, second, _ := run(input, append([]string{"--semente", "42"}, level...)...)
+	const (
+		input = "B1 baixo\nE1 h\ndesfazer\nE3 v\ndesfazer\naleatorio\nA1\nB2\nC3\nsair\n"
+		// Six battleships leave only row 10, and the seventh at D10 leaves
+		// no room for the cruiser: the warning shows before desfazer.
+		warningInput = "A2 h\nF2 h\nA5 h\nF5 h\nA8 h\nF8 h\nD10 h\ndesfazer\naleatorio\nA1\nB2\nC3\nsair\n"
+		warning      = "Atenção: o resto da frota não cabe mais no tabuleiro." //nolint:misspell // Portuguese text for the player
+	)
+	tests := []struct {
+		name  string
+		input string
+		args  []string
+	}{
+		{"default level", input, nil},
+		{"dificil", input, []string{"--nivel", "dificil"}},
+		{"facil", input, []string{"--nivel", "facil"}},
+		{"mestre", input, []string{"--nivel", "mestre"}},
+		{"warning", warningInput, []string{"--frota", "E=7,C=1"}},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			_, first, _ := run(tt.input, append([]string{"--semente", "42"}, tt.args...)...)
+			_, second, _ := run(tt.input, append([]string{"--semente", "42"}, tt.args...)...)
 			if first != second {
-				t.Errorf("two runs with --semente 42 %q differ:\n%s\n---\n%s", level, first, second)
+				t.Errorf("two runs with --semente 42 %q differ:\n%s\n---\n%s", tt.args, first, second)
 			}
-			if _, other, _ := run(input, append([]string{"--semente", "43"}, level...)...); other == first {
+			if _, other, _ := run(tt.input, append([]string{"--semente", "43"}, tt.args...)...); other == first {
 				t.Error("runs with --semente 42 and 43 drew the same board")
+			}
+			if hasWarning := strings.Contains(first, warning); hasWarning != (tt.input == warningInput) {
+				t.Errorf("warning shown = %v, want %v:\n%s", hasWarning, !hasWarning, first)
 			}
 		})
 	}

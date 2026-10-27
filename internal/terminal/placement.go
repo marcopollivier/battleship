@@ -51,7 +51,11 @@ func orientationByName(name string) (board.Orientation, bool) {
 // placementInstructions explain how to place the fleet.
 const placementInstructions = "Posicione a sua frota. Para cada navio, digite a casa e a orientação, por exemplo E5 vertical.\n" +
 	"A casa é a primeira do navio (a de cima ou a da esquerda). No Porta-Aviões, é o meio da barra do T.\n" +
-	"Comandos: aleatorio sorteia o resto da frota, recomecar tira todos os navios, sair desiste.\n" //nolint:misspell // Portuguese text for the player
+	"Comandos: aleatorio sorteia o resto da frota, desfazer tira o último navio, recomecar tira todos os navios, sair desiste.\n" //nolint:misspell // Portuguese text for the player
+
+// placementWarning is shown before the board while the ships still missing
+// no longer fit on it. It does not stop the player.
+const placementWarning = "Atenção: o resto da frota não cabe mais no tabuleiro. Use desfazer ou recomecar.\n" //nolint:misspell // Portuguese text for the player
 
 // placeFleet asks for the missing ships of the player's board, largest
 // first, and reports false if the player gave up or a write failed.
@@ -62,6 +66,9 @@ func (g *machineGame) placeFleet(scanner *bufio.Scanner) bool {
 		if len(remaining) == 0 {
 			g.write("Frota posicionada!\n\n")
 			return g.err == nil
+		}
+		if len(g.player.Ships()) > 0 && !board.Fits(g.player) {
+			g.write(placementWarning)
 		}
 		g.render(RenderBoard, g.player)
 		g.write("\n")
@@ -77,11 +84,12 @@ func (g *machineGame) placeFleet(scanner *bufio.Scanner) bool {
 // Commands accepted instead of a position, in any letter case.
 const (
 	randomCommand  = "aleatorio"
+	undoCommand    = "desfazer"
 	restartCommand = "recomecar"
 )
 
 // placeShip asks for the position of one ship of type t until it is placed,
-// or until a command fills or clears the board. It reports false if the
+// or until a command fills the board or removes ships from it. It reports false if the
 // player gave up or a write failed.
 func (g *machineGame) placeShip(scanner *bufio.Scanner, t board.ShipType) bool {
 	for {
@@ -96,6 +104,14 @@ func (g *machineGame) placeShip(scanner *bufio.Scanner, t board.ShipType) bool {
 				continue
 			}
 			return true
+		case undoCommand:
+			// The ships are asked largest first, so the ship removed is the
+			// next one placeFleet asks for.
+			if g.player.RemoveLast() {
+				return true
+			}
+			g.write("Não há navio para desfazer.\n")
+			continue
 		case restartCommand:
 			g.player.Clear()
 			return true

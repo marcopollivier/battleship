@@ -102,7 +102,7 @@ Semente: 1729901234
 A cada vez que o turno volta para você, a tela mostra `Sua frota:` (seus navios e os tiros da máquina) e `Frota inimiga:` (os seus tiros).
 
 - Para armar a frota, digite a casa e a orientação de cada navio, como `E5 vertical` ou `e5 v`. A casa é a primeira do navio (a de cima ou a da esquerda); no Porta-Aviões, é o meio da barra do T. O Submarino só precisa da casa.
-- Enquanto arma a frota, `aleatorio` sorteia os navios que faltam e `recomecar` tira todos os navios.
+- Enquanto arma a frota, `aleatorio` sorteia os navios que faltam, `desfazer` tira o último navio posicionado e `recomecar` tira todos os navios. Se os navios que faltam não couberem mais no tabuleiro, o jogo avisa antes de pedir o próximo.
 - Na partida, digite uma coordenada por vez, como `B7` ou `j10`.
 - Digite `sair` (ou aperte Ctrl+D) para desistir e ver onde estavam os navios inimigos.
 

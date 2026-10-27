@@ -212,3 +212,39 @@ func TestBoard_Clear(t *testing.T) {
 	}
 	place(t, b, placement{Submarine, "A1", Horizontal})
 }
+
+// CA-1 and CA-2 (spec 014): RemoveLast removes the ships one at a time, last
+// placed first, and reports false once the board is empty.
+func TestBoard_RemoveLast(t *testing.T) {
+	b := NewBoard(DefaultFleet())
+	if b.RemoveLast() {
+		t.Fatal("RemoveLast() on an empty board = true, want false")
+	}
+
+	place(t, b, placement{AircraftCarrier, "B1", Down}, placement{Battleship, "E1", Horizontal})
+	if !b.RemoveLast() {
+		t.Fatal("RemoveLast() with two ships = false, want true")
+	}
+	ships := b.Ships()
+	if len(ships) != 1 || ships[0].Type != AircraftCarrier {
+		t.Fatalf("Ships() after one RemoveLast = %v, want only the carrier", ships)
+	}
+	want := []ShipType{Battleship, Cruiser, Destroyer, Destroyer, Submarine, Submarine, Submarine}
+	if got := b.Remaining(); !slices.Equal(got, want) {
+		t.Errorf("Remaining() after one RemoveLast = %v, want %v", got, want)
+	}
+	// The removed ship's cells are free again.
+	place(t, b, placement{Battleship, "E1", Horizontal})
+
+	for range 2 {
+		if !b.RemoveLast() {
+			t.Fatal("RemoveLast() with ships on the board = false, want true")
+		}
+	}
+	if n := len(b.Ships()); n != 0 {
+		t.Errorf("Ships() after removing both has %d ships, want 0", n)
+	}
+	if b.RemoveLast() {
+		t.Error("RemoveLast() after removing every ship = true, want false")
+	}
+}
