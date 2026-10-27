@@ -21,11 +21,10 @@ Features da mesma onda não dependem umas das outras e são tocadas em paralelo 
 | 010 | Cores no terminal: água, navios e disparos em cores diferentes | Fora de escopo da 004 | 009 | 6 | Concluída |
 | 011 | `make run` repassar opções ao jogo (`make run ARGS="--semente 42"`) | Encerramento da 006 | 006 | 6 | Concluída |
 | 013 | Máquina com estratégia: atirar em volta de um acerto até afundar o navio | Encerramento da 007 | 007 | 6 | Concluída |
-| 014 | Posicionamento mais fácil: desfazer só o último navio, e avisar quando o resto da frota não cabe mais | Encerramento da 012 | 012 | — | Backlog |
-| 015 | Cores nas mensagens: `Acerto!`, `Água.`, vitória e derrota | Encerramento da 010 | 010 | — | Backlog |
-| 016 | Desligar as cores sozinho quando a saída não é um terminal, ou com a variável `NO_COLOR` | Encerramento da 010 | 010 | — | Backlog |
+| 014 | Posicionamento mais fácil: desfazer só o último navio, e avisar quando o resto da frota não cabe mais | Encerramento da 012 | 012 | 7 | Spec |
+| 015 | Mais cores: mensagens coloridas (`Acerto!`, `Água.`, vitória e derrota), e cores desligadas sozinhas quando a saída não é um terminal ou com a variável `NO_COLOR` | Encerramento da 010 | 010 | 7 | Spec |
 | 017 | `make run` devolver o código de saída do jogo (compilar e rodar o binário, no lugar do `go run`) | Encerramento da 011 | 011 | — | Backlog |
-| 018 | Terceiro nível da máquina, com procura mais forte (xadrez ou onde cada navio ainda cabe) | Encerramento da 013 | 013 | — | Backlog |
+| 018 | Terceiro nível da máquina, com procura mais forte (xadrez ou onde cada navio ainda cabe) | Encerramento da 013 | 013 | 7 | Spec |
 
 ## Notas das specs concluídas
 

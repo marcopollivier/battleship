@@ -72,7 +72,7 @@ func TestParsePlacement_Invalid(t *testing.T) {
 
 const placementIntro = "Posicione a sua frota. Para cada navio, digite a casa e a orientação, por exemplo E5 vertical.\n" +
 	"A casa é a primeira do navio (a de cima ou a da esquerda). No Porta-Aviões, é o meio da barra do T.\n" +
-	"Comandos: aleatorio sorteia o resto da frota, recomecar tira todos os navios, sair desiste.\n" + //nolint:misspell // Portuguese text for the player
+	"Comandos: aleatorio sorteia o resto da frota, desfazer tira o último navio, recomecar tira todos os navios, sair desiste.\n" + //nolint:misspell // Portuguese text for the player
 	"\n"
 
 // placementExample is the example board from spec 003 as the player types it.
@@ -262,6 +262,83 @@ func TestPlayVsMachine_PlacementRestart(t *testing.T) {
 	}
 }
 
+// CA-1, CA-2 and CA-3 (spec 014): "desfazer" removes the last ship placed
+// and asks for it again with the board, one ship at a time; on an empty
+// board it says so and asks for the same ship.
+func TestPlayVsMachine_PlacementUndo(t *testing.T) {
+	empty, withCarrier := placementWithCarrier(t)
+	withTwo := board.NewBoard(board.DefaultFleet())
+	for _, p := range placementExample[:2] {
+		c, o, err := parsePlacement(p.line, p.shipType)
+		if err != nil {
+			t.Fatalf("parsePlacement(%q): %v", p.line, err)
+		}
+		if err := withTwo.Place(p.shipType, c, o); err != nil {
+			t.Fatalf("Place(%q): %v", p.line, err)
+		}
+	}
+	want := placementIntro + placementAsk(t, empty, placementCarrierPrompt) +
+		"Não há navio para desfazer.\n" + placementCarrierPrompt +
+		placementAsk(t, withCarrier, placementBattleshipPrompt) +
+		placementAsk(t, withTwo, "Cruzador, 3 casas (horizontal, vertical): ") +
+		placementAsk(t, withCarrier, placementBattleshipPrompt) +
+		placementAsk(t, empty, placementCarrierPrompt) +
+		"Você desistiu antes da partida.\n"
+
+	if got := placementPlay(t, "desfazer\nB1 baixo\nE1 h\nDESFAZER\n desfazer \nsair\n"); got != want {
+		t.Errorf("PlayVsMachine() =\n%s\nwant\n%s", got, want)
+	}
+}
+
+// CA-4, CA-5 and CA-6 (spec 014): with 7 battleships and a cruiser, six
+// battleships two per row in rows 2, 5 and 8 leave only row 10. The seventh
+// at D10 leaves no room for the cruiser, so the warning comes before the
+// board; after desfazer it is gone, and the seventh at C10 leaves exactly
+// H10 to J10 for the cruiser, with no warning.
+func TestPlayVsMachine_PlacementWarning(t *testing.T) {
+	const (
+		battleshipPrompt = "Encouraçado, 4 casas (horizontal, vertical): "
+		cruiserPrompt    = "Cruzador, 3 casas (horizontal, vertical): "
+		warning          = "Atenção: o resto da frota não cabe mais no tabuleiro. Use desfazer ou recomecar.\n" //nolint:misspell // Portuguese text for the player
+	)
+	fleet := []board.FleetEntry{{Type: board.Battleship, Count: 7}, {Type: board.Cruiser, Count: 1}}
+	replay := board.NewBoard(fleet)
+	want := placementIntro
+	var input []string
+	for _, line := range []string{"A2 h", "F2 h", "A5 h", "F5 h", "A8 h", "F8 h"} {
+		want += placementAsk(t, replay, battleshipPrompt)
+		c, o, err := parsePlacement(line, board.Battleship)
+		if err != nil {
+			t.Fatalf("parsePlacement(%q): %v", line, err)
+		}
+		if err := replay.Place(board.Battleship, c, o); err != nil {
+			t.Fatalf("Place(%q): %v", line, err)
+		}
+		input = append(input, line)
+	}
+	sixShips := placementAsk(t, replay, battleshipPrompt)
+	want += sixShips
+	if err := replay.Place(board.Battleship, board.Coord{Col: 3, Row: 9}, board.Horizontal); err != nil {
+		t.Fatalf("Place(D10): %v", err)
+	}
+	want += warning + placementAsk(t, replay, cruiserPrompt) + sixShips
+	replay.RemoveLast()
+	if err := replay.Place(board.Battleship, board.Coord{Col: 2, Row: 9}, board.Horizontal); err != nil {
+		t.Fatalf("Place(C10): %v", err)
+	}
+	want += placementAsk(t, replay, cruiserPrompt) + "Você desistiu antes da partida.\n"
+	input = append(input, "D10 h", "desfazer", "C10 h", "sair")
+
+	var sb strings.Builder
+	err := PlayVsMachine(strings.NewReader(strings.Join(input, "\n")+"\n"), &sb, board.NewBoard(fleet), machineEnemyBoard(t), rand.New(rand.NewPCG(1, 0)), Plain, board.RandomShot)
+	if err != nil {
+		t.Fatalf("PlayVsMachine: %v", err)
+	}
+	if got := sb.String(); got != want {
+		t.Errorf("PlayVsMachine() =\n%s\nwant\n%s", got, want)
+	}
+}
+
 // CA-8: "sair" or the end of the input gives up before the game.
 func TestPlayVsMachine_PlacementGiveUp(t *testing.T) {
 	empty, withCarrier := placementWithCarrier(t)
@@ -322,5 +399,28 @@ func TestPlayVsMachine_PlacementColoredErrors(t *testing.T) {
 	want := prompt + colored("33", "Não foi possível sortear o resto da frota. Mude a posição dos navios com recomecar.") + "\n" + prompt
 	if got := sb.String(); !strings.Contains(got, want) {
 		t.Errorf("PlayVsMachine() =\n%s\nwant it to contain %q", got, want)
+	}
+}
+
+// CA-4 (spec 015) for the messages of spec 014: desfazer on an empty board
+// and the warning that the rest of the fleet no longer fits are yellow.
+func TestPlayVsMachine_PlacementColoredUndoAndWarning(t *testing.T) {
+	got := placementPlayStyle(t, "desfazer\nsair\n", Colored)
+	if want := colored("33", "Não há navio para desfazer.") + "\n" + placementCarrierPrompt; !strings.Contains(got, want) {
+		t.Errorf("PlayVsMachine() =\n%s\nwant it to contain %q", got, want)
+	}
+
+	// Six battleships leave only row 10, and the seventh at D10 leaves no
+	// room for the cruiser.
+	fleet := []board.FleetEntry{{Type: board.Battleship, Count: 7}, {Type: board.Cruiser, Count: 1}}
+	input := "A2 h\nF2 h\nA5 h\nF5 h\nA8 h\nF8 h\nD10 h\nsair\n"
+	var sb strings.Builder
+	err := PlayVsMachine(strings.NewReader(input), &sb, board.NewBoard(fleet), machineEnemyBoard(t), rand.New(rand.NewPCG(1, 0)), Colored, board.RandomShot)
+	if err != nil {
+		t.Fatalf("PlayVsMachine: %v", err)
+	}
+	warning := colored("33", "Atenção: o resto da frota não cabe mais no tabuleiro. Use desfazer ou recomecar.") + "\n" //nolint:misspell // Portuguese text for the player
+	if got := sb.String(); !strings.Contains(got, warning) {
+		t.Errorf("PlayVsMachine() =\n%s\nwant it to contain %q", got, warning)
 	}
 }

@@ -84,6 +84,7 @@ Não foi conferido num terminal de verdade, com os olhos, como as cores novas fi
 - Testes a mais: `TestShotColor`, e o `TestIsTerminal` também confere que o `/dev/null` conta como terminal, como o plano já previa nas decisões.
 - O texto de ajuda da opção `--cores` mudou para explicar o `auto`.
 - Como o plano previa, a vitória do modo solo (`Você afundou toda a frota em ...!`) também fica verde, embora a spec só cite `Você venceu!`.
+- Depois do merge da 014, quem coordena trouxe o `master` para esta spec e pintou de amarelo as duas mensagens novas do posicionamento, `Não há navio para desfazer.` e o aviso de que o resto da frota não cabe, com o teste `TestPlayVsMachine_PlacementColoredUndoAndWarning`, como o plano previa.
 
 **Para o roadmap:**
 

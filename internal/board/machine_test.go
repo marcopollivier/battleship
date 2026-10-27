@@ -56,18 +56,25 @@ func TestRandomShot(t *testing.T) {
 const smartSeeds = 200
 
 // smartChoices runs SmartShot on b with smartSeeds seeds, without firing,
+// and returns the set of cells it chose.
+func smartChoices(t *testing.T, b *Board) map[Coord]bool {
+	t.Helper()
+	return strategyChoices(t, SmartShot, b)
+}
+
+// strategyChoices runs strategy on b with smartSeeds seeds, without firing,
 // and returns the set of cells it chose. Every choice must be a cell that
 // has not been shot yet.
-func smartChoices(t *testing.T, b *Board) map[Coord]bool {
+func strategyChoices(t *testing.T, strategy ShotStrategy, b *Board) map[Coord]bool {
 	t.Helper()
 	chosen := map[Coord]bool{}
 	for seed := range uint64(smartSeeds) {
-		c, err := SmartShot(b, seeded(seed))
+		c, err := strategy(b, seeded(seed))
 		if err != nil {
-			t.Fatalf("SmartShot(seed %d): %v", seed, err)
+			t.Fatalf("seed %d: %v", seed, err)
 		}
 		if b.Cell(c) != CellUntouched {
-			t.Errorf("SmartShot(seed %d) chose %v, which was already shot", seed, c)
+			t.Errorf("seed %d: chose %v, which was already shot", seed, c)
 		}
 		chosen[c] = true
 	}
@@ -299,17 +306,25 @@ func TestSmartShot_PublicKnowledge(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			b1, b2 := exampleBoard(t), smartOtherBoard(t)
-			fire(t, b1, tt.shots...)
-			fire(t, b2, tt.shots...)
-			for seed := range uint64(smartSeeds) {
-				c1, err1 := SmartShot(b1, seeded(seed))
-				c2, err2 := SmartShot(b2, seeded(seed))
-				if c1 != c2 || err1 != nil || err2 != nil {
-					t.Fatalf("seed %d: SmartShot = %v, %v on one board and %v, %v on the other", seed, c1, err1, c2, err2)
-				}
-			}
+			samePublicShots(t, SmartShot, tt.shots)
 		})
+	}
+}
+
+// samePublicShots fires shots at exampleBoard and at smartOtherBoard and
+// fails the test if strategy, with the same seed, chooses differently on
+// the two boards.
+func samePublicShots(t *testing.T, strategy ShotStrategy, shots []string) {
+	t.Helper()
+	b1, b2 := exampleBoard(t), smartOtherBoard(t)
+	fire(t, b1, shots...)
+	fire(t, b2, shots...)
+	for seed := range uint64(smartSeeds) {
+		c1, err1 := strategy(b1, seeded(seed))
+		c2, err2 := strategy(b2, seeded(seed))
+		if c1 != c2 || err1 != nil || err2 != nil {
+			t.Fatalf("seed %d: the shot is %v, %v on one board and %v, %v on the other", seed, c1, err1, c2, err2)
+		}
 	}
 }
 
