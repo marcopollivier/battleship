@@ -26,7 +26,7 @@ func PlayVsMachine(in io.Reader, out io.Writer, player, enemy *board.Board, rng 
 	for {
 		line, ok := g.prompt(scanner, shotPrompt)
 		if !ok {
-			g.giveUp("A frota inimiga era:")
+			g.showFinal("Você desistiu depois de " + shotCount(g.shots) + ".")
 			return g.err
 		}
 		c, shot, ok := g.shoot(line)
@@ -38,13 +38,11 @@ func PlayVsMachine(in io.Reader, out io.Writer, player, enemy *board.Board, rng 
 		}
 		g.events = append(g.events, g.shotResult(c, shot))
 		if enemy.AllSunk() {
-			g.writeEvents()
-			g.write(g.style.paint("Você venceu! Afundou a frota inimiga em "+shotCount(g.shots)+".", winColor) + "\n")
+			g.showFinal(g.style.paint("Você venceu! Afundou a frota inimiga em "+shotCount(g.shots)+".", winColor))
 			return g.err
 		}
 		if shot.Result == board.Miss && g.machineTurn() {
-			g.writeEvents()
-			g.machineWins()
+			g.showFinal(g.style.paint("A máquina venceu! Ela afundou a sua frota em "+shotCount(g.machineShots)+".", hitColor))
 			return g.err
 		}
 		g.showScreen()
@@ -90,15 +88,6 @@ func (g *machineGame) machineTurn() bool {
 	return false
 }
 
-// machineWins ends the game showing the player's sunk fleet and revealing
-// the enemy fleet.
-func (g *machineGame) machineWins() {
-	g.write("\nSua frota:\n")
-	g.render(RenderBoard, g.player)
-	g.write("\n" + g.style.paint("A máquina venceu! Ela afundou a sua frota em "+shotCount(g.machineShots)+".", hitColor) + " A frota inimiga era:\n\n")
-	g.render(RenderBoard, g.target)
-}
-
 // machineShotMessage is the result of a machine shot, naming the player's
 // ship when it sinks, such as "Afundou o seu Cruzador!".
 func machineShotMessage(s board.Shot) string {
@@ -115,19 +104,36 @@ const (
 	enemyScreenLegend = enemyTitle + ": . não atingida, o água, X acerto, S D C E P navio afundado"
 )
 
-// showScreen writes the game screen: the clear code if the terminal is
-// cleared, both boards side by side with their titles and legends, and the
-// events since the last screen. The prompt comes after it.
+// finalLegend explains the symbols of both boards on the last screen,
+// which shows both fleets.
+const finalLegend = "Legenda: ~ água, S D C E P navio, X atingido, o tiro na água"
+
+// showScreen writes the game screen, with both boards side by side, their
+// legends and the events since the last screen. The prompt comes after it.
 func (g *machineGame) showScreen() {
+	g.writeScreen(attackGrid(g.target, g.style), ownScreenLegend+"\n"+enemyScreenLegend)
+}
+
+// showFinal writes the last screen, with both boards side by side and the
+// enemy fleet revealed, the events since the last screen and message.
+func (g *machineGame) showFinal(message string) {
+	g.writeScreen(ownGrid(g.target, g.style), finalLegend)
+	g.write(message + "\n")
+}
+
+// writeScreen writes the clear code if the terminal is cleared, the titles,
+// the player's board side by side with enemy, the grid of the enemy board,
+// legends and the events since the last screen.
+func (g *machineGame) writeScreen(enemy []string, legends string) {
 	var sb strings.Builder
 	if g.clear {
 		sb.WriteString(clearScreen)
 	}
 	sb.WriteString(boardTitles + "\n")
-	for _, line := range sideBySide(ownGrid(g.player, g.style), attackGrid(g.target, g.style)) {
+	for _, line := range sideBySide(ownGrid(g.player, g.style), enemy) {
 		sb.WriteString(line + "\n")
 	}
-	sb.WriteString("\n" + ownScreenLegend + "\n" + enemyScreenLegend + "\n\n")
+	sb.WriteString("\n" + legends + "\n\n")
 	g.write(sb.String())
 	g.writeEvents()
 }
