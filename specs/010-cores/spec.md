@@ -1,6 +1,6 @@
 # 010 — Cores no terminal
 
-- **Status:** Aprovada
+- **Status:** Em andamento
 - **Roadmap:** #010 (onda 6)
 - **Depende de:** 009 (tabuleiro de ataque)
 

@@ -31,7 +31,7 @@ var shipSymbols = map[board.ShipType]string{
 
 // RenderBoard writes the player's own board, including the shots it has
 // received, followed by a blank line and the legend.
-func RenderBoard(w io.Writer, b *board.Board) error {
+func RenderBoard(w io.Writer, b *board.Board, style Style) error {
 	var grid [board.Size][board.Size]string
 	for row := range grid {
 		for col := range grid[row] {

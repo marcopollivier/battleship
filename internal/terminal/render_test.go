@@ -11,7 +11,7 @@ import (
 func render(t *testing.T, b *board.Board) string {
 	t.Helper()
 	var sb strings.Builder
-	if err := RenderBoard(&sb, b); err != nil {
+	if err := RenderBoard(&sb, b, Plain); err != nil {
 		t.Fatalf("RenderBoard: %v", err)
 	}
 	return sb.String()

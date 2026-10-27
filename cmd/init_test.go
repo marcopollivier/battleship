@@ -37,7 +37,7 @@ func seedShots(t *testing.T, fleet []board.FleetEntry, seed uint64) string {
 func emptyAttackBoard(t *testing.T) string {
 	t.Helper()
 	var sb strings.Builder
-	if err := terminal.RenderAttackBoard(&sb, board.NewBoard(board.DefaultFleet())); err != nil {
+	if err := terminal.RenderAttackBoard(&sb, board.NewBoard(board.DefaultFleet()), terminal.Plain); err != nil {
 		t.Fatalf("RenderAttackBoard: %v", err)
 	}
 	return sb.String()

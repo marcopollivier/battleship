@@ -144,9 +144,9 @@ func (g *playerAttack) showBoard() {
 }
 
 // render draws b with draw, unless an earlier write failed.
-func (g *playerAttack) render(draw func(io.Writer, *board.Board) error, b *board.Board) {
+func (g *playerAttack) render(draw func(io.Writer, *board.Board, Style) error, b *board.Board) {
 	if g.err == nil {
-		g.err = draw(g.out, b)
+		g.err = draw(g.out, b, Plain)
 	}
 }
 

@@ -14,7 +14,7 @@ const untouchedSymbol = "."
 
 // RenderAttackBoard writes the opponent's board as the attacker sees it:
 // ships appear only once hit, and sunk ships show their letter.
-func RenderAttackBoard(w io.Writer, b *board.Board) error {
+func RenderAttackBoard(w io.Writer, b *board.Board, style Style) error {
 	var grid [board.Size][board.Size]string
 	for row := range grid {
 		for col := range grid[row] {
