@@ -87,19 +87,37 @@ Submarino, 1 casa: J10
 Frota posicionada!
 
 Disparo: b7
-Água.
-...
+Seu disparo em B7: Água.
 A máquina atirou em H3: Acerto!
 A máquina atirou em D4: Água.
 ...
 Disparo: e1
-Afundou o Encouraçado!
+Seu disparo em E1: Afundou o Encouraçado!
 ...
 Você venceu! Afundou a frota inimiga em 52 disparos.
 Semente: 1729901234
 ```
 
-A cada vez que o turno volta para você, a tela mostra `Sua frota:` (seus navios e os tiros da máquina) e `Frota inimiga:` (os seus tiros).
+A cada jogada, a tela é limpa e mostra os dois tabuleiros lado a lado: `Sua frota` (seus navios e os tiros da máquina) à esquerda e `Frota inimiga` (os seus tiros) à direita. Embaixo vem o que aconteceu desde a tela anterior, o seu disparo e os da máquina, e depois o pedido do próximo disparo:
+
+```
+Sua frota                  Frota inimiga
+   A B C D E F G H I J        A B C D E F G H I J
+ 1 ~ C C C ~ ~ ~ ~ ~ ~      1 S o . . . . . . . .
+ 2 ~ ~ ~ ~ ~ ~ ~ ~ ~ ~      2 . . . . . . . . . .
+ 3 D ~ ~ E E E E o ~ ~      3 . . . . . . . . . .
+...
+10 ~ ~ ~ ~ ~ ~ ~ ~ ~ ~     10 . . . . . . . . . .
+
+Sua frota: ~ água, S D C E P navio, X atingido, o tiro na água
+Frota inimiga: . não atingida, o água, X acerto, S D C E P navio afundado
+
+Seu disparo em B1: Água.
+A máquina atirou em H3: Água.
+Disparo:
+```
+
+No fim da partida, a última tela mostra as duas frotas inteiras, com os navios inimigos revelados.
 
 - Para armar a frota, digite a casa e a orientação de cada navio, como `E5 vertical` ou `e5 v`. A casa é a primeira do navio (a de cima ou a da esquerda); no Porta-Aviões, é o meio da barra do T. O Submarino só precisa da casa.
 - Enquanto arma a frota, `aleatorio` sorteia os navios que faltam, `desfazer` tira o último navio posicionado e `recomecar` tira todos os navios. Se os navios que faltam não couberem mais no tabuleiro, o jogo avisa antes de pedir o próximo.
@@ -115,6 +133,7 @@ Opção | Exemplo | O que faz
 `--modo` | `--modo solo` | `maquina` (padrão) joga contra a máquina; `solo` só ataca um tabuleiro sorteado, sem a máquina atirar de volta.
 `--nivel` | `--nivel facil` | `dificil` (padrão): a máquina joga como quem joga no papel, sorteia casas até acertar um navio e então atira em volta do acerto até afundá-lo, sem atirar nas casas encostadas num navio já afundado. `facil`: a máquina sorteia todos os tiros. `mestre`: a máquina sabe quais navios ainda faltam e atira onde mais deles ainda caberiam, pelo que ela já viu; depois de um acerto, ela segue o navio para o lado em que ele cabe.
 `--cores` | `--cores nao` | Pinta os tabuleiros e as mensagens de acerto, água, navio afundado, fim de partida e entrada inválida. `auto` (padrão) usa cores só quando a saída é um terminal e a variável `NO_COLOR` não está definida (ou está vazia), então `go run . > partida.txt` e `go run . \| less` saem sem cores; `sim` usa cores sempre, mesmo com `NO_COLOR`; `nao` nunca usa.
+`--limpar` | `--limpar nao` | Limpa a tela antes de cada jogada e antes de cada navio a posicionar. `auto` (padrão) limpa só quando a saída é um terminal, então `go run . > partida.txt` guarda as telas uma embaixo da outra; `sim` limpa sempre; `nao` nunca limpa.
 
 ## TODO - Evolução do projeto
 

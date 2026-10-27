@@ -5,6 +5,7 @@ import (
 	"io"
 	"os"
 	"regexp"
+	"slices"
 	"strings"
 	"testing"
 
@@ -75,7 +76,7 @@ func TestRun_GiveUp(t *testing.T) {
 	}
 }
 
-// CA-9 (spec 012), CA-7 (spec 013), CA-7 (spec 014) and CA-7 (spec 018): with the same seed,
+// CA-9 (spec 012), CA-7 (spec 013), CA-7 (spec 014), CA-7 (spec 018) and CA-10 (spec 022): with the same seed,
 // level and input the game repeats: the machine's board, the ships drawn
 // with aleatorio and every machine shot, also after desfazer and the warning
 // that the rest of the fleet no longer fits.
@@ -97,6 +98,7 @@ func TestRun_SameSeed(t *testing.T) {
 		{"facil", input, []string{"--nivel", "facil"}},
 		{"mestre", input, []string{"--nivel", "mestre"}},
 		{"warning", warningInput, []string{"--frota", "E=7,C=1"}},
+		{"clear and colors", input, []string{"--limpar", "sim", "--cores", "sim"}},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -107,6 +109,9 @@ func TestRun_SameSeed(t *testing.T) {
 			}
 			if _, other, _ := run(tt.input, append([]string{"--semente", "43"}, tt.args...)...); other == first {
 				t.Error("runs with --semente 42 and 43 drew the same board")
+			}
+			if cleared := strings.Contains(first, "\x1b[2J"); cleared != slices.Contains(tt.args, "--limpar") {
+				t.Errorf("terminal cleared = %v, want %v", cleared, !cleared)
 			}
 			if hasWarning := strings.Contains(first, warning); hasWarning != (tt.input == warningInput) {
 				t.Errorf("warning shown = %v, want %v:\n%s", hasWarning, !hasWarning, first)
@@ -399,6 +404,86 @@ func TestRun_InvalidColors(t *testing.T) {
 		}
 		if want := "Cores inválidas: use sim, nao ou auto.\n"; stderr != want {
 			t.Errorf("Run(%q) stderr = %q, want %q", args, stderr, want)
+		}
+	}
+}
+
+// CA-5 (spec 022): with the output going to a buffer instead of a terminal,
+// the default auto never clears the terminal, --limpar sim in any case
+// starts every screen by clearing it, and --limpar nao never does. Clearing
+// changes nothing else.
+func TestRun_Clear(t *testing.T) {
+	const input = "aleatorio\nA1\nB2\nsair\n"
+	_, plain, _ := run(input, "--semente", "42", "--cores", "nao")
+	tests := []struct {
+		name  string
+		args  []string
+		clear bool
+	}{
+		{"default", nil, false},
+		{"auto", []string{"--limpar", "Auto"}, false},
+		{"sim", []string{"--limpar", "sim"}, true},
+		{"SIM", []string{"--limpar", "SIM"}, true},
+		{"nao", []string{"--limpar", "nao"}, false},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			args := append([]string{"--semente", "42", "--cores", "nao"}, tt.args...)
+			code, stdout, stderr := run(input, args...)
+			if code != 0 {
+				t.Errorf("Run(%q) code = %d, want 0 (stderr %q)", args, code, stderr)
+			}
+			if cleared := strings.HasPrefix(stdout, "\x1b[H\x1b[2J"); cleared != tt.clear {
+				t.Errorf("Run(%q) stdout starts by clearing the terminal = %v, want %v", args, cleared, tt.clear)
+			}
+			if got := strings.ReplaceAll(stdout, "\x1b[H\x1b[2J", ""); got != plain {
+				t.Errorf("Run(%q) stdout without the clear codes =\n%s\nwant\n%s", args, got, plain)
+			}
+		})
+	}
+}
+
+// CA-9 (spec 022): an unknown --limpar value is an option error, with exit
+// code 2, checked before the fleet.
+func TestRun_InvalidClear(t *testing.T) {
+	for _, args := range [][]string{{"--limpar", "xyz"}, {"--limpar", "xyz", "--frota", "X=1"}} {
+		code, stdout, stderr := run("sair\n", args...)
+		if code != 2 {
+			t.Errorf("Run(%q) code = %d, want 2", args, code)
+		}
+		if stdout != "" {
+			t.Errorf("Run(%q) stdout = %q, want empty", args, stdout)
+		}
+		if want := "Limpar inválido: use sim, nao ou auto.\n"; stderr != want {
+			t.Errorf("Run(%q) stderr = %q, want %q", args, stderr, want)
+		}
+	}
+}
+
+// CA-5 (spec 022): auto clears the terminal only when the output is one,
+// sim always clears it and nao never does, in any case; other values are
+// invalid.
+func TestChooseClear(t *testing.T) {
+	tests := []struct {
+		value string
+		tty   bool
+		want  bool
+		ok    bool
+	}{
+		{"auto", true, true, true},
+		{"AUTO", true, true, true},
+		{"auto", false, false, true},
+		{"sim", false, true, true},
+		{"Sim", true, true, true},
+		{"nao", true, false, true},
+		{"NAO", false, false, true},
+		{"xyz", true, false, false},
+		{"", true, false, false},
+	}
+	for _, tt := range tests {
+		got, ok := chooseClear(tt.value, tt.tty)
+		if got != tt.want || ok != tt.ok {
+			t.Errorf("chooseClear(%q, %v) = %v, %v, want %v, %v", tt.value, tt.tty, got, ok, tt.want, tt.ok)
 		}
 	}
 }

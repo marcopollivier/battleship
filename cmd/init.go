@@ -21,6 +21,7 @@ const (
 	modeFlag  = "modo"
 	levelFlag = "nivel"
 	colorFlag = "cores"
+	clearFlag = "limpar"
 )
 
 // Values of the mode option.
@@ -36,11 +37,11 @@ const (
 	masterLevel = "mestre"
 )
 
-// Values of the colors option.
+// Values of the colors and clear options.
 const (
-	colorsOn   = "sim"
-	colorsOff  = "nao"
-	colorsAuto = "auto"
+	optionOn   = "sim"
+	optionOff  = "nao"
+	optionAuto = "auto"
 )
 
 // Run runs a game, against the machine or solo, with the command-line args (without the program name),
@@ -53,7 +54,8 @@ func Run(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
 	seed := fs.Uint64(seedFlag, 0, "número que define os tabuleiros e os disparos da máquina, para repetir uma partida (padrão: um número novo a cada execução)")
 	mode := fs.String(modeFlag, machineMode, "maquina para jogar contra a máquina, ou solo para só atacar um tabuleiro sorteado")
 	level := fs.String(levelFlag, hardLevel, "dificil para a máquina cercar os navios que acerta, facil para ela sortear todos os tiros, ou mestre para ela atirar onde ainda cabem mais navios")
-	colors := fs.String(colorFlag, colorsAuto, "auto para usar cores só quando a saída é um terminal e NO_COLOR não está definida, sim para usar sempre, ou nao para nunca usar")
+	colors := fs.String(colorFlag, optionAuto, "auto para usar cores só quando a saída é um terminal e NO_COLOR não está definida, sim para usar sempre, ou nao para nunca usar")
+	clearOption := fs.String(clearFlag, optionAuto, "auto para limpar a tela a cada jogada só quando a saída é um terminal, sim para limpar sempre, ou nao para nunca limpar")
 	if err := fs.Parse(args); err != nil {
 		if errors.Is(err, flag.ErrHelp) {
 			return 0
@@ -64,9 +66,15 @@ func Run(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
 		fmt.Fprintln(stderr, "Modo inválido: use maquina ou solo.")
 		return 2
 	}
-	style, ok := chooseStyle(*colors, isTerminal(stdout), os.Getenv("NO_COLOR"))
+	tty := isTerminal(stdout)
+	style, ok := chooseStyle(*colors, tty, os.Getenv("NO_COLOR"))
 	if !ok {
 		fmt.Fprintln(stderr, "Cores inválidas: use sim, nao ou auto.")
+		return 2
+	}
+	clearScreen, ok := chooseClear(*clearOption, tty)
+	if !ok {
+		fmt.Fprintln(stderr, "Limpar inválido: use sim, nao ou auto.")
 		return 2
 	}
 	strategy, ok := chooseStrategy(*level)
@@ -83,7 +91,7 @@ func Run(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
 	if !flagGiven(fs, seedFlag) {
 		*seed = rand.Uint64() //nolint:gosec // a game seed, not security-sensitive
 	}
-	if err := play(*mode, fleet, strategy, newRNG(*seed), terminal.Display{Style: style}, stdin, stdout); err != nil {
+	if err := play(*mode, fleet, strategy, newRNG(*seed), terminal.Display{Style: style, Clear: clearScreen}, stdin, stdout); err != nil {
 		fmt.Fprintln(stderr, terminal.FleetErrorMessage(err))
 		return 1
 	}
@@ -115,17 +123,34 @@ func play(mode string, fleet []board.FleetEntry, strategy board.ShotStrategy, rn
 // colored only on a terminal with NO_COLOR empty or unset.
 func chooseStyle(colors string, tty bool, noColor string) (terminal.Style, bool) {
 	switch {
-	case strings.EqualFold(colors, colorsOn):
+	case strings.EqualFold(colors, optionOn):
 		return terminal.Colored, true
-	case strings.EqualFold(colors, colorsOff):
+	case strings.EqualFold(colors, optionOff):
 		return terminal.Plain, true
-	case strings.EqualFold(colors, colorsAuto):
+	case strings.EqualFold(colors, optionAuto):
 		if tty && noColor == "" {
 			return terminal.Colored, true
 		}
 		return terminal.Plain, true
 	default:
 		return terminal.Plain, false
+	}
+}
+
+// chooseClear reports whether the terminal is cleared before each screen
+// for the clear option (sim, nao or auto, in any case), given whether the
+// output is a terminal, and false for any other option value. With auto,
+// the terminal is cleared only when the output is one.
+func chooseClear(value string, tty bool) (cleared, ok bool) {
+	switch {
+	case strings.EqualFold(value, optionOn):
+		return true, true
+	case strings.EqualFold(value, optionOff):
+		return false, true
+	case strings.EqualFold(value, optionAuto):
+		return tty, true
+	default:
+		return false, false
 	}
 }
 
