@@ -1,6 +1,6 @@
 # 013 — Máquina com estratégia
 
-- **Status:** Em andamento
+- **Status:** Concluída
 - **Roadmap:** #013 (onda 6)
 - **Depende de:** 007 (jogador contra a máquina)
 
@@ -69,4 +69,22 @@ Todas decididas em 2026-10-26:
 
 ## Encerramento
 
-Preenchido na fase 5: desvios em relação ao plano e o que ficou para o roadmap.
+Concluída em 2026-10-26, nas tarefas T1–T6. Os 9 critérios de aceitação são cobertos por testes em `internal/board/machine_test.go` (CA-1 em `TestSmartShot_Hunt`, CA-2 em `TestSmartShot_TargetNeighbors`, CA-3 em `TestSmartShot_TargetLine`, CA-4 em `TestSmartShot_TargetLineBlocked`, CA-5 em `TestSmartShot_AfterSunk`, CA-6 em `TestSmartShot_Game`, e o conhecimento público em `TestSmartShot_PublicKnowledge`), `internal/terminal/machine_test.go` (`TestPlayVsMachine_Strategy`) e `cmd/init_test.go` (CA-7 em `TestRun_SameSeed`, CA-8 em `TestRun_Level`, CA-9 em `TestRun_InvalidLevel`). A cobertura ficou em 99,6% em `internal/board`, 97,4% em `internal/terminal` e 90,6% em `cmd`.
+
+Em 200 sementes da frota padrão, a máquina `dificil` precisa em média de 59,7 tiros para afundar a frota, e a `facil` de 95,6. Para a issue #25: sem a regra de pular as casas em volta de navio afundado, a média do `dificil` sobe para 83,8 tiros (medido tirando a regra só para a conta, sem commit).
+
+O binário do `master` e o desta spec com `--nivel facil` foram rodados com as sementes 1, 7, 8, 42, 99 e 2026, com `aleatorio` e um tiro em cada casa do tabuleiro, e as saídas foram iguais (CA-8). Com `--nivel dificil` e as mesmas entradas, a máquina venceu as 6 partidas, em 54 a 78 tiros; com `facil`, venceu 1. Nos tiros do `dificil`, dá para ver a máquina cercar o acerto, seguir a linha e voltar à procura depois de afundar.
+
+**Desvios em relação ao plano:**
+
+- Os testes do T4 (CA-6 e conhecimento público) passaram de cara, porque conferem o comportamento feito no T1–T3. O teste do CA-4 também passou já no T3, antes da implementação das pontas, porque cair nas vizinhas era o comportamento do T2; o que falhou no T3 foi o do CA-3.
+- No CA-4, com a barra do T na fileira 1 e as pontas bloqueadas, as candidatas são A2, B2 e C2, e não só a haste (B2) como diz o plano: A2 e C2 também são vizinhas de acertos, como a regra da spec permite.
+- O `RandomShot` passou a usar as funções internas `freeCells` e `draw`, que o `SmartShot` também usa. A ordem das casas e o sorteio não mudaram, como mostrou a comparação com o binário do `master`.
+- No `PlayVsMachine`, o campo que guarda a estratégia se chama `strategy`, porque o tipo `playerAttack` já tem um método `shoot`.
+- O CA-8 no `cmd` ganhou um teste próprio, `TestRun_Level`, que compara a saída de `--nivel facil` com a de uma partida com `RandomShot`, e a de `dificil` (e do padrão) com uma partida com `SmartShot`. O plano só previa que os testes atuais continuassem passando.
+- O `TestPlayVsMachine_Errors` ganhou o caso de erro da estratégia, que volta para quem chamou o `PlayVsMachine`.
+
+**Para o roadmap:**
+
+- Decidir a issue #25 jogando: a regra de pular as casas em volta de navio afundado tira cerca de 24 tiros da média.
+- Uma procura mais forte, como atirar em xadrez ou calcular onde cada navio ainda cabe, talvez como um terceiro nível.
