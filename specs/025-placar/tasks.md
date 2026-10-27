@@ -1,7 +1,7 @@
 # 025 — Tarefas
 
 - **Plano:** [plan.md](plan.md)
-- **Status:** Rascunho
+- **Status:** Aprovado
 
 Cada tarefa é um commit: teste falhando → implementação → `make pre-commit` → commit.
 
