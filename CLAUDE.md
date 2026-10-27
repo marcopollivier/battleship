@@ -10,7 +10,7 @@ A terminal Battleship ("Batalha Naval") game in Go (module `github.com/marcopoll
 
 All are Makefile targets (`make help` lists them):
 
-- `make run`: `go run ./main.go`, which starts a game against the machine (options: `--modo solo`, `--frota S=2,P=1`, `--semente 42`, `--cores nao`)
+- `make run`: `go run ./main.go`, which starts a game against the machine. Options go in `ARGS`, as in `make run ARGS="--modo solo --frota S=2,P=1 --semente 42 --cores nao"`, or after `go run .`
 - `make build`: builds the binary to `bin/battleship`
 - `make test`: `go test -v ./...`
 - Run a single test: `go test -v -run TestName ./cmd/`
