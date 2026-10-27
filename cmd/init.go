@@ -18,6 +18,7 @@ const (
 	fleetFlag = "frota"
 	seedFlag  = "semente"
 	modeFlag  = "modo"
+	levelFlag = "nivel"
 	colorFlag = "cores"
 )
 
@@ -25,6 +26,12 @@ const (
 const (
 	machineMode = "maquina"
 	soloMode    = "solo"
+)
+
+// Values of the level option.
+const (
+	easyLevel = "facil"
+	hardLevel = "dificil"
 )
 
 // Values of the colors option.
@@ -42,6 +49,7 @@ func Run(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
 	fleetText := fs.String(fleetFlag, "", "frota no formato letra=quantidade separados por vírgula, por exemplo S=2,D=1,P=1 (padrão: a frota da cartela)")
 	seed := fs.Uint64(seedFlag, 0, "número que define os tabuleiros e os disparos da máquina, para repetir uma partida (padrão: um número novo a cada execução)")
 	mode := fs.String(modeFlag, machineMode, "maquina para jogar contra a máquina, ou solo para só atacar um tabuleiro sorteado")
+	level := fs.String(levelFlag, hardLevel, "dificil para a máquina cercar os navios que acerta, ou facil para ela sortear todos os tiros")
 	colors := fs.String(colorFlag, colorsOn, "sim para desenhar os tabuleiros com cores, ou nao para desenhar sem cores")
 	if err := fs.Parse(args); err != nil {
 		if errors.Is(err, flag.ErrHelp) {
@@ -58,6 +66,11 @@ func Run(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
 		fmt.Fprintln(stderr, "Cores inválidas: use sim ou nao.")
 		return 2
 	}
+	strategy, ok := chooseStrategy(*level)
+	if !ok {
+		fmt.Fprintln(stderr, "Nível inválido: use facil ou dificil.")
+		return 2
+	}
 
 	fleet, err := chooseFleet(fs, *fleetText)
 	if err != nil {
@@ -67,7 +80,7 @@ func Run(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
 	if !flagGiven(fs, seedFlag) {
 		*seed = rand.Uint64() //nolint:gosec // a game seed, not security-sensitive
 	}
-	if err := play(*mode, fleet, newRNG(*seed), style, stdin, stdout); err != nil {
+	if err := play(*mode, fleet, strategy, newRNG(*seed), style, stdin, stdout); err != nil {
 		fmt.Fprintln(stderr, terminal.FleetErrorMessage(err))
 		return 1
 	}
@@ -79,10 +92,10 @@ func Run(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
 
 // play runs a game in mode with fleet. Solo, rng draws the board to attack.
 // Against the machine, rng draws the machine's board first, then the ships
-// the player asks to draw while placing, then the machine's shots; the
-// player starts with an empty board and places the fleet. The boards are
-// drawn with style.
-func play(mode string, fleet []board.FleetEntry, rng *rand.Rand, style terminal.Style, stdin io.Reader, stdout io.Writer) error {
+// the player asks to draw while placing, then the machine's shots, which
+// strategy chooses; the player starts with an empty board and places the fleet.
+// The boards are drawn with style.
+func play(mode string, fleet []board.FleetEntry, strategy board.ShotStrategy, rng *rand.Rand, style terminal.Style, stdin io.Reader, stdout io.Writer) error {
 	target, err := board.RandomBoard(fleet, rng)
 	if err != nil {
 		return err
@@ -90,7 +103,7 @@ func play(mode string, fleet []board.FleetEntry, rng *rand.Rand, style terminal.
 	if strings.EqualFold(mode, soloMode) {
 		return terminal.PlaySolo(stdin, stdout, target, style)
 	}
-	return terminal.PlayVsMachine(stdin, stdout, board.NewBoard(fleet), target, rng, style)
+	return terminal.PlayVsMachine(stdin, stdout, board.NewBoard(fleet), target, rng, style, strategy)
 }
 
 // chooseStyle returns the board style for the colors option, sim or nao in
@@ -104,6 +117,18 @@ func chooseStyle(colors string) (terminal.Style, bool) {
 	default:
 		return terminal.Plain, false
 	}
+}
+
+// chooseStrategy returns the machine's strategy for the level option, in
+// any case, and false for an unknown level.
+func chooseStrategy(level string) (board.ShotStrategy, bool) {
+	switch {
+	case strings.EqualFold(level, hardLevel):
+		return board.SmartShot, true
+	case strings.EqualFold(level, easyLevel):
+		return board.RandomShot, true
+	}
+	return nil, false
 }
 
 // newRNG returns the random source that draws the boards for seed.

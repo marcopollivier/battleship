@@ -10,7 +10,7 @@ A terminal Battleship ("Batalha Naval") game in Go (module `github.com/marcopoll
 
 All are Makefile targets (`make help` lists them):
 
-- `make run`: `go run ./main.go`, which starts a game against the machine. Options go in `ARGS`, as in `make run ARGS="--modo solo --frota S=2,P=1 --semente 42 --cores nao"`, or after `go run .`
+- `make run`: `go run ./main.go`, which starts a game against the machine. Options go in `ARGS`, as in `make run ARGS="--modo solo --frota S=2,P=1 --semente 42 --cores nao --nivel facil"`, or after `go run .`
 - `make build`: builds the binary to `bin/battleship`
 - `make test`: `go test -v ./...`
 - Run a single test: `go test -v -run TestName ./cmd/`
@@ -37,7 +37,7 @@ Two layers, and the domain never imports the terminal:
   - `board.go`: `Board` with `Place`, which validates fleet limit, orientation, bounds, overlap and adjacency in that order and leaves the board unchanged on error; `Remaining` (ships still to place, largest first) and `Clear`.
   - `shot.go`: `Fire`, `Cell` and `AllSunk`.
   - `random.go`: `RandomBoard` and `FillRandom` (places only the missing ships), which take an injected `*rand.Rand`.
-  - `machine.go`: `RandomShot`, the machine's next shot, drawn among the cells not shot yet.
+  - `machine.go`: `ShotStrategy`, the type of a machine's way to choose its next shot. `RandomShot` draws among the cells not shot yet. `SmartShot` hunts at random, then shoots next to the hits on a ship afloat (the ends of a line of hits first) until it sinks; it skips the cells around sunk ships (`aroundSunk`, a provisional rule, issue #25) and only uses what the shooter knows.
   - `fleet.go`: `ValidateFleet`, which rejects negative counts, empty fleets and fleets that do not fit on the board.
   - Errors are sentinel values wrapped with `%w`; check them with `errors.Is`.
 - **`internal/terminal`: presentation.** It reads the domain and writes to an `io.Writer`. Text shown to the player is in Portuguese.
@@ -49,9 +49,9 @@ Two layers, and the domain never imports the terminal:
   - `messages.go`: `ShotMessage`, the result of a shot.
   - `fleet.go`: `ParseFleet`, which reads the `--frota` text (such as `S=2,D=1,P=1`), and `FleetErrorMessage`.
   - `solo.go`: `PlaySolo(in, out, board, style)`, the solo game loop: reads one shot per line until every ship is sunk or the player types `sair` or closes the input. Its `playerAttack` type is the player's turn, shared with `machine.go`, and keeps the `Style` every board of the game is drawn with.
-  - `machine.go`: `PlayVsMachine(in, out, player, enemy, rng, style)`, the game against the machine: whoever hits shoots again. If `player` is not complete, it first runs the placing phase.
+  - `machine.go`: `PlayVsMachine(in, out, player, enemy, rng, style, shoot)`, the game against the machine, which shoots with the `ShotStrategy` `shoot`: whoever hits shoots again. If `player` is not complete, it first runs the placing phase.
   - `placement.go`: the placing phase (`casa orientação` lines, `aleatorio`, `recomecar`, `sair`). It runs inside `PlayVsMachine` so one `bufio.Scanner` reads all the input.
-- **`cmd/` and `main.go`: wiring.** `cmd.Run(args, stdin, stdout, stderr) int` parses `--modo`, `--cores` (`sim`, the default, or `nao`; colors stay on even when the output is not a terminal), `--frota` and `--semente`, checking the mode, then the colors, then the fleet. One `*rand.Rand` seeded by the seed (a new one each run unless given) draws the machine's board, then the ships the player draws with `aleatorio`, then the machine's shots; `Run` runs `PlayVsMachine` (or `PlaySolo`) and prints the seed. It returns the exit code: 0 at the end of a game or on `-h`, 1 on a fleet error, and 2 on an invalid option. `main.go` passes it to `os.Exit`.
+- **`cmd/` and `main.go`: wiring.** `cmd.Run(args, stdin, stdout, stderr) int` parses `--modo`, `--cores` (`sim`, the default, or `nao`; colors stay on even when the output is not a terminal), `--nivel` (`dificil`, the default, picks `SmartShot`; `facil` picks `RandomShot`), `--frota` and `--semente`, checking the mode, then the colors, then the level, then the fleet. One `*rand.Rand` seeded by the seed (a new one each run unless given) draws the machine's board, then the ships the player draws with `aleatorio`, then the machine's shots; `Run` runs `PlayVsMachine` (or `PlaySolo`) and prints the seed. It returns the exit code: 0 at the end of a game or on `-h`, 1 on a fleet error, and 2 on an invalid option. `main.go` passes it to `os.Exit`.
 
 ## Game rules (from README)
 

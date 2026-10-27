@@ -111,8 +111,9 @@ As opções vão em `ARGS`, como em `make run ARGS="--frota S=2,P=1 --semente 42
 Opção | Exemplo | O que faz
 ----- | ------- | ---------
 `--frota` | `--frota S=2,D=1,P=1` | Escolhe quantos navios de cada tipo, pelas letras da legenda: `S` Submarino, `D` Destroyer, `C` Cruzador, `E` Encouraçado, `P` Porta-Aviões. Sem a opção, vale a frota da cartela.
-`--semente` | `--semente 42` | Repete uma partida anterior: o tabuleiro da máquina, os navios sorteados com `aleatorio` e os tiros da máquina, desde que você digite as mesmas coisas. A semente aparece no fim de cada partida.
+`--semente` | `--semente 42` | Repete uma partida anterior: o tabuleiro da máquina, os navios sorteados com `aleatorio` e os tiros da máquina, desde que você digite as mesmas coisas e use o mesmo nível. A semente aparece no fim de cada partida.
 `--modo` | `--modo solo` | `maquina` (padrão) joga contra a máquina; `solo` só ataca um tabuleiro sorteado, sem a máquina atirar de volta.
+`--nivel` | `--nivel facil` | `dificil` (padrão): a máquina joga como quem joga no papel, sorteia casas até acertar um navio e então atira em volta do acerto até afundá-lo, sem atirar nas casas encostadas num navio já afundado. `facil`: a máquina sorteia todos os tiros.
 `--cores` | `--cores nao` | `sim` (padrão) desenha os tabuleiros com cores; `nao` desenha só com os caracteres, para terminais sem cores. As cores continuam ligadas quando a saída vai para um arquivo.
 
 ## TODO - Evolução do projeto

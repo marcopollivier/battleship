@@ -60,7 +60,7 @@ func machinePlay(t *testing.T, input string, seed uint64) string {
 func machinePlayStyle(t *testing.T, input string, seed uint64, style Style) string {
 	t.Helper()
 	var sb strings.Builder
-	err := PlayVsMachine(strings.NewReader(input), &sb, machinePlayerBoard(t), machineEnemyBoard(t), rand.New(rand.NewPCG(seed, 0)), style)
+	err := PlayVsMachine(strings.NewReader(input), &sb, machinePlayerBoard(t), machineEnemyBoard(t), rand.New(rand.NewPCG(seed, 0)), style, board.RandomShot)
 	if err != nil {
 		t.Fatalf("PlayVsMachine: %v", err)
 	}
@@ -222,22 +222,71 @@ func TestPlayVsMachine_GiveUp(t *testing.T) {
 	})
 }
 
+// machineScript is a ShotStrategy that shoots at cells in order, and
+// returns ErrNoCellsLeft when they run out.
+func machineScript(t *testing.T, cells ...string) board.ShotStrategy {
+	t.Helper()
+	var coords []board.Coord
+	for _, cell := range cells {
+		c, err := board.ParseCoord(cell)
+		if err != nil {
+			t.Fatalf("ParseCoord(%q): %v", cell, err)
+		}
+		coords = append(coords, c)
+	}
+	return func(*board.Board, *rand.Rand) (board.Coord, error) {
+		if len(coords) == 0 {
+			return board.Coord{}, board.ErrNoCellsLeft
+		}
+		c := coords[0]
+		coords = coords[1:]
+		return c, nil
+	}
+}
+
+// Spec 013: the machine shoots where the ShotStrategy it receives chooses.
+func TestPlayVsMachine_Strategy(t *testing.T) {
+	var sb strings.Builder
+	err := PlayVsMachine(strings.NewReader("A10\nA9\n"), &sb, machinePlayerBoard(t), machineEnemyBoard(t),
+		rand.New(rand.NewPCG(1, 0)), Plain, machineScript(t, "B5", "A1"))
+	if err != nil {
+		t.Fatalf("PlayVsMachine: %v", err)
+	}
+	got := sb.String()
+	for _, want := range []string{
+		"A máquina atirou em B5: Água.\n",
+		"A máquina atirou em A1: Afundou o seu Submarino!\n",
+		"A máquina venceu! Ela afundou a sua frota em 2 disparos.",
+	} {
+		if !strings.Contains(got, want) {
+			t.Errorf("PlayVsMachine() =\n%s\nwant it to contain %q", got, want)
+		}
+	}
+}
+
 // Errors that are not a mistake of the player end the game and are returned.
 func TestPlayVsMachine_Errors(t *testing.T) {
 	rng := func() *rand.Rand { return rand.New(rand.NewPCG(1, 0)) }
 
 	t.Run("player shoots at an incomplete enemy board", func(t *testing.T) {
 		incomplete := board.NewBoard(board.DefaultFleet())
-		err := PlayVsMachine(strings.NewReader("A10\n"), io.Discard, machinePlayerBoard(t), incomplete, rng(), Plain)
+		err := PlayVsMachine(strings.NewReader("A10\n"), io.Discard, machinePlayerBoard(t), incomplete, rng(), Plain, board.RandomShot)
 		if !errors.Is(err, board.ErrIncompleteBoard) {
 			t.Errorf("PlayVsMachine() error = %v, want ErrIncompleteBoard", err)
 		}
 	})
 
 	t.Run("write fails", func(t *testing.T) {
-		err := PlayVsMachine(strings.NewReader("A10\n"), &soloFailingWriter{}, machinePlayerBoard(t), machineEnemyBoard(t), rng(), Plain)
+		err := PlayVsMachine(strings.NewReader("A10\n"), &soloFailingWriter{}, machinePlayerBoard(t), machineEnemyBoard(t), rng(), Plain, board.RandomShot)
 		if !errors.Is(err, errSoloWrite) {
 			t.Errorf("PlayVsMachine() error = %v, want %v", err, errSoloWrite)
+		}
+	})
+
+	t.Run("the strategy fails", func(t *testing.T) {
+		err := PlayVsMachine(strings.NewReader("A10\n"), io.Discard, machinePlayerBoard(t), machineEnemyBoard(t), rng(), Plain, machineScript(t))
+		if !errors.Is(err, board.ErrNoCellsLeft) {
+			t.Errorf("PlayVsMachine() error = %v, want ErrNoCellsLeft", err)
 		}
 	})
 }

@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"fmt"
 	"regexp"
 	"strings"
 	"testing"
@@ -72,17 +73,90 @@ func TestRun_GiveUp(t *testing.T) {
 	}
 }
 
-// CA-9 (spec 012): with the same seed and input the game repeats: the
-// machine's board, the ships drawn with aleatorio and every machine shot.
+// CA-9 (spec 012) and CA-7 (spec 013): with the same seed, level and input
+// the game repeats: the machine's board, the ships drawn with aleatorio and
+// every machine shot.
 func TestRun_SameSeed(t *testing.T) {
 	const input = "B1 baixo\naleatorio\nA1\nB2\nC3\nsair\n"
-	_, first, _ := run(input, "--semente", "42")
-	_, second, _ := run(input, "--semente", "42")
-	if first != second {
-		t.Errorf("two runs with --semente 42 differ:\n%s\n---\n%s", first, second)
+	for _, level := range [][]string{nil, {"--nivel", "dificil"}, {"--nivel", "facil"}} {
+		t.Run(strings.Join(level, " "), func(t *testing.T) {
+			_, first, _ := run(input, append([]string{"--semente", "42"}, level...)...)
+			_, second, _ := run(input, append([]string{"--semente", "42"}, level...)...)
+			if first != second {
+				t.Errorf("two runs with --semente 42 %q differ:\n%s\n---\n%s", level, first, second)
+			}
+			if _, other, _ := run(input, append([]string{"--semente", "43"}, level...)...); other == first {
+				t.Error("runs with --semente 42 and 43 drew the same board")
+			}
+		})
 	}
-	if _, other, _ := run(input, "--semente", "43"); other == first {
-		t.Error("runs with --semente 42 and 43 drew the same board")
+}
+
+// levelGame returns what the program writes for a game against the machine
+// with the default fleet, seed and input, when the machine shoots with
+// strategy and the boards drawn with colors, the default: the boards and the
+// shots come from one random source, as in play.
+func levelGame(t *testing.T, input string, seed uint64, strategy board.ShotStrategy) string {
+	t.Helper()
+	rng := newRNG(seed)
+	enemy, err := board.RandomBoard(board.DefaultFleet(), rng)
+	if err != nil {
+		t.Fatalf("RandomBoard: %v", err)
+	}
+	var sb strings.Builder
+	if err := terminal.PlayVsMachine(strings.NewReader(input), &sb, board.NewBoard(board.DefaultFleet()), enemy, rng, terminal.Colored, strategy); err != nil {
+		t.Fatalf("PlayVsMachine: %v", err)
+	}
+	return sb.String() + fmt.Sprintf("Semente: %d\n", seed)
+}
+
+// CA-8 and the level option (spec 013): dificil, the default, plays with
+// SmartShot, and facil with RandomShot, the machine from before spec 013.
+// The player only hits water, so the machine shoots until it wins.
+func TestRun_Level(t *testing.T) {
+	const seed = 42
+	input := randomPlacement + machineCells(machineEnemy(t, board.DefaultFleet(), seed), false)
+	smart, random := levelGame(t, input, seed, board.SmartShot), levelGame(t, input, seed, board.RandomShot)
+	if smart == random {
+		t.Fatal("SmartShot and RandomShot played the same game; pick another seed")
+	}
+	tests := []struct {
+		name string
+		args []string
+		want string
+	}{
+		{"default", nil, smart},
+		{"dificil", []string{"--nivel", "dificil"}, smart},
+		{"facil", []string{"--nivel", "facil"}, random},
+		{"any case", []string{"--nivel", "FACIL"}, random},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			code, stdout, stderr := run(input, append([]string{"--semente", "42"}, tt.args...)...)
+			if code != 0 {
+				t.Errorf("Run(%q) code = %d, want 0 (stderr %q)", tt.args, code, stderr)
+			}
+			if stdout != tt.want {
+				t.Errorf("Run(%q) stdout =\n%s\nwant\n%s", tt.args, stdout, tt.want)
+			}
+		})
+	}
+}
+
+// CA-9 (spec 013): an unknown level is an option error, with exit code 2,
+// in solo mode too.
+func TestRun_InvalidLevel(t *testing.T) {
+	for _, args := range [][]string{{"--nivel", "xyz"}, {"--modo", "solo", "--nivel", "xyz"}} {
+		code, stdout, stderr := run("sair\n", args...)
+		if code != 2 {
+			t.Errorf("Run(%q) code = %d, want 2", args, code)
+		}
+		if stdout != "" {
+			t.Errorf("Run(%q) stdout = %q, want empty", args, stdout)
+		}
+		if want := "Nível inválido: use facil ou dificil.\n"; stderr != want {
+			t.Errorf("Run(%q) stderr = %q, want %q", args, stderr, want)
+		}
 	}
 }
 
