@@ -227,6 +227,92 @@ func TestSmartShot_TargetLineBlocked(t *testing.T) {
 	})
 }
 
+// smartGameShots plays a whole game of strategy against the board drawn for
+// seed, with the shots also drawn from seed, and returns how many shots it
+// took to sink the fleet. A repeated cell fails the test, since Fire
+// rejects it.
+func smartGameShots(t *testing.T, strategy ShotStrategy, seed uint64) int {
+	t.Helper()
+	b := mustRandomBoard(t, seed)
+	rng := seeded(seed)
+	for shots := 1; shots <= Size*Size; shots++ {
+		c, err := strategy(b, rng)
+		if err != nil {
+			t.Fatalf("seed %d, shot %d: %v", seed, shots, err)
+		}
+		if _, err := b.Fire(c); err != nil {
+			t.Fatalf("seed %d, shot %d: Fire(%v): %v", seed, shots, c, err)
+		}
+		if b.AllSunk() {
+			return shots
+		}
+	}
+	t.Fatalf("seed %d: the fleet is still afloat after %d shots", seed, Size*Size)
+	return 0
+}
+
+// CA-6: on any board of the default fleet, SmartShot never shoots the same
+// cell twice and sinks the whole fleet, with fewer shots on average than
+// RandomShot.
+func TestSmartShot_Game(t *testing.T) {
+	const games = 200
+	smartTotal, randomTotal := 0, 0
+	for seed := range uint64(games) {
+		smartTotal += smartGameShots(t, SmartShot, seed)
+		randomTotal += smartGameShots(t, RandomShot, seed)
+	}
+	smartAvg, randomAvg := float64(smartTotal)/games, float64(randomTotal)/games
+	t.Logf("average shots to sink the fleet in %d games: SmartShot %.1f, RandomShot %.1f", games, smartAvg, randomAvg)
+	if smartAvg >= randomAvg {
+		t.Errorf("SmartShot took %.1f shots on average, want fewer than RandomShot's %.1f", smartAvg, randomAvg)
+	}
+}
+
+// smartOtherBoard is exampleBoard with two Submarines elsewhere.
+func smartOtherBoard(t *testing.T) *Board {
+	t.Helper()
+	b := NewBoard(DefaultFleet())
+	place(t, b,
+		placement{AircraftCarrier, "B1", Down},
+		placement{Battleship, "E1", Horizontal},
+		placement{Cruiser, "J1", Vertical},
+		placement{Destroyer, "A5", Horizontal},
+		placement{Destroyer, "E3", Horizontal},
+		placement{Submarine, "H5", Horizontal},
+		placement{Submarine, "C10", Horizontal},
+		placement{Submarine, "G8", Horizontal},
+	)
+	return b
+}
+
+// SmartShot only uses what the shooter knows: two boards with the same
+// shots and results, but ships not found yet in different places, give the
+// same shot with the same seed.
+func TestSmartShot_PublicKnowledge(t *testing.T) {
+	tests := []struct {
+		name  string
+		shots []string
+	}{
+		{"hunt after sinking", []string{"J10", "H5", "A5", "B5"}},
+		{"one hit", []string{"J10", "E3"}},
+		{"hits in line", []string{"E1", "F1"}},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			b1, b2 := exampleBoard(t), smartOtherBoard(t)
+			fire(t, b1, tt.shots...)
+			fire(t, b2, tt.shots...)
+			for seed := range uint64(smartSeeds) {
+				c1, err1 := SmartShot(b1, seeded(seed))
+				c2, err2 := SmartShot(b2, seeded(seed))
+				if c1 != c2 || err1 != nil || err2 != nil {
+					t.Fatalf("seed %d: SmartShot = %v, %v on one board and %v, %v on the other", seed, c1, err1, c2, err2)
+				}
+			}
+		})
+	}
+}
+
 // The strategies fit the ShotStrategy type.
 var (
 	_ ShotStrategy = RandomShot
