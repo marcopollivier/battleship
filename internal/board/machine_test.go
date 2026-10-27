@@ -2,6 +2,7 @@ package board
 
 import (
 	"errors"
+	"maps"
 	"slices"
 	"testing"
 )
@@ -170,6 +171,40 @@ func TestSmartShot_AfterSunk(t *testing.T) {
 		t.Fatalf("A5 and B5 gave %v, want the Destroyer sunk", shot.Result)
 	}
 	smartHunts(t, smartChoices(t, b), smartCells(t, "A5", "B5"))
+}
+
+// smartTargetTest is a board of the example fleet after shots, and the
+// cells SmartShot should choose among.
+type smartTargetTest struct {
+	name  string
+	shots []string
+	want  []string
+}
+
+// smartRunTargets checks, for each test, that SmartShot chooses exactly
+// among the wanted cells across the seeds.
+func smartRunTargets(t *testing.T, tests []smartTargetTest) {
+	t.Helper()
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			b := exampleBoard(t)
+			fire(t, b, tt.shots...)
+			if got, want := smartChoices(t, b), smartCells(t, tt.want...); !maps.Equal(got, want) {
+				t.Errorf("SmartShot after %v chose %v, want %v", tt.shots, got, want)
+			}
+		})
+	}
+}
+
+// CA-2: with a single hit on a ship afloat, SmartShot shoots at one of the
+// cells above, below, left or right of it that are not shot yet.
+func TestSmartShot_TargetNeighbors(t *testing.T) {
+	smartRunTargets(t, []smartTargetTest{
+		{"middle of the board", []string{"E3"}, []string{"E2", "E4", "D3", "F3"}},
+		{"some neighbors already shot", []string{"D3", "E2", "E3"}, []string{"E4", "F3"}},
+		{"corner", []string{"J1"}, []string{"I1", "J2"}},
+		{"a neighbor touches a sunk ship", []string{"E1", "F1", "G1", "H1", "E3"}, []string{"D3", "E4", "F3"}},
+	})
 }
 
 // The strategies fit the ShotStrategy type.

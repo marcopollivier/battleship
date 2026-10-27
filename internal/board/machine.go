@@ -22,13 +22,47 @@ func RandomShot(b *Board, rng *rand.Rand) (Coord, error) {
 // hits until the ship sinks, as a player on paper would. It uses only what
 // the shooter knows: the state of each cell and which ships have sunk.
 func SmartShot(b *Board, rng *rand.Rand) (Coord, error) {
-	skip := aroundSunk(b)
-	candidates := freeCells(b, func(c Coord) bool { return !skip[c] })
+	sunk := sunkCells(b)
+	skip := aroundSunk(sunk)
+	targets := targetCells(pendingHits(b, sunk))
+	candidates := freeCells(b, func(c Coord) bool { return targets[c] && !skip[c] })
+	if len(candidates) == 0 {
+		// No hit on a ship afloat: hunt.
+		candidates = freeCells(b, func(c Coord) bool { return !skip[c] })
+	}
 	if len(candidates) == 0 {
 		// Only when every ship has sunk: any cell is as good as another.
 		candidates = freeCells(b, nil)
 	}
 	return draw(candidates, rng)
+}
+
+// pendingHits lists the hit cells of b that are not part of a sunk ship,
+// row by row: the hits on a ship still afloat.
+func pendingHits(b *Board, sunk map[Coord]bool) []Coord {
+	var hits []Coord
+	for row := range Size {
+		for col := range Size {
+			c := Coord{Col: col, Row: row}
+			if b.Cell(c) == CellHit && !sunk[c] {
+				hits = append(hits, c)
+			}
+		}
+	}
+	return hits
+}
+
+// targetCells returns the cells to shoot at next to the hits: above, below,
+// left and right of each one. Cells off the board or already shot are left
+// for the caller to filter.
+func targetCells(hits []Coord) map[Coord]bool {
+	targets := map[Coord]bool{}
+	for _, h := range hits {
+		for _, n := range neighbors(h) {
+			targets[n] = true
+		}
+	}
+	return targets
 }
 
 // draw returns one of cells chosen with rng, or ErrNoCellsLeft if there is none.
@@ -54,6 +88,17 @@ func freeCells(b *Board, keep func(Coord) bool) []Coord {
 	return free
 }
 
+// neighbors returns the cells above, below, left and right of c, which may
+// be off the board.
+func neighbors(c Coord) []Coord {
+	return []Coord{
+		{Col: c.Col, Row: c.Row - 1},
+		{Col: c.Col, Row: c.Row + 1},
+		{Col: c.Col - 1, Row: c.Row},
+		{Col: c.Col + 1, Row: c.Row},
+	}
+}
+
 // sunkCells returns the cells of the ships that have sunk. The shooter knows
 // them: a ship that sinks is announced, and since ships do not touch, it
 // takes exactly the hit cells connected to the last shot.
@@ -69,12 +114,12 @@ func sunkCells(b *Board) map[Coord]bool {
 	return cells
 }
 
-// aroundSunk returns the cells that touch a sunk ship, diagonals included.
+// aroundSunk returns the cells that touch the sunk cells, diagonals included.
 // No ship can be there, because ships do not touch. This rule is a
 // provisional decision (issue #25) and may be dropped.
-func aroundSunk(b *Board) map[Coord]bool {
+func aroundSunk(sunk map[Coord]bool) map[Coord]bool {
 	around := map[Coord]bool{}
-	for c := range sunkCells(b) {
+	for c := range sunk {
 		for dCol := -1; dCol <= 1; dCol++ {
 			for dRow := -1; dRow <= 1; dRow++ {
 				around[Coord{Col: c.Col + dCol, Row: c.Row + dRow}] = true
