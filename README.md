@@ -106,7 +106,7 @@ A cada vez que o turno volta para você, a tela mostra `Sua frota:` (seus navios
 - Na partida, digite uma coordenada por vez, como `B7` ou `j10`.
 - Digite `sair` (ou aperte Ctrl+D) para desistir e ver onde estavam os navios inimigos.
 
-As opções vão depois de `go run .`, como em `go run . --frota S=2,P=1 --semente 42`:
+As opções vão em `ARGS`, como em `make run ARGS="--frota S=2,P=1 --semente 42"`, ou depois de `go run .`, como em `go run . --frota S=2,P=1 --semente 42`:
 
 Opção | Exemplo | O que faz
 ----- | ------- | ---------
