@@ -11,24 +11,30 @@ const maxFitAttempts = 1_000_000
 // If the search passes maxFitAttempts, which only a large custom fleet can
 // do, Fits answers true: it only answers false when it is sure.
 func Fits(b *Board) bool {
-	fits, attempts := fitSearch(b)
-	return fits || attempts > maxFitAttempts
+	return fitsWithin(b, maxFitAttempts)
+}
+
+// fitsWithin is Fits with limit in place of maxFitAttempts.
+func fitsWithin(b *Board, limit int) bool {
+	fits, attempts := fitSearch(b, limit)
+	return fits || attempts > limit
 }
 
 // fitSearch looks for a way to place the missing ships of b on a copy of it.
 // It reports whether it found one and how many placements it tried, and
-// stops once that passes maxFitAttempts.
-func fitSearch(b *Board) (fits bool, attempts int) {
-	s := &fitter{board: b.clone(), ships: b.Remaining()}
+// stops once that passes limit.
+func fitSearch(b *Board, limit int) (fits bool, attempts int) {
+	s := &fitter{board: b.clone(), ships: b.Remaining(), limit: limit}
 	return s.place(0, 0), s.attempts
 }
 
 // fitter is the state of one fitSearch: the board copy, the ships to place,
-// largest first, and the placements tried so far.
+// largest first, the placements tried so far and the most it may try.
 type fitter struct {
 	board    *Board
 	ships    []ShipType
 	attempts int
+	limit    int
 }
 
 // place tries every spot, from spot from on, for ship i, and the ships after
@@ -48,7 +54,7 @@ func (s *fitter) place(i, from int) bool {
 		return false
 	}
 	for spot := from; spot < Size*Size*len(orientations); spot++ {
-		if s.attempts > maxFitAttempts {
+		if s.attempts > s.limit {
 			return false
 		}
 		s.attempts++

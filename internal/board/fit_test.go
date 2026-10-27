@@ -1,9 +1,6 @@
 package board
 
-import (
-	"testing"
-	"time"
-)
+import "testing"
 
 // battleshipRows returns a board for fleet with six battleships in rows 2, 5
 // and 8, two per row, and a seventh at last in row 10. They leave no room
@@ -111,23 +108,19 @@ func TestFits(t *testing.T) {
 	}
 }
 
-// Fits stops after maxFitAttempts and answers true, so a large fleet does
-// not hang the game and the warning is never shown by mistake.
+// The search stops once it passes its attempt limit and Fits then answers
+// true, so a large fleet does not hang the game and the warning is never
+// shown by mistake. 26 submarines never fit, so the search would try every
+// arrangement of 25 of them.
 func TestFits_AttemptLimit(t *testing.T) {
+	const limit = 1000
 	b := gridSubmarines(1)(t)
-	start := time.Now()
-	fits, attempts := fitSearch(b)
-	if attempts <= maxFitAttempts {
-		t.Fatalf("fitSearch() used %d attempts, want the limit %d to be passed", attempts, maxFitAttempts)
+	fits, attempts := fitSearch(b, limit)
+	if fits || attempts != limit+1 {
+		t.Errorf("fitSearch(limit %d) = %v after %d attempts, want false after %d", limit, fits, attempts, limit+1)
 	}
-	if fits {
-		t.Error("fitSearch() = true for 26 submarines, want false")
-	}
-	if !Fits(b) {
-		t.Error("Fits() = false after the attempt limit, want true")
-	}
-	if elapsed := time.Since(start); elapsed > 5*time.Second {
-		t.Errorf("Fits took %v, want under 5s", elapsed)
+	if !fitsWithin(b, limit) {
+		t.Error("fitsWithin() = false after the attempt limit, want true")
 	}
 }
 
@@ -157,7 +150,7 @@ func TestFits_Bounded(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if _, attempts := fitSearch(tt.board(t)); attempts > limit {
+			if _, attempts := fitSearch(tt.board(t), maxFitAttempts); attempts > limit {
 				t.Errorf("fitSearch() used %d attempts, want at most %d", attempts, limit)
 			}
 		})

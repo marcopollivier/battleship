@@ -79,7 +79,7 @@ A partida foi conferida à mão com `--semente 42 --cores nao`: `desfazer` no ta
 **Desvios em relação ao plano:**
 
 - Os casos dos testes em que o resto não cabe usam uma frota de 7 Encouraçados e 1 Cruzador (seis Encouraçados em três fileiras não deixam lugar fora da fileira 10), e não o exemplo de 2 Encouraçados do plano, que não bloqueia o tabuleiro. O caso em xadrez usa 26 Submarinos, com 20 e 25 posicionados.
-- A busca fica numa função interna, `fitSearch`, que devolve também o número de tentativas, para os testes do limite e do pior caso. O limite ganhou um teste próprio, `TestFits_AttemptLimit`.
+- A busca fica numa função interna, `fitSearch`, que recebe o limite e devolve também o número de tentativas, para os testes do limite e do pior caso. O limite ganhou um teste próprio, `TestFits_AttemptLimit`, que usa um limite de 1.000 tentativas: com o limite de verdade, o teste levou 20 s no CI, que roda com `-race`.
 - O teste do T5 passou de cara, porque o `desfazer` e o aviso vieram no T3 e no T4. Ele ganhou um caso com `--frota E=7,C=1` para repetir uma partida com o aviso, já que a frota da cartela não o mostra.
 - O aviso aparece antes de cada tabuleiro, como no plano; depois de uma posição recusada, o tabuleiro não é desenhado de novo, e o aviso também não.
 
