@@ -30,8 +30,9 @@ const (
 
 // Values of the level option.
 const (
-	easyLevel = "facil"
-	hardLevel = "dificil"
+	easyLevel   = "facil"
+	hardLevel   = "dificil"
+	masterLevel = "mestre"
 )
 
 // Values of the colors option.
@@ -49,7 +50,7 @@ func Run(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
 	fleetText := fs.String(fleetFlag, "", "frota no formato letra=quantidade separados por vírgula, por exemplo S=2,D=1,P=1 (padrão: a frota da cartela)")
 	seed := fs.Uint64(seedFlag, 0, "número que define os tabuleiros e os disparos da máquina, para repetir uma partida (padrão: um número novo a cada execução)")
 	mode := fs.String(modeFlag, machineMode, "maquina para jogar contra a máquina, ou solo para só atacar um tabuleiro sorteado")
-	level := fs.String(levelFlag, hardLevel, "dificil para a máquina cercar os navios que acerta, ou facil para ela sortear todos os tiros")
+	level := fs.String(levelFlag, hardLevel, "dificil para a máquina cercar os navios que acerta, facil para ela sortear todos os tiros, ou mestre para ela atirar onde ainda cabem mais navios")
 	colors := fs.String(colorFlag, colorsOn, "sim para desenhar os tabuleiros com cores, ou nao para desenhar sem cores")
 	if err := fs.Parse(args); err != nil {
 		if errors.Is(err, flag.ErrHelp) {
@@ -68,7 +69,7 @@ func Run(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
 	}
 	strategy, ok := chooseStrategy(*level)
 	if !ok {
-		fmt.Fprintln(stderr, "Nível inválido: use facil ou dificil.")
+		fmt.Fprintln(stderr, "Nível inválido: use facil, dificil ou mestre.")
 		return 2
 	}
 
@@ -127,6 +128,8 @@ func chooseStrategy(level string) (board.ShotStrategy, bool) {
 		return board.SmartShot, true
 	case strings.EqualFold(level, easyLevel):
 		return board.RandomShot, true
+	case strings.EqualFold(level, masterLevel):
+		return board.MasterShot, true
 	}
 	return nil, false
 }
