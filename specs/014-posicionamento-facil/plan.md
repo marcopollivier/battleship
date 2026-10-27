@@ -1,7 +1,7 @@
 # 014 — Plano
 
 - **Spec:** [spec.md](spec.md)
-- **Status:** Rascunho
+- **Status:** Aprovado
 
 ## Abordagem
 
