@@ -22,11 +22,12 @@ Hoje cada tabuleiro é impresso abaixo do anterior. Numa partida contra a máqui
    ...
   10 ~ ~ ~ ~ ~ ~ ~ ~ ~ ~     10 . . . . . . . . . .
 
-  Sua frota: ~ água, S Submarino, D Destroyer, C Cruzador, E Encouraçado, P Porta-Aviões, X atingido, o tiro na água
+  Sua frota: ~ água, S D C E P navio, X atingido, o tiro na água
   Frota inimiga: . não atingida, o água, X acerto, S D C E P navio afundado
   ```
 
-- A tela inteira cabe em 80 colunas e cerca de 20 linhas, contando as mensagens e o pedido.
+- A tela inteira cabe em 80 colunas e cerca de 20 linhas, contando as mensagens e o pedido. Para isso, a legenda da frota própria nesta tela cita as letras dos navios juntas (`S D C E P navio`), como a legenda inimiga, no lugar dos nomes por extenso (questão 6).
+- Ficam fora da regra das 80 colunas as instruções do posicionamento (012), que aparecem uma vez, e a mensagem de coordenada inválida, que só aparece no erro.
 - Os dois tabuleiros aparecem lado a lado a cada disparo do jogador, inclusive depois de um acerto (hoje aparece só o de ataque).
 - No modo solo, há um tabuleiro só, como hoje.
 
@@ -49,7 +50,7 @@ Hoje cada tabuleiro é impresso abaixo do anterior. Numa partida contra a máqui
 
 ## Critérios de aceitação
 
-- **CA-1:** Dada uma partida contra a máquina, quando o turno começa, então os dois tabuleiros aparecem lado a lado, com os títulos, as duas legendas embaixo, e nenhuma linha passa de 80 colunas.
+- **CA-1:** Dada uma partida contra a máquina, quando o turno começa, então os dois tabuleiros aparecem lado a lado, com os títulos e as duas legendas embaixo, e nenhuma linha da tela (títulos, tabuleiros, legendas, mensagens do turno e pedido) passa de 80 colunas.
 - **CA-2:** Dado um acerto do jogador, quando ele atira de novo, então a tela mostra os dois tabuleiros de novo, com `Seu disparo em B7: Acerto!` abaixo deles.
 - **CA-3:** Dada uma água do jogador, quando a máquina atira, então a próxima tela mostra o resultado do jogador e as linhas da máquina abaixo dos tabuleiros, e depois o pedido.
 - **CA-4:** Dada uma coordenada inválida ou um tiro repetido, quando o jogador a digita, então a mensagem aparece abaixo do pedido, sem limpar a tela e sem redesenhar os tabuleiros.
@@ -76,6 +77,7 @@ Todas decididas em 2026-10-27, como propostas:
 - [x] **3. Resultado com a casa:** `Seu disparo em B7: Acerto!`, no lugar de só `Acerto!`, nos dois modos. As mensagens da máquina já citam a casa.
 - [x] **4. Layout:** títulos `Sua frota` e `Frota inimiga` sem os dois-pontos, cinco espaços entre os tabuleiros, as legendas embaixo começando com o nome do tabuleiro. A alternativa é uma legenda só, juntando os símbolos dos dois.
 - [x] **5. Posicionamento:** também limpa a tela a cada navio, mantendo as instruções no topo.
+- [x] **6. Legenda curta (decidida em 2026-10-27, durante a implementação):** a legenda da frota própria tinha 114 colunas e passava do limite. Ela vira `Sua frota: ~ água, S D C E P navio, X atingido, o tiro na água`. As alternativas eram quebrar a legenda em duas linhas ou limitar a regra das 80 colunas aos tabuleiros.
 
 ## Encerramento
 
