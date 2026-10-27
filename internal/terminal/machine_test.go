@@ -298,7 +298,7 @@ func TestPlayVsMachine_Colored(t *testing.T) {
 	want := "Sua frota:\n" + renderColored(t, RenderBoard, player) +
 		"\nFrota inimiga:\n" + renderColored(t, RenderAttackBoard, enemy) + "\n" + soloPrompt
 	attackFire(t, enemy, "E5")
-	want += "Acerto!\n\n" + renderColored(t, RenderAttackBoard, enemy) + "\n" + soloPrompt +
+	want += colored("1;31", "Acerto!") + "\n\n" + renderColored(t, RenderAttackBoard, enemy) + "\n" + soloPrompt +
 		"Você desistiu depois de 1 disparo. A frota inimiga era:\n\n" + renderColored(t, RenderBoard, enemy)
 
 	if got := machinePlayStyle(t, "E5\nsair\n", 1, Colored); got != want {

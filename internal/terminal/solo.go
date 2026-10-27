@@ -39,7 +39,7 @@ func PlaySolo(in io.Reader, out io.Writer, b *board.Board, style Style) error {
 			continue
 		}
 		if b.AllSunk() {
-			g.write("Você afundou toda a frota em " + shotCount(g.shots) + "!\n")
+			g.write(g.style.paint("Você afundou toda a frota em "+shotCount(g.shots)+"!", winColor) + "\n")
 			return g.err
 		}
 	}
@@ -93,7 +93,7 @@ func (g *playerAttack) shoot(line string) (board.Shot, bool) {
 		return board.Shot{}, false
 	}
 	g.shots++
-	g.write(ShotMessage(shot) + "\n\n")
+	g.write(g.style.paint(ShotMessage(shot), shotColor(shot.Result)) + "\n\n")
 	g.showBoard()
 	return shot, g.err == nil
 }

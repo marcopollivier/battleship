@@ -1,6 +1,6 @@
 # 015 — Mais cores
 
-- **Status:** Aprovada
+- **Status:** Em andamento
 - **Roadmap:** #015 (onda 7)
 - **Depende de:** 010 (cores no terminal)
 

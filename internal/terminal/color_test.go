@@ -177,3 +177,41 @@ func assertBoardsColored(t *testing.T, output, plain string) {
 		t.Error("the game shows no board")
 	}
 }
+
+// colorSpan matches a text in color: a color code other than the reset, the
+// text and the reset.
+var colorSpan = regexp.MustCompile("\x1b\\[[0-9;]*[1-9][0-9;]*m[^\x1b]*\x1b\\[0m")
+
+// assertUncolored checks that every text appears in output, a game drawn
+// with Colored, and never inside a color code: prompts, instructions and
+// titles have no color.
+func assertUncolored(t *testing.T, output string, texts ...string) {
+	t.Helper()
+	outside := colorSpan.ReplaceAllString(output, "")
+	for _, text := range texts {
+		if !strings.Contains(output, text) {
+			t.Errorf("the game does not show %q", text)
+			continue
+		}
+		if got, want := strings.Count(outside, text), strings.Count(stripColors(output), text); got != want {
+			t.Errorf("%q is colored %d of %d times", text, want-got, want)
+		}
+	}
+}
+
+// Spec 015: shotColor gives each shot result the color of its board symbol.
+func TestShotColor(t *testing.T) {
+	tests := []struct {
+		result board.ShotResult
+		want   string
+	}{
+		{board.Miss, "\x1b[36m"},
+		{board.Hit, "\x1b[1;31m"},
+		{board.Sunk, "\x1b[1;31m"},
+	}
+	for _, tt := range tests {
+		if got := shotColor(tt.result); got != tt.want {
+			t.Errorf("shotColor(%v) = %q, want %q", tt.result, got, tt.want)
+		}
+	}
+}

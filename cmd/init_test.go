@@ -46,7 +46,7 @@ func emptyAttackBoard(t *testing.T, style terminal.Style) string {
 
 // Solo mode (spec 006): shooting every ship cell wins, and the seed is shown at the end.
 func TestRun_Win(t *testing.T) {
-	code, stdout, stderr := run(seedShots(t, board.DefaultFleet(), 42), "--modo", "solo", "--semente", "42")
+	code, stdout, stderr := run(seedShots(t, board.DefaultFleet(), 42), "--modo", "solo", "--semente", "42", "--cores", "nao")
 	if code != 0 {
 		t.Errorf("Run() code = %d, want 0 (stderr %q)", code, stderr)
 	}
@@ -164,7 +164,7 @@ func TestRun_InvalidLevel(t *testing.T) {
 // program before the game, with the reason on stderr and exit code 1.
 func TestRun_Fleet(t *testing.T) {
 	twoSubs := []board.FleetEntry{{Type: board.Submarine, Count: 2}}
-	code, stdout, stderr := run(seedShots(t, twoSubs, 7), "--modo", "solo", "--frota", "S=2", "--semente", "7")
+	code, stdout, stderr := run(seedShots(t, twoSubs, 7), "--modo", "solo", "--frota", "S=2", "--semente", "7", "--cores", "nao")
 	if code != 0 {
 		t.Errorf("Run(--frota S=2) code = %d, want 0 (stderr %q)", code, stderr)
 	}

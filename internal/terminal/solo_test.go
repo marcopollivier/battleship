@@ -232,12 +232,34 @@ func TestPlaySolo_Colored(t *testing.T) {
 	replay := attackExampleBoard(t)
 	want := renderColored(t, RenderAttackBoard, replay) + "\n" + soloPrompt
 	attackFire(t, replay, "J10")
-	want += "Água.\n\n" + renderColored(t, RenderAttackBoard, replay) + "\n" + soloPrompt +
+	want += colored("36", "Água.") + "\n\n" + renderColored(t, RenderAttackBoard, replay) + "\n" + soloPrompt +
 		"Você desistiu depois de 1 disparo. A frota era:\n\n" + renderColored(t, RenderBoard, replay)
 
-	if got := soloPlayStyle(t, attackExampleBoard(t), "J10\nsair\n", Colored); got != want {
+	got := soloPlayStyle(t, attackExampleBoard(t), "J10\nsair\n", Colored)
+	if got != want {
 		t.Errorf("PlaySolo() =\n%s\nwant\n%s", got, want)
 	}
+	assertUncolored(t, got, soloPrompt, "Você desistiu depois de 1 disparo. A frota era:")
 	input := strings.Join(soloShipCells, "\n") + "\n"
 	assertBoardsColored(t, soloPlayStyle(t, attackExampleBoard(t), input, Colored), soloPlay(t, attackExampleBoard(t), input))
+}
+
+// CA-1 (spec 015): with Colored, a miss is cyan, a hit and a sunk ship bold
+// red, and the solo win bold green; the line breaks stay out of the colors.
+func TestPlaySolo_ColoredMessages(t *testing.T) {
+	cells := append([]string{"J10"}, soloShipCells...)
+	got := soloPlayStyle(t, attackExampleBoard(t), strings.Join(cells, "\n")+"\n", Colored)
+	for _, want := range []string{
+		soloPrompt + colored("36", "Água.") + "\n\n",
+		soloPrompt + colored("1;31", "Acerto!") + "\n\n",
+		soloPrompt + colored("1;31", "Afundou o Submarino!") + "\n\n",
+		soloPrompt + colored("1;31", "Afundou o Porta-Aviões!") + "\n\n",
+	} {
+		if !strings.Contains(got, want) {
+			t.Errorf("PlaySolo() =\n%s\nwant it to contain %q", got, want)
+		}
+	}
+	if !strings.HasSuffix(got, "\n"+colored("1;32", "Você afundou toda a frota em 20 disparos!")+"\n") {
+		t.Errorf("PlaySolo() does not end with the colored win:\n%s", got)
+	}
 }
