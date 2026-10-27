@@ -4,6 +4,7 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
+	"regexp"
 	"strings"
 	"testing"
 
@@ -114,6 +115,92 @@ func TestRun_ScoreNotCounted(t *testing.T) {
 			}
 			if strings.Contains(stdout, "Placar") {
 				t.Errorf("Run(%q) stdout =\n%s\nwant no score line", tt.args, stdout)
+			}
+		})
+	}
+}
+
+// scoreWarning is shown on stderr when the score cannot be read or saved.
+const scoreWarning = "Não foi possível guardar o placar.\n"
+
+// unwritableScore returns a score path in a folder without write permission.
+func unwritableScore(t *testing.T) string {
+	t.Helper()
+	dir := t.TempDir()
+	if err := os.Chmod(dir, 0o500); err != nil {
+		t.Fatalf("Chmod: %v", err)
+	}
+	t.Cleanup(func() { _ = os.Chmod(dir, 0o700) })
+	return filepath.Join(dir, "battleship", "placar.json")
+}
+
+// corruptScore returns the path of a score file that is not valid JSON.
+func corruptScore(t *testing.T) string {
+	t.Helper()
+	path := filepath.Join(t.TempDir(), "placar.json")
+	if err := os.WriteFile(path, []byte("{nope"), 0o600); err != nil {
+		t.Fatalf("WriteFile: %v", err)
+	}
+	return path
+}
+
+// CA-7 (spec 025): when the score cannot be read or saved, the warning goes
+// to stderr, the score line is left out, and the rest of the output and the
+// exit code are those of a normal game. A corrupt file is kept as it was.
+func TestRun_ScoreError(t *testing.T) {
+	win := randomPlacement + machineCells(machineEnemy(t, board.DefaultFleet(), 42), true)
+	lose := randomPlacement + machineCells(machineEnemy(t, board.DefaultFleet(), 42), false)
+	paths := []struct {
+		name string
+		path func(*testing.T) string
+	}{
+		{"corrupt file", corruptScore},
+		{"folder without permission", unwritableScore},
+		{"no configuration folder", func(*testing.T) string { return "" }},
+	}
+	for _, p := range paths {
+		for game, input := range map[string]string{"win": win, "loss": lose} {
+			t.Run(p.name+" "+game, func(t *testing.T) {
+				args := []string{"--semente", "42", "--cores", "nao"}
+				_, normal, _ := runCmd(t, input, args...)
+				path := p.path(t)
+				before, _ := os.ReadFile(path)
+				code, stdout, stderr := runScore(path, input, args...)
+				if code != 0 || stderr != scoreWarning {
+					t.Errorf("Run() code = %d, stderr %q, want 0 and %q", code, stderr, scoreWarning)
+				}
+				if want := regexp.MustCompile(`(?m)^Placar no nível .*\n`).ReplaceAllString(normal, ""); stdout != want || want == normal {
+					t.Errorf("Run() stdout =\n%s\nwant\n%s", stdout, want)
+				}
+				if after, _ := os.ReadFile(path); string(after) != string(before) {
+					t.Errorf("score file after Run() = %s, want %s", after, before)
+				}
+			})
+		}
+	}
+}
+
+// CA-7 (spec 025): --placar with a score that cannot be read and
+// --zerar-placar with one that cannot be saved show the warning and end
+// with code 0; --zerar-placar replaces a corrupt file with an empty score.
+func TestRun_ScoreCommandError(t *testing.T) {
+	tests := []struct {
+		name       string
+		path       string
+		args       []string
+		wantStdout string
+		wantStderr string
+	}{
+		{"show corrupt", corruptScore(t), []string{"--placar"}, "", scoreWarning},
+		{"show with no path", "", []string{"--placar"}, "", scoreWarning},
+		{"reset unwritable", unwritableScore(t), []string{"--zerar-placar"}, "", scoreWarning},
+		{"reset corrupt", corruptScore(t), []string{"--zerar-placar"}, "Placar zerado.\n", ""},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			code, stdout, stderr := runScore(tt.path, "", tt.args...)
+			if code != 0 || stdout != tt.wantStdout || stderr != tt.wantStderr {
+				t.Errorf("Run(%q) = %d, %q, %q, want 0, %q, %q", tt.args, code, stdout, stderr, tt.wantStdout, tt.wantStderr)
 			}
 		})
 	}

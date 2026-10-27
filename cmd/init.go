@@ -77,7 +77,7 @@ func run(args []string, stdin io.Reader, stdout, stderr io.Writer, scorePath str
 		}
 		return 2
 	}
-	if code, done := scoreCommand(stdout, scorePath, *showScore, *resetScore); done {
+	if code, done := scoreCommand(stdout, stderr, scorePath, *showScore, *resetScore); done {
 		return code
 	}
 	if !strings.EqualFold(*mode, machineMode) && !strings.EqualFold(*mode, soloMode) {
@@ -109,7 +109,7 @@ func run(args []string, stdin io.Reader, stdout, stderr io.Writer, scorePath str
 		return 1
 	}
 	if counts(*mode, flagGiven(fs, fleetFlag), result) {
-		recordScore(stdout, scorePath, strings.ToLower(*level), result)
+		recordScore(stdout, stderr, scorePath, strings.ToLower(*level), result)
 	}
 	if _, err := fmt.Fprintf(stdout, "Semente: %d\n", *seed); err != nil {
 		return 1
@@ -144,11 +144,17 @@ func counts(mode string, fleetGiven bool, result terminal.Result) bool {
 	return result.Outcome != terminal.GaveUp || result.Shots > 0
 }
 
+// scoreErrorMessage is shown on stderr when the score cannot be read or
+// saved; the game goes on as if there were no score.
+const scoreErrorMessage = "Não foi possível guardar o placar."
+
 // recordScore adds result to the score of level in the file at scorePath
-// and writes the score line of level to stdout.
-func recordScore(stdout io.Writer, scorePath, level string, result terminal.Result) {
+// and writes the score line of level to stdout. If the score cannot be read
+// or saved, it writes the warning to stderr instead.
+func recordScore(stdout, stderr io.Writer, scorePath, level string, result terminal.Result) {
 	b, err := score.Load(scorePath)
 	if err != nil {
+		fmt.Fprintln(stderr, scoreErrorMessage)
 		return
 	}
 	if result.Outcome == terminal.PlayerWon {
@@ -157,6 +163,7 @@ func recordScore(stdout io.Writer, scorePath, level string, result terminal.Resu
 		b.AddLoss(level)
 	}
 	if err := score.Save(scorePath, b); err != nil {
+		fmt.Fprintln(stderr, scoreErrorMessage)
 		return
 	}
 	fmt.Fprintln(stdout, terminal.ScoreLine(level, b[level]))
@@ -164,14 +171,16 @@ func recordScore(stdout io.Writer, scorePath, level string, result terminal.Resu
 
 // scoreCommand runs the score options instead of a game: with reset it
 // empties the score in the file at scorePath, and with show it writes the
-// score line of every level to stdout. It returns the exit code, and false
-// when neither option was given and the game should start.
-func scoreCommand(stdout io.Writer, scorePath string, show, reset bool) (int, bool) {
+// score line of every level to stdout. If the score cannot be read or
+// saved, it writes the warning to stderr and stops. It returns the exit
+// code, and false when neither option was given and the game should start.
+func scoreCommand(stdout, stderr io.Writer, scorePath string, show, reset bool) (int, bool) {
 	if !show && !reset {
 		return 0, false
 	}
 	if reset {
 		if err := score.Save(scorePath, score.Board{}); err != nil {
+			fmt.Fprintln(stderr, scoreErrorMessage)
 			return 0, true
 		}
 		fmt.Fprintln(stdout, "Placar zerado.")
@@ -179,6 +188,7 @@ func scoreCommand(stdout io.Writer, scorePath string, show, reset bool) (int, bo
 	if show {
 		b, err := score.Load(scorePath)
 		if err != nil {
+			fmt.Fprintln(stderr, scoreErrorMessage)
 			return 0, true
 		}
 		for _, level := range []string{easyLevel, hardLevel, masterLevel} {
