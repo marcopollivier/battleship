@@ -1,6 +1,6 @@
 # 015 — Mais cores
 
-- **Status:** Rascunho
+- **Status:** Aprovada
 - **Roadmap:** #015 (onda 7)
 - **Depende de:** 010 (cores no terminal)
 
@@ -56,10 +56,12 @@ A 010 coloriu só os tabuleiros, e deixou as cores sempre ligadas. Por isso as m
 
 ## Questões em aberto
 
-- [ ] **1. Mensagens e cores:** as da tabela, com o resultado da máquina colorido só depois dos dois-pontos. Alternativas: colorir a linha inteira da máquina; ou deixar as mensagens de entrada inválida sem cor.
-- [ ] **2. Padrão `auto`:** o padrão passa a ser `auto`, desfazendo a decisão da 010 de cores sempre ligadas, como proposto no roadmap. A alternativa é manter `sim` como padrão e só acrescentar `auto` como opção.
-- [ ] **3. `NO_COLOR` com `sim`:** `--cores sim` ignora `NO_COLOR`, porque quem passa a opção pediu cores de propósito. A alternativa é `NO_COLOR` vencer sempre.
-- [ ] **4. Texto:** `Cores inválidas: use sim, nao ou auto.`.
+Todas decididas em 2026-10-27, como propostas:
+
+- [x] **1. Mensagens e cores:** as da tabela, com o resultado da máquina colorido só depois dos dois-pontos. Alternativas: colorir a linha inteira da máquina; ou deixar as mensagens de entrada inválida sem cor.
+- [x] **2. Padrão `auto`:** o padrão passa a ser `auto`, desfazendo a decisão da 010 de cores sempre ligadas, como proposto no roadmap. A alternativa é manter `sim` como padrão e só acrescentar `auto` como opção.
+- [x] **3. `NO_COLOR` com `sim`:** `--cores sim` ignora `NO_COLOR`, porque quem passa a opção pediu cores de propósito. A alternativa é `NO_COLOR` vencer sempre.
+- [x] **4. Texto:** `Cores inválidas: use sim, nao ou auto.`.
 
 ## Encerramento
 
