@@ -81,8 +81,9 @@ const (
 )
 
 // placeShip asks for the position of one ship of type t until it is placed,
-// or until a command fills or clears the board. It reports false if the
-// player gave up or a write failed.
+// or until a command fills or clears the board. Invalid positions and a
+// random draw that does not fit show a message in yellow. It reports false
+// if the player gave up or a write failed.
 func (g *machineGame) placeShip(scanner *bufio.Scanner, t board.ShipType) bool {
 	for {
 		line, ok := g.prompt(scanner, placementPrompt(t))
@@ -92,7 +93,7 @@ func (g *machineGame) placeShip(scanner *bufio.Scanner, t board.ShipType) bool {
 		switch strings.ToLower(strings.TrimSpace(line)) {
 		case randomCommand:
 			if err := board.FillRandom(g.player, g.rng); err != nil {
-				g.write("Não foi possível sortear o resto da frota. Mude a posição dos navios com recomecar.\n")
+				g.write(g.style.paint("Não foi possível sortear o resto da frota. Mude a posição dos navios com recomecar.", warnColor) + "\n")
 				continue
 			}
 			return true
@@ -112,7 +113,7 @@ func (g *machineGame) placeShip(scanner *bufio.Scanner, t board.ShipType) bool {
 			g.err = err
 			return false
 		}
-		g.write(message + "\n")
+		g.write(g.style.paint(message, warnColor) + "\n")
 	}
 }
 

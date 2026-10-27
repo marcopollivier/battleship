@@ -113,7 +113,7 @@ func shotCount(n int) string {
 	return fmt.Sprintf("%d disparos", n)
 }
 
-// reject shows the message for an invalid shot at c. An error with no
+// reject shows the message for an invalid shot at c, in yellow. An error with no
 // message for the player is kept in g.err and ends the game.
 func (g *playerAttack) reject(err error, c board.Coord) {
 	message, ok := shotErrorMessage(err, c)
@@ -121,7 +121,7 @@ func (g *playerAttack) reject(err error, c board.Coord) {
 		g.err = err
 		return
 	}
-	g.write(message + "\n")
+	g.write(g.style.paint(message, warnColor) + "\n")
 }
 
 // shotErrorMessage returns the Portuguese message for a shot at c that was

@@ -244,12 +244,16 @@ func TestPlaySolo_Colored(t *testing.T) {
 	assertBoardsColored(t, soloPlayStyle(t, attackExampleBoard(t), input, Colored), soloPlay(t, attackExampleBoard(t), input))
 }
 
-// CA-1 (spec 015): with Colored, a miss is cyan, a hit and a sunk ship bold
-// red, and the solo win bold green; the line breaks stay out of the colors.
+// CA-1 and CA-4 (spec 015): with Colored, a miss is cyan, a hit and a sunk
+// ship bold red, the solo win bold green and invalid input yellow; the line
+// breaks stay out of the colors.
 func TestPlaySolo_ColoredMessages(t *testing.T) {
-	cells := append([]string{"J10"}, soloShipCells...)
+	cells := append([]string{"J10", "7B", "K1", "j10"}, soloShipCells...)
 	got := soloPlayStyle(t, attackExampleBoard(t), strings.Join(cells, "\n")+"\n", Colored)
 	for _, want := range []string{
+		soloPrompt + colored("33", "Coordenada inválida: use uma letra de A a J e um número de 1 a 10, por exemplo B7.") + "\n" + soloPrompt,
+		soloPrompt + colored("33", "Fora do tabuleiro: use uma letra de A a J e um número de 1 a 10.") + "\n" + soloPrompt,
+		soloPrompt + colored("33", "Você já atirou em J10.") + "\n" + soloPrompt,
 		soloPrompt + colored("36", "Água.") + "\n\n",
 		soloPrompt + colored("1;31", "Acerto!") + "\n\n",
 		soloPrompt + colored("1;31", "Afundou o Submarino!") + "\n\n",

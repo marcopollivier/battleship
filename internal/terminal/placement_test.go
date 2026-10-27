@@ -296,4 +296,31 @@ func TestPlayVsMachine_PlacementColored(t *testing.T) {
 		t.Errorf("PlayVsMachine() =\n%s\nwant prefix\n%s", got, want)
 	}
 	assertBoardsColored(t, got, placementPlay(t, input))
+	assertUncolored(t, got, placementInstructions, placementCarrierPrompt, placementBattleshipPrompt, "Frota posicionada!")
+}
+
+// CA-4 (spec 015): with Colored, an invalid position and a random draw that
+// does not fit are yellow, followed by the uncolored prompt.
+func TestPlayVsMachine_PlacementColoredErrors(t *testing.T) {
+	got := placementPlayStyle(t, "xyz\nB1 baixo\nA1 horizontal\nsair\n", Colored)
+	for _, want := range []string{
+		colored("33", "Posição inválida: digite a casa e a orientação, por exemplo E5 vertical.") + "\n" + placementCarrierPrompt,
+		colored("33", "Posição ocupada: o Encouraçado ficaria em cima de outro navio.") + "\n" + placementBattleshipPrompt,
+	} {
+		if !strings.Contains(got, want) {
+			t.Errorf("PlayVsMachine() =\n%s\nwant it to contain %q", got, want)
+		}
+	}
+
+	const prompt = "Submarino, 1 casa: "
+	fleet := []board.FleetEntry{{Type: board.Submarine, Count: 26}}
+	var sb strings.Builder
+	err := PlayVsMachine(strings.NewReader("aleatorio\n"), &sb, board.NewBoard(fleet), machineEnemyBoard(t), rand.New(rand.NewPCG(1, 0)), Colored, board.RandomShot)
+	if err != nil {
+		t.Fatalf("PlayVsMachine: %v", err)
+	}
+	want := prompt + colored("33", "Não foi possível sortear o resto da frota. Mude a posição dos navios com recomecar.") + "\n" + prompt
+	if got := sb.String(); !strings.Contains(got, want) {
+		t.Errorf("PlayVsMachine() =\n%s\nwant it to contain %q", got, want)
+	}
 }
