@@ -178,6 +178,27 @@ func TestPlaySolo_GiveUp(t *testing.T) {
 	}
 }
 
+// CA-5 (spec 023): after the player sinks a ship and gives up, the revealed
+// fleet shows that ship as #, a hit ship still afloat as X and the others
+// with their letters.
+func TestPlaySolo_GiveUpShowsSunk(t *testing.T) {
+	got := soloPlay(t, attackExampleBoard(t), "H5\nE1\nJ10\nsair\n")
+	_, reveal, found := strings.Cut(got, "Você desistiu depois de 3 disparos. A frota era:\n\n")
+	if !found {
+		t.Fatalf("PlaySolo() =\n%s\nwant the revealed fleet", got)
+	}
+	lines := strings.Split(reveal, "\n")
+	for row, want := range map[int]string{
+		1:  " 1 P P P ~ X E E E ~ C",
+		5:  " 5 D D ~ ~ ~ ~ ~ # ~ ~",
+		10: "10 ~ ~ ~ ~ ~ ~ ~ ~ ~ o",
+	} {
+		if lines[row] != want {
+			t.Errorf("revealed row %d = %q, want %q", row, lines[row], want)
+		}
+	}
+}
+
 // A win with a single shot uses the singular.
 func TestPlaySolo_WinOneShot(t *testing.T) {
 	b := board.NewBoard([]board.FleetEntry{{Type: board.Submarine, Count: 1}})
