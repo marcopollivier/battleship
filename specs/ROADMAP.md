@@ -18,11 +18,10 @@ Features da mesma onda não dependem umas das outras e são tocadas em paralelo 
 | 006 | Modo solo: atacar um tabuleiro gerado aleatoriamente | TODO do README | 003, 005, 009 | 3 | Concluída |
 | 007 | Jogador vs. máquina: jogar com a frota sorteada contra jogadas aleatórias, com turno extra após acerto | TODO do README | 006 | 4 | Concluída |
 | 012 | Posicionar a própria frota: o jogador escolhe onde fica cada navio antes da partida contra a máquina | Divisão da 007 | 007 | 5 | Concluída |
-| 010 | Cores no terminal: água, navios e disparos em cores diferentes | Fora de escopo da 004 | 009 | — | Backlog |
-| 011 | `make run` repassar opções ao jogo (`make run ARGS="--semente 42"`) | Encerramento da 006 | 006 | — | Backlog |
-| 013 | Máquina com estratégia: atirar em volta de um acerto até afundar o navio | Encerramento da 007 | 007 | — | Backlog |
-| 014 | Avisar, durante o posicionamento, que o resto da frota não cabe mais | Encerramento da 012 | 012 | — | Backlog |
-| 015 | Desfazer só o último navio posicionado, no lugar de recomeçar tudo | Encerramento da 012 | 012 | — | Backlog |
+| 010 | Cores no terminal: água, navios e disparos em cores diferentes | Fora de escopo da 004 | 009 | 6 | Spec |
+| 011 | `make run` repassar opções ao jogo (`make run ARGS="--semente 42"`) | Encerramento da 006 | 006 | 6 | Spec |
+| 013 | Máquina com estratégia: atirar em volta de um acerto até afundar o navio | Encerramento da 007 | 007 | 6 | Spec |
+| 014 | Posicionamento mais fácil: desfazer só o último navio, e avisar quando o resto da frota não cabe mais | Encerramento da 012 | 012 | — | Backlog |
 
 ## Notas das specs concluídas
 
