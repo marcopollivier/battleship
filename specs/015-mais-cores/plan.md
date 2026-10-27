@@ -43,13 +43,13 @@ Onde cada mensagem é pintada:
 // chooseStyle returns the board style for the colors option (sim, nao or
 // auto, in any case), given whether the output is a terminal and the value
 // of NO_COLOR, and false for any other option value.
-func chooseStyle(colors string, terminal bool, noColor string) (terminal.Style, bool)
+func chooseStyle(colors string, tty bool, noColor string) (terminal.Style, bool)
 
 // isTerminal reports whether w is a character device, such as a terminal.
 func isTerminal(w io.Writer) bool
 ```
 
-- Com `auto`, `chooseStyle` só devolve `Colored` quando `terminal` é verdadeiro e `noColor == ""`.
+- Com `auto`, `chooseStyle` só devolve `Colored` quando `tty` é verdadeiro e `noColor == ""`.
 - `isTerminal` testa se o `w` é um `*os.File` e se o `Stat` tem `os.ModeCharDevice`. O `Run` chama `chooseStyle(*colors, isTerminal(stdout), os.Getenv("NO_COLOR"))`.
 - A mensagem de valor inválido passa a ser `Cores inválidas: use sim, nao ou auto.`.
 
