@@ -67,28 +67,78 @@ func machinePlayStyle(t *testing.T, input string, seed uint64, style Style) stri
 	return sb.String()
 }
 
-// machineScreen is the full screen shown when the turn is the player's.
-func machineScreen(t *testing.T, player, enemy *board.Board) string {
+// machineScreen is the screen shown when the turn is the player's, without
+// colors and without clearing the terminal: both boards side by side, the
+// legends, the events of the turn, one per line, and the prompt.
+func machineScreen(t *testing.T, player, enemy *board.Board, events ...string) string {
 	t.Helper()
-	return "Sua frota:\n" + soloReveal(t, player) + "\nFrota inimiga:\n" + attackRender(t, enemy) + "\n" + soloPrompt
+	return machineScreenStyle(t, Plain, player, enemy, events...)
 }
 
-// CA-1: the game starts with both boards and the prompt.
+// machineScreenStyle is machineScreen with the boards drawn with style.
+func machineScreenStyle(t *testing.T, style Style, player, enemy *board.Board, events ...string) string {
+	t.Helper()
+	lines := append([]string{"Sua frota                  Frota inimiga"}, sideBySide(ownGrid(player, style), attackGrid(enemy, style))...)
+	lines = append(lines, "",
+		"Sua frota: ~ água, S D C E P navio, X atingido, o tiro na água",
+		"Frota inimiga: . não atingida, o água, X acerto, S D C E P navio afundado",
+		"")
+	lines = append(lines, events...)
+	return strings.Join(lines, "\n") + "\n" + soloPrompt
+}
+
+// machineShot fires at cell on replay and returns the event PlayVsMachine
+// shows for it, such as "Seu disparo em E5: Acerto!".
+func machineShot(t *testing.T, replay *board.Board, cell string) string {
+	t.Helper()
+	c, err := board.ParseCoord(cell)
+	if err != nil {
+		t.Fatalf("ParseCoord(%q): %v", cell, err)
+	}
+	shot, err := replay.Fire(c)
+	if err != nil {
+		t.Fatalf("Fire(%s): %v", cell, err)
+	}
+	return "Seu disparo em " + c.String() + ": " + ShotMessage(shot)
+}
+
+// CA-1 (spec 022): the game starts with both boards side by side, their
+// titles and legends, and the prompt, no line wider than 80 columns.
 func TestPlayVsMachine_Start(t *testing.T) {
 	got := machinePlay(t, "", 1)
-	if want := machineScreen(t, machinePlayerBoard(t), machineEnemyBoard(t)); !strings.HasPrefix(got, want) {
+	want := machineScreen(t, machinePlayerBoard(t), machineEnemyBoard(t))
+	if !strings.HasPrefix(got, want) {
+		t.Errorf("PlayVsMachine() =\n%s\nwant prefix\n%s", got, want)
+	}
+	for i, line := range strings.Split(want, "\n") {
+		if n := visibleWidth(line); n > maxWidth {
+			t.Errorf("line %d is %d columns wide: %q", i+1, n, line)
+		}
+	}
+}
+
+// CA-2 (spec 022): after a hit, the player shoots again on a new screen
+// with both boards and the result of the shot, citing the cell.
+func TestPlayVsMachine_HitShootsAgain(t *testing.T) {
+	player, enemy := machinePlayerBoard(t), machineEnemyBoard(t)
+	want := machineScreen(t, player, enemy)
+	want += machineScreen(t, player, enemy, machineShot(t, enemy, "E5"))
+	if !strings.Contains(want, "\nSeu disparo em E5: Acerto!\nDisparo: ") {
+		t.Fatalf("the screen does not show the hit:\n%s", want)
+	}
+	if got := machinePlay(t, "E5\nsair\n", 1); !strings.HasPrefix(got, want) {
 		t.Errorf("PlayVsMachine() =\n%s\nwant prefix\n%s", got, want)
 	}
 }
 
-// CA-2 and CA-5: a hit lets the player shoot again, without the machine
-// shooting, and sinking the last enemy ship wins.
+// CA-2 and CA-5 (spec 008): a hit lets the player shoot again, without the
+// machine shooting, and sinking the last enemy ship wins.
 func TestPlayVsMachine_PlayerWins(t *testing.T) {
 	player, enemy := machinePlayerBoard(t), machineEnemyBoard(t)
-	want := machineScreen(t, player, enemy) +
-		soloTurn(t, enemy, "E5", "Acerto!") + "\n" + soloPrompt +
-		soloTurn(t, enemy, "F5", "Afundou o Destroyer!") + "\n" + soloPrompt +
-		soloTurn(t, enemy, "J10", "Afundou o Submarino!") + "\n" +
+	want := machineScreen(t, player, enemy)
+	want += machineScreen(t, player, enemy, machineShot(t, enemy, "E5"))
+	want += machineScreen(t, player, enemy, machineShot(t, enemy, "F5"))
+	want += machineShot(t, enemy, "J10") + "\n" +
 		"Você venceu! Afundou a frota inimiga em 3 disparos.\n"
 
 	if got := machinePlay(t, "E5\nF5\nJ10\nA1\n", 1); got != want {
@@ -96,12 +146,56 @@ func TestPlayVsMachine_PlayerWins(t *testing.T) {
 	}
 }
 
+// CA-4 (spec 022): invalid input shows its message below the prompt and
+// asks again, without a new screen.
+func TestPlayVsMachine_InvalidInput(t *testing.T) {
+	player, enemy := machinePlayerBoard(t), machineEnemyBoard(t)
+	want := machineScreen(t, player, enemy)
+	want += machineScreen(t, player, enemy, machineShot(t, enemy, "E5")) +
+		"Coordenada inválida: use uma letra de A a J e um número de 1 a 10, por exemplo B7.\n" + soloPrompt +
+		"Você já atirou em E5.\n" + soloPrompt +
+		"Você desistiu"
+	if got := machinePlay(t, "E5\n7B\ne5\nsair\n", 1); !strings.HasPrefix(got, want) {
+		t.Errorf("PlayVsMachine() =\n%s\nwant prefix\n%s", got, want)
+	}
+}
+
+// CA-5 (spec 022): with Clear, every screen starts with the code that clears
+// the terminal, and only the screens; without it, the code never appears.
+func TestPlayVsMachine_Clear(t *testing.T) {
+	play := func(clear bool) string {
+		var sb strings.Builder
+		err := PlayVsMachine(strings.NewReader("E5\n7B\nA10\nsair\n"), &sb, machinePlayerBoard(t), machineEnemyBoard(t),
+			rand.New(rand.NewPCG(1, 0)), Display{Style: Plain, Clear: clear}, machineScript(t, "J10"))
+		if err != nil {
+			t.Fatalf("PlayVsMachine: %v", err)
+		}
+		return sb.String()
+	}
+	plain, cleared := play(false), play(true)
+	if strings.Contains(plain, "\x1b[2J") {
+		t.Errorf("without Clear, the game clears the terminal:\n%q", plain)
+	}
+	if got := strings.ReplaceAll(cleared, clearScreen, ""); got != plain {
+		t.Errorf("with Clear, without the clear codes =\n%s\nwant\n%s", got, plain)
+	}
+	screens := strings.Split(cleared, clearScreen)
+	if len(screens) != 4 || screens[0] != "" {
+		t.Fatalf("with Clear, %d parts split by the clear code, want the output to start with it and 3 screens:\n%q", len(screens), cleared)
+	}
+	for i, screen := range screens[1:] {
+		if !strings.HasPrefix(screen, "Sua frota                  Frota inimiga\n") {
+			t.Errorf("screen %d does not start with the titles:\n%s", i+1, screen)
+		}
+	}
+}
+
 // machineTurn replays a machine turn on player with rng: it fires until a
 // miss or until the player's fleet is sunk, and returns the lines
-// PlayVsMachine should write and whether the machine won.
-func machineTurn(t *testing.T, player *board.Board, rng *rand.Rand) (string, bool) {
+// PlayVsMachine should show and whether the machine won.
+func machineTurn(t *testing.T, player *board.Board, rng *rand.Rand) ([]string, bool) {
 	t.Helper()
-	var sb strings.Builder
+	var lines []string
 	for {
 		c, err := board.RandomShot(player, rng)
 		if err != nil {
@@ -115,12 +209,12 @@ func machineTurn(t *testing.T, player *board.Board, rng *rand.Rand) (string, boo
 		if shot.Result == board.Sunk {
 			message = "Afundou o seu " + ShipName(shot.Ship) + "!"
 		}
-		sb.WriteString("A máquina atirou em " + c.String() + ": " + message + "\n")
+		lines = append(lines, "A máquina atirou em "+c.String()+": "+message)
 		if player.AllSunk() {
-			return sb.String(), true
+			return lines, true
 		}
 		if shot.Result == board.Miss {
-			return sb.String(), false
+			return lines, false
 		}
 	}
 }
@@ -144,18 +238,20 @@ func machineWaterCells(b *board.Board) []string {
 	return cells
 }
 
-// CA-3: after the player's miss the machine shoots until it misses, one line
-// per shot, and then the full screen comes back.
+// CA-3 (spec 022): after the player's miss the machine shoots until it
+// misses, and the next screen shows the player's result and one line per
+// machine shot below the boards, then the prompt.
 func TestPlayVsMachine_MachineTurn(t *testing.T) {
 	const seed = 1
 	player, enemy := machinePlayerBoard(t), machineEnemyBoard(t)
 	rng := rand.New(rand.NewPCG(seed, 0))
-	want := machineScreen(t, player, enemy) + soloTurn(t, enemy, "A10", "Água.") + "\n"
+	want := machineScreen(t, player, enemy)
+	events := []string{machineShot(t, enemy, "A10")}
 	lines, won := machineTurn(t, player, rng)
 	if won {
 		t.Fatalf("the machine wins in its first turn with seed %d; pick another seed", seed)
 	}
-	want += lines + "\n" + machineScreen(t, player, enemy)
+	want += machineScreen(t, player, enemy, append(events, lines...)...)
 
 	if got := machinePlay(t, "A10\n", seed); !strings.HasPrefix(got, want) {
 		t.Errorf("PlayVsMachine() =\n%s\nwant prefix\n%s", got, want)
@@ -173,18 +269,19 @@ func TestPlayVsMachine_MachineWins(t *testing.T) {
 	want := machineScreen(t, player, enemy)
 	won, machineShots := false, 0
 	for _, cell := range waters {
-		want += soloTurn(t, enemy, cell, "Água.") + "\n"
+		events := []string{machineShot(t, enemy, cell)}
 		lines, machineWon := machineTurn(t, player, rng)
-		want += lines
-		machineShots += strings.Count(lines, "\n")
+		events = append(events, lines...)
+		machineShots += len(lines)
 		if machineWon {
 			won = true
+			want += strings.Join(events, "\n") + "\n"
 			want += "\nSua frota:\n" + soloReveal(t, player) +
 				"\nA máquina venceu! Ela afundou a sua frota em " + shotCount(machineShots) + ". A frota inimiga era:\n\n" +
 				soloReveal(t, enemy)
 			break
 		}
-		want += "\n" + machineScreen(t, player, enemy)
+		want += machineScreen(t, player, enemy, events...)
 	}
 	if !won {
 		t.Fatalf("the machine does not win with seed %d before the player runs out of water", seed)
@@ -209,12 +306,13 @@ func TestPlayVsMachine_GiveUp(t *testing.T) {
 	t.Run("end of input after a miss", func(t *testing.T) {
 		const seed = 1
 		player, enemy := machinePlayerBoard(t), machineEnemyBoard(t)
-		want := machineScreen(t, player, enemy) + soloTurn(t, enemy, "A10", "Água.") + "\n"
+		want := machineScreen(t, player, enemy)
+		events := []string{machineShot(t, enemy, "A10")}
 		lines, won := machineTurn(t, player, rand.New(rand.NewPCG(seed, 0)))
 		if won {
 			t.Fatalf("the machine wins in its first turn with seed %d; pick another seed", seed)
 		}
-		want += lines + "\n" + machineScreen(t, player, enemy) +
+		want += machineScreen(t, player, enemy, append(events, lines...)...) +
 			"\nVocê desistiu depois de 1 disparo. A frota inimiga era:\n\n" + soloReveal(t, enemy)
 		if got := machinePlay(t, "A10", seed); got != want {
 			t.Errorf("PlayVsMachine() =\n%s\nwant\n%s", got, want)
@@ -295,10 +393,9 @@ func TestPlayVsMachine_Errors(t *testing.T) {
 // the end and the revealed enemy fleet are drawn with colors.
 func TestPlayVsMachine_Colored(t *testing.T) {
 	player, enemy := machinePlayerBoard(t), machineEnemyBoard(t)
-	want := "Sua frota:\n" + renderColored(t, RenderBoard, player) +
-		"\nFrota inimiga:\n" + renderColored(t, RenderAttackBoard, enemy) + "\n" + soloPrompt
+	want := machineScreenStyle(t, Colored, player, enemy)
 	attackFire(t, enemy, "E5")
-	want += colored("1;31", "Acerto!") + "\n\n" + renderColored(t, RenderAttackBoard, enemy) + "\n" + soloPrompt +
+	want += machineScreenStyle(t, Colored, player, enemy, "Seu disparo em E5: "+colored("1;31", "Acerto!")) +
 		"Você desistiu depois de 1 disparo. A frota inimiga era:\n\n" + renderColored(t, RenderBoard, enemy)
 
 	if got := machinePlayStyle(t, "E5\nsair\n", 1, Colored); got != want {
@@ -312,7 +409,7 @@ func TestPlayVsMachine_Colored(t *testing.T) {
 		t.Fatalf("the machine does not win with seed %d", seed)
 	}
 	assertBoardsColored(t, got, machinePlay(t, input, seed))
-	assertUncolored(t, got, "Sua frota:", "Frota inimiga:", soloPrompt, "A máquina atirou em ", " A frota inimiga era:")
+	assertUncolored(t, got, "Sua frota                  Frota inimiga", "Sua frota: ~", "Frota inimiga: .", soloPrompt, "Seu disparo em ", "A máquina atirou em ", " A frota inimiga era:")
 }
 
 // machineScriptPlay runs PlayVsMachine with colors on player and the

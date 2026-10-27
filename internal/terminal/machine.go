@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"io"
 	"math/rand/v2"
+	"strings"
 
 	"github.com/marcopollivier/battleship/internal/board"
 )
@@ -16,7 +17,7 @@ import (
 // boards drawn as display says, and returns an error if reading, writing or
 // choosing a machine shot fails.
 func PlayVsMachine(in io.Reader, out io.Writer, player, enemy *board.Board, rng *rand.Rand, display Display, shoot board.ShotStrategy) error {
-	g := &machineGame{playerAttack: playerAttack{out: out, target: enemy, style: display.Style}, player: player, rng: rng, strategy: shoot}
+	g := &machineGame{playerAttack: playerAttack{out: out, target: enemy, style: display.Style, clear: display.Clear}, player: player, rng: rng, strategy: shoot}
 	scanner := bufio.NewScanner(in)
 	if !player.Complete() && !g.placeFleet(scanner) {
 		return g.err
@@ -28,25 +29,24 @@ func PlayVsMachine(in io.Reader, out io.Writer, player, enemy *board.Board, rng 
 			g.giveUp("A frota inimiga era:")
 			return g.err
 		}
-		shot, ok := g.shoot(line)
+		c, shot, ok := g.shoot(line)
 		if !ok {
 			if g.err != nil {
 				return g.err
 			}
 			continue
 		}
+		g.events = append(g.events, g.shotResult(c, shot))
 		if enemy.AllSunk() {
+			g.writeEvents()
 			g.write(g.style.paint("Você venceu! Afundou a frota inimiga em "+shotCount(g.shots)+".", winColor) + "\n")
 			return g.err
 		}
-		if shot.Result != board.Miss {
-			continue
-		}
-		if g.machineTurn() {
+		if shot.Result == board.Miss && g.machineTurn() {
+			g.writeEvents()
 			g.machineWins()
 			return g.err
 		}
-		g.write("\n")
 		g.showScreen()
 	}
 }
@@ -59,6 +59,9 @@ type machineGame struct {
 	rng          *rand.Rand
 	strategy     board.ShotStrategy
 	machineShots int
+	// events are the lines of what happened since the last screen, shown
+	// below the boards of the next one.
+	events []string
 }
 
 // machineTurn makes the machine shoot at the player's board until it misses,
@@ -76,7 +79,7 @@ func (g *machineGame) machineTurn() bool {
 			return false
 		}
 		g.machineShots++
-		g.write("A máquina atirou em " + c.String() + ": " + g.style.paint(machineShotMessage(shot), shotColor(shot.Result)) + "\n")
+		g.events = append(g.events, "A máquina atirou em "+c.String()+": "+g.style.paint(machineShotMessage(shot), shotColor(shot.Result)))
 		if g.player.AllSunk() {
 			return true
 		}
@@ -105,10 +108,35 @@ func machineShotMessage(s board.Shot) string {
 	return ShotMessage(s)
 }
 
-// showScreen writes the player's board and the attack board, each with its title.
+// Legends of the boards on the game screen, which name the ship letters
+// together to keep the screen within 80 columns.
+const (
+	ownScreenLegend   = ownTitle + ": ~ água, S D C E P navio, X atingido, o tiro na água"
+	enemyScreenLegend = enemyTitle + ": . não atingida, o água, X acerto, S D C E P navio afundado"
+)
+
+// showScreen writes the game screen: the clear code if the terminal is
+// cleared, both boards side by side with their titles and legends, and the
+// events since the last screen. The prompt comes after it.
 func (g *machineGame) showScreen() {
-	g.write("Sua frota:\n")
-	g.render(RenderBoard, g.player)
-	g.write("\nFrota inimiga:\n")
-	g.showBoard()
+	var sb strings.Builder
+	if g.clear {
+		sb.WriteString(clearScreen)
+	}
+	sb.WriteString(boardTitles + "\n")
+	for _, line := range sideBySide(ownGrid(g.player, g.style), attackGrid(g.target, g.style)) {
+		sb.WriteString(line + "\n")
+	}
+	sb.WriteString("\n" + ownScreenLegend + "\n" + enemyScreenLegend + "\n\n")
+	g.write(sb.String())
+	g.writeEvents()
+}
+
+// writeEvents writes the events since the last screen, one per line, and
+// forgets them.
+func (g *machineGame) writeEvents() {
+	for _, event := range g.events {
+		g.write(event + "\n")
+	}
+	g.events = nil
 }

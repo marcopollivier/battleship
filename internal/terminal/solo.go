@@ -23,7 +23,7 @@ const (
 // are drawn as display says. It returns an error if writing to out or reading
 // from in fails.
 func PlaySolo(in io.Reader, out io.Writer, b *board.Board, display Display) error {
-	g := &playerAttack{out: out, target: b, style: display.Style}
+	g := &playerAttack{out: out, target: b, style: display.Style, clear: display.Clear}
 	g.showBoard()
 	scanner := bufio.NewScanner(in)
 	for {
@@ -32,12 +32,15 @@ func PlaySolo(in io.Reader, out io.Writer, b *board.Board, display Display) erro
 			g.giveUp("A frota era:")
 			return g.err
 		}
-		if _, ok := g.shoot(line); !ok {
+		_, shot, ok := g.shoot(line)
+		if !ok {
 			if g.err != nil {
 				return g.err
 			}
 			continue
 		}
+		g.write(g.style.paint(ShotMessage(shot), shotColor(shot.Result)) + "\n\n")
+		g.showBoard()
 		if b.AllSunk() {
 			g.write(g.style.paint("Você afundou toda a frota em "+shotCount(g.shots)+"!", winColor) + "\n")
 			return g.err
@@ -46,12 +49,14 @@ func PlaySolo(in io.Reader, out io.Writer, b *board.Board, display Display) erro
 }
 
 // playerAttack holds the player's side of a game: the board they shoot at,
-// how many valid shots they made and the style every board is drawn with.
-// Writes stop at the first error, which is kept in err.
+// how many valid shots they made, the style every board is drawn with and
+// whether the terminal is cleared before each screen. Writes stop at the
+// first error, which is kept in err.
 type playerAttack struct {
 	out    io.Writer
 	target *board.Board
 	style  Style
+	clear  bool
 	shots  int
 	err    error
 }
@@ -78,24 +83,28 @@ func (g *playerAttack) prompt(scanner *bufio.Scanner, text string) (string, bool
 	return line, true
 }
 
-// shoot fires at the cell in line and shows the result followed by the
-// attack board. Invalid input only shows a message, does not count as a shot
-// and returns false.
-func (g *playerAttack) shoot(line string) (board.Shot, bool) {
+// shoot fires at the cell in line and returns the cell and the shot.
+// Invalid input only shows a message, does not count as a shot and returns
+// false.
+func (g *playerAttack) shoot(line string) (board.Coord, board.Shot, bool) {
 	c, err := board.ParseCoord(line)
 	if err != nil {
 		g.reject(err, c)
-		return board.Shot{}, false
+		return c, board.Shot{}, false
 	}
 	shot, err := g.target.Fire(c)
 	if err != nil {
 		g.reject(err, c)
-		return board.Shot{}, false
+		return c, board.Shot{}, false
 	}
 	g.shots++
-	g.write(g.style.paint(ShotMessage(shot), shotColor(shot.Result)) + "\n\n")
-	g.showBoard()
-	return shot, g.err == nil
+	return c, shot, true
+}
+
+// shotResult is the result of the player's shot at c, citing the cell, such
+// as "Seu disparo em B7: Acerto!", with the result in its color.
+func (g *playerAttack) shotResult(c board.Coord, shot board.Shot) string {
+	return "Seu disparo em " + c.String() + ": " + g.style.paint(ShotMessage(shot), shotColor(shot.Result))
 }
 
 // giveUp ends the game with the number of shots and reveal, then the target
