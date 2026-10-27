@@ -112,6 +112,15 @@ func (b *Board) clone() *Board {
 	return &Board{fleet: slices.Clone(b.fleet), ships: b.Ships(), shots: maps.Clone(b.shots)}
 }
 
+// RemoveLast removes the ship placed last and reports false if there is none.
+func (b *Board) RemoveLast() bool {
+	if len(b.ships) == 0 {
+		return false
+	}
+	b.ships = b.ships[:len(b.ships)-1]
+	return true
+}
+
 // Clear removes every ship and every shot from the board.
 func (b *Board) Clear() {
 	b.ships = nil
