@@ -88,6 +88,5 @@ Não foi conferido num terminal de verdade, com os olhos, como as cores novas fi
 
 **Para o roadmap:**
 
-- Pintar de amarelo as duas mensagens novas do posicionamento da 014 (`Não há navio para desfazer.` e o aviso de que o resto da frota não cabe), com teste, quando o `master` com a 014 for trazido para esta spec (ver "Dependências e riscos" do plano).
 - Conferir num terminal de verdade como as cores ficam, inclusive em fundo claro.
 - Os itens que a spec deixou fora de escopo: detectar `TERM=dumb`, cores no `stderr` e escolher a paleta.
