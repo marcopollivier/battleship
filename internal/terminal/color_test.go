@@ -152,3 +152,28 @@ func TestRenderAttackBoard_Colored(t *testing.T) {
 	}
 	assertColoredCells(t, got, attackRender(t, b), attackBoardCodes)
 }
+
+// boardRow matches a board row, which starts with its number.
+var boardRow = regexp.MustCompile(`^( \d|10) `)
+
+// assertBoardsColored checks that output, a game drawn with Colored, is
+// plain without its color codes, and that every board row in it is colored.
+func assertBoardsColored(t *testing.T, output, plain string) {
+	t.Helper()
+	if got := stripColors(output); got != plain {
+		t.Errorf("colored game without codes =\n%s\nwant\n%s", got, plain)
+	}
+	rows := 0
+	for _, line := range strings.Split(output, "\n") {
+		if !boardRow.MatchString(line) {
+			continue
+		}
+		rows++
+		if !strings.Contains(line, "\x1b") {
+			t.Errorf("board row %q has no color", line)
+		}
+	}
+	if rows == 0 {
+		t.Error("the game shows no board")
+	}
+}

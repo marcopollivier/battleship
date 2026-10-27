@@ -19,10 +19,11 @@ const (
 
 // PlaySolo runs a solo game: it reads shots from in, one per line, and
 // writes the attack board and messages to out until every ship of b is sunk
-// or the player gives up, with "sair" or the end of the input. It returns an
-// error if writing to out or reading from in fails.
-func PlaySolo(in io.Reader, out io.Writer, b *board.Board) error {
-	g := &playerAttack{out: out, target: b}
+// or the player gives up, with "sair" or the end of the input. The boards
+// are drawn with style. It returns an error if writing to out or reading
+// from in fails.
+func PlaySolo(in io.Reader, out io.Writer, b *board.Board, style Style) error {
+	g := &playerAttack{out: out, target: b, style: style}
 	g.showBoard()
 	scanner := bufio.NewScanner(in)
 	for {
@@ -44,12 +45,13 @@ func PlaySolo(in io.Reader, out io.Writer, b *board.Board) error {
 	}
 }
 
-// playerAttack holds the player's side of a game: the board they shoot at
-// and how many valid shots they made. Writes stop at the first error, which
-// is kept in err.
+// playerAttack holds the player's side of a game: the board they shoot at,
+// how many valid shots they made and the style every board is drawn with.
+// Writes stop at the first error, which is kept in err.
 type playerAttack struct {
 	out    io.Writer
 	target *board.Board
+	style  Style
 	shots  int
 	err    error
 }
@@ -143,10 +145,10 @@ func (g *playerAttack) showBoard() {
 	g.write("\n")
 }
 
-// render draws b with draw, unless an earlier write failed.
+// render draws b with draw in the game's style, unless an earlier write failed.
 func (g *playerAttack) render(draw func(io.Writer, *board.Board, Style) error, b *board.Board) {
 	if g.err == nil {
-		g.err = draw(g.out, b, Plain)
+		g.err = draw(g.out, b, g.style)
 	}
 }
 

@@ -74,9 +74,9 @@ func play(mode string, fleet []board.FleetEntry, rng *rand.Rand, stdin io.Reader
 		return err
 	}
 	if strings.EqualFold(mode, soloMode) {
-		return terminal.PlaySolo(stdin, stdout, target)
+		return terminal.PlaySolo(stdin, stdout, target, terminal.Plain)
 	}
-	return terminal.PlayVsMachine(stdin, stdout, board.NewBoard(fleet), target, rng)
+	return terminal.PlayVsMachine(stdin, stdout, board.NewBoard(fleet), target, rng, terminal.Plain)
 }
 
 // newRNG returns the random source that draws the boards for seed.
