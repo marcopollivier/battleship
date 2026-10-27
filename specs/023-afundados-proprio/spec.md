@@ -1,6 +1,6 @@
 # 023 — Navios afundados no próprio tabuleiro
 
-- **Status:** Em andamento
+- **Status:** Concluída
 - **Roadmap:** #023 (onda 8), issue #33
 - **Depende de:** 015 (mais cores)
 
@@ -45,4 +45,17 @@ Todas decididas em 2026-10-27, como propostas:
 
 ## Encerramento
 
-Preenchido na fase 5: desvios em relação ao plano e o que ficou para o roadmap.
+Concluída em 2026-10-27, nas tarefas T1 e T2. Os 5 critérios de aceitação são cobertos por testes em `internal/terminal`: CA-1 em `TestRenderBoard_Sunk` (`render_test.go`), CA-2 em `TestRenderBoard_SunkColored` (`color_test.go`), CA-3 em `TestRenderBoard_Sunk` e nos testes do `RenderBoard` que já existiam (`TestRenderBoard_Empty`, `TestRenderBoard_FullFleet`, `TestRenderBoard_ReceivedShots`), que passaram a conferir a legenda nova, CA-4 em `TestPlayVsMachine_SunkOwnShip` (`machine_test.go`) e CA-5 em `TestPlaySolo_GiveUpShowsSunk` (`solo_test.go`). A cobertura ficou em 99,7% em `internal/board`, 97,6% em `internal/terminal` e 93,0% em `cmd`.
+
+O binário foi rodado com `--cores nao --semente 42`, `aleatorio` e um tiro em cada casa do tabuleiro: depois de `Afundou o seu Encouraçado!`, a tela seguinte mostra o Encouraçado como `# # # #` em `Sua frota`, com os outros navios ainda com as suas letras; na derrota, a sua frota aparece toda com `#`, e na frota inimiga revelada os navios que o jogador afundou também. Com `--modo solo --semente 7 --cores sim`, três linhas de tiros e `sair`, a frota revelada mostra o Submarino e o Destroyer afundados com `#` em vermelho (`\x1b[31m`) e o Porta-Aviões atingido, mas boiando, com `X` em vermelho negrito.
+
+**Desvios em relação ao plano:**
+
+- Os testes do T2 (CA-4 e CA-5) passaram de cara, porque o T1 já mudou o `RenderBoard`, que todas as telas usam. Para conferir que eles pegam o problema, eles foram rodados com o `sunkSymbol` trocado por `X` e falharam nas linhas esperadas.
+- No CA-4, o teste usa uma frota de jogador com dois Submarinos e uma estratégia de tiros fixa (`machineScript`, da 013): a máquina afunda o Submarino em A1, erra em C3 e a tela volta para o jogador. Com um só navio, como nos tabuleiros de teste da 007, afundar o navio já termina a partida, e não haveria "a tela seguinte".
+- Os testes do CA-4 e do CA-5 conferem as linhas da grade escritas à mão, e não montadas com o próprio `RenderBoard`, para não passarem com qualquer desenho.
+- O README não cita a legenda do tabuleiro próprio, então não mudou. O `CLAUDE.md` cita o `#` na descrição do `render.go`.
+
+**Para o roadmap:**
+
+- A fusão com a 022, que refaz a tela e separa a grade da legenda no `render.go`: ela precisa manter o passo dos navios afundados e a legenda com `# afundado`.
