@@ -1,6 +1,6 @@
 # 025 — Placar entre partidas
 
-- **Status:** Rascunho
+- **Status:** Aprovada
 - **Roadmap:** #025 (onda 8), issue #35
 - **Depende de:** 018 (nível `mestre`)
 
@@ -60,12 +60,14 @@ O jogo esquece tudo quando a partida acaba. O jogador não sabe quantas vezes j�
 
 ## Questões em aberto
 
-- [ ] **1. O que conta:** só contra a máquina, com a frota da cartela, separado por nível. A alternativa é contar também frotas do `--frota` e o modo solo, num placar à parte.
-- [ ] **2. Desistência:** depois do primeiro disparo conta como derrota; no posicionamento, não conta. A alternativa é nunca contar desistências.
-- [ ] **3. Onde guardar:** um arquivo JSON na pasta de configuração do usuário, achada pela biblioteca padrão do Go. A alternativa é um arquivo na pasta atual, que mudaria conforme de onde o jogo é rodado.
-- [ ] **4. Quando mostrar:** uma linha no fim de cada partida que conta, e `--placar` para ver os três níveis.
-- [ ] **5. Zerar:** `--zerar-placar`. A alternativa é a pessoa apagar o arquivo, com o caminho explicado no README.
-- [ ] **6. Textos:** a linha do placar, `Placar zerado.` e `Não foi possível guardar o placar.`.
+Todas decididas em 2026-10-27, como propostas:
+
+- [x] **1. O que conta:** só contra a máquina, com a frota da cartela, separado por nível. A alternativa é contar também frotas do `--frota` e o modo solo, num placar à parte.
+- [x] **2. Desistência:** depois do primeiro disparo conta como derrota; no posicionamento, não conta. A alternativa é nunca contar desistências.
+- [x] **3. Onde guardar:** um arquivo JSON na pasta de configuração do usuário, achada pela biblioteca padrão do Go. A alternativa é um arquivo na pasta atual, que mudaria conforme de onde o jogo é rodado.
+- [x] **4. Quando mostrar:** uma linha no fim de cada partida que conta, e `--placar` para ver os três níveis.
+- [x] **5. Zerar:** `--zerar-placar`. A alternativa é a pessoa apagar o arquivo, com o caminho explicado no README.
+- [x] **6. Textos:** a linha do placar, `Placar zerado.` e `Não foi possível guardar o placar.`.
 
 ## Encerramento
 
