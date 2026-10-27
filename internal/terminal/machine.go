@@ -10,12 +10,12 @@ import (
 
 // PlayVsMachine runs a game against the machine. If player is not complete,
 // the player first places the missing ships. Then the player shoots at enemy
-// with shots read from in, the machine shoots at player with cells drawn
-// from rng, and whoever hits shoots again. The player gives up with "sair"
-// or the end of the input. It writes the game to out and returns an error if
-// reading or writing fails.
-func PlayVsMachine(in io.Reader, out io.Writer, player, enemy *board.Board, rng *rand.Rand) error {
-	g := &machineGame{playerAttack: playerAttack{out: out, target: enemy}, player: player, rng: rng}
+// with shots read from in, the machine shoots at player with the cells shoot
+// chooses, drawing with rng, and whoever hits shoots again. The player gives
+// up with "sair" or the end of the input. It writes the game to out and
+// returns an error if reading, writing or choosing a machine shot fails.
+func PlayVsMachine(in io.Reader, out io.Writer, player, enemy *board.Board, rng *rand.Rand, shoot board.ShotStrategy) error {
+	g := &machineGame{playerAttack: playerAttack{out: out, target: enemy}, player: player, rng: rng, strategy: shoot}
 	scanner := bufio.NewScanner(in)
 	if !player.Complete() && !g.placeFleet(scanner) {
 		return g.err
@@ -56,6 +56,7 @@ type machineGame struct {
 	playerAttack
 	player       *board.Board
 	rng          *rand.Rand
+	strategy     board.ShotStrategy
 	machineShots int
 }
 
@@ -63,7 +64,7 @@ type machineGame struct {
 // one line per shot, and reports whether it sank the player's whole fleet.
 func (g *machineGame) machineTurn() bool {
 	for g.err == nil {
-		c, err := board.RandomShot(g.player, g.rng)
+		c, err := g.strategy(g.player, g.rng)
 		if err != nil {
 			g.err = err
 			return false
