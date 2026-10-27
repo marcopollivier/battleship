@@ -1,6 +1,6 @@
 # 011 — `make run` com opções
 
-- **Status:** Aprovada
+- **Status:** Em andamento
 - **Roadmap:** #011 (onda 6)
 - **Depende de:** 006 (modo solo)
 
