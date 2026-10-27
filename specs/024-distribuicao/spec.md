@@ -1,6 +1,6 @@
 # 024 — Distribuição
 
-- **Status:** Rascunho
+- **Status:** Aprovada
 - **Roadmap:** #024 (onda 8), issue #37
 - **Depende de:** nenhuma
 
@@ -53,12 +53,14 @@ Para jogar hoje, a pessoa precisa ter Go instalado, clonar o repositório e roda
 
 ## Questões em aberto
 
-- [ ] **1. Nome do binário:** `battleship`, que é o que o `go install` gera a partir do nome do módulo. A alternativa, `batalha-naval`, exigiria mudar o módulo ou mover o `main.go` para `cmd/batalha-naval`.
-- [ ] **2. Sistemas:** os 5 da lista acima.
-- [ ] **3. Automação:** uma GitHub Action que roda na tag, compila com `go build` para cada sistema e publica com o `gh`, sem ferramentas de fora. A alternativa é o GoReleaser, mais completo, mas uma dependência a mais no CI.
-- [ ] **4. Primeira versão:** `v1.0.0`. A alternativa é `v0.1.0`, deixando a `1.0` para depois da usabilidade.
-- [ ] **5. Opção `--versao`:** sim, com o texto acima. A versão vem da tag gravada no binário pela própria ferramenta do Go.
-- [ ] **6. Quem cria a tag:** você, quando quiser publicar; o PR desta spec não cria a primeira tag, só deixa tudo pronto e explica como fazer.
+Todas decididas em 2026-10-27, como propostas:
+
+- [x] **1. Nome do binário:** `battleship`, que é o que o `go install` gera a partir do nome do módulo. A alternativa, `batalha-naval`, exigiria mudar o módulo ou mover o `main.go` para `cmd/batalha-naval`.
+- [x] **2. Sistemas:** os 5 da lista acima.
+- [x] **3. Automação:** uma GitHub Action que roda na tag, compila com `go build` para cada sistema e publica com o `gh`, sem ferramentas de fora. A alternativa é o GoReleaser, mais completo, mas uma dependência a mais no CI.
+- [x] **4. Primeira versão:** `v1.0.0`. A alternativa é `v0.1.0`, deixando a `1.0` para depois da usabilidade.
+- [x] **5. Opção `--versao`:** sim, com o texto acima. A versão vem da tag gravada no binário pela própria ferramenta do Go.
+- [x] **6. Quem cria a tag:** você, quando quiser publicar; o PR desta spec não cria a primeira tag, só deixa tudo pronto e explica como fazer.
 
 ## Encerramento
 
