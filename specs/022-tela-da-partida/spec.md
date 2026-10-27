@@ -1,6 +1,6 @@
 # 022 — Tela da partida
 
-- **Status:** Em andamento
+- **Status:** Concluída
 - **Roadmap:** #022 (onda 8), issue #32
 - **Depende de:** 015 (mais cores)
 
@@ -81,4 +81,54 @@ Todas decididas em 2026-10-27, como propostas:
 
 ## Encerramento
 
-Preenchido na fase 5: desvios em relação ao plano e o que ficou para o roadmap.
+Concluída em 2026-10-27, nas tarefas T1–T7. Os 10 critérios de aceitação são cobertos por testes em `internal/terminal` e `cmd/init_test.go`:
+
+- CA-1 em `TestGrids`, `TestSideBySide`, `TestBoardTitles` e `TestPlayVsMachine_Start`;
+- CA-2 em `TestPlayVsMachine_HitShootsAgain` e `TestPlayVsMachine_PlayerWins`;
+- CA-3 em `TestPlayVsMachine_MachineTurn`;
+- CA-4 em `TestPlayVsMachine_InvalidInput`;
+- CA-5 em `TestClearScreen`, `TestPlayVsMachine_Clear`, `TestPlaySolo_Clear`, `TestChooseClear` e `TestRun_Clear`;
+- CA-6 em `TestPlayVsMachine_PlayerWins`, `_MachineWins`, `_GiveUp` e `_Colored`;
+- CA-7 em `TestPlaySolo_Shots`, `_Win`, `_GiveUp`, `_Clear` e `_ColoredMessages`;
+- CA-8 em `TestPlayVsMachine_PlacementClear` e nos outros testes do posicionamento;
+- CA-9 em `TestRun_InvalidClear`;
+- CA-10 em `TestRun_SameSeed` (com `--limpar sim --cores sim`), `TestRun_Clear` e `TestPlayVsMachine_Colored`.
+
+A cobertura ficou em 98,0% em `internal/terminal`, 99,7% em `internal/board` e 93,9% em `cmd`.
+
+O binário foi rodado com `--semente 42`, `aleatorio` e alguns disparos. Com `--cores nao --limpar nao`, as telas ficam uma embaixo da outra; com `--limpar sim`, cada tela (cada navio do posicionamento, cada disparo e a tela final) começa com `\x1b[H\x1b[2J`. Nenhuma linha da tela da partida passa de 49 colunas nos tabuleiros e 73 nas legendas. Uma tela depois de uma água:
+
+```
+Sua frota                  Frota inimiga
+   A B C D E F G H I J        A B C D E F G H I J
+ 1 ~ C C C ~ ~ ~ ~ ~ ~      1 S o . . . . . . . .
+ 2 ~ ~ ~ ~ ~ ~ ~ ~ ~ ~      2 . . . . . . . . . .
+ 3 D ~ ~ E E E E o ~ ~      3 . . . . . . . . . .
+...
+10 ~ ~ ~ ~ ~ ~ ~ ~ ~ ~     10 . . . . . . . . . .
+
+Sua frota: ~ água, S D C E P navio, X atingido, o tiro na água
+Frota inimiga: . não atingida, o água, X acerto, S D C E P navio afundado
+
+Seu disparo em B1: Água.
+A máquina atirou em H3: Água.
+Disparo:
+```
+
+**Desvios em relação ao plano:**
+
+- A legenda da frota própria na tela tinha 114 colunas e contrariava a regra das 80. A implementação parou depois do T3, e a spec mudou durante a implementação (questão 6): a legenda da tela é `Sua frota: ~ água, S D C E P navio, X atingido, o tiro na água`, numa constante própria (`ownScreenLegend`); a `Legend` do `RenderBoard` não mudou. As instruções do posicionamento e a mensagem de coordenada inválida ficaram fora da regra.
+- A tela final tem uma legenda só, `Legenda: ~ água, S D C E P navio, X atingido, o tiro na água`, porque os dois tabuleiros mostram os navios. O plano não listava legenda na tela final.
+- No modo solo, a tela final usa a grade do `RenderBoard` com essa legenda curta, e não o `RenderBoard` inteiro, para caber em 80 colunas. As frases `A frota era:` e `A frota inimiga era:` saíram, porque a frota já aparece na tela.
+- `Frota posicionada!` virou a primeira mensagem da primeira tela da partida; antes da tela, ela sumiria com a limpeza.
+- As instruções do posicionamento aparecem em cada tela de navio, como no plano, também sem limpar a tela.
+- O `shoot` do `playerAttack` não escreve mais o resultado: ele devolve a casa e o disparo, e o resultado entra nas `events` do `playerAttack`, que o solo e a partida contra a máquina escrevem abaixo dos tabuleiros.
+- No `cmd`, as constantes `colorsOn`, `colorsOff` e `colorsAuto` viraram `optionOn`, `optionOff` e `optionAuto`, usadas por `--cores` e `--limpar`.
+- O commit do T6 deixou o `TestRun_GiveUp` do `cmd` esperando a frase antiga; um commit a mais corrigiu o teste.
+- Sem terminal (saída num arquivo), o pedido `Disparo: ` fica na mesma linha do começo da tela seguinte, porque a entrada não aparece; foi sempre assim.
+
+**Para o roadmap:**
+
+- A legenda do tabuleiro no posicionamento continua com 110 colunas (o `RenderBoard` com a `Legend`), e as instruções do posicionamento passam de 80 colunas.
+- A mensagem de coordenada inválida tem 82 colunas.
+- Na fusão com a 023, o `# afundado` entra também nas legendas curtas `ownScreenLegend` e `finalLegend`.
