@@ -5,7 +5,7 @@
 
 Cada tarefa é um commit: teste falhando → implementação → `make pre-commit` → commit.
 
-- [ ] **T1** — `ShotStrategy` e `SmartShot` na procura: sorteia casas não atingidas fora do entorno dos navios afundados. (cobre CA-1, CA-5)
+- [x] **T1** — `ShotStrategy` e `SmartShot` na procura: sorteia casas não atingidas fora do entorno dos navios afundados. (cobre CA-1, CA-5)
 - [ ] **T2** — Cerco pelas vizinhas de um acerto pendente. (cobre CA-2)
 - [ ] **T3** — Cerco pelas pontas da linha, com volta às vizinhas quando a linha acaba. (cobre CA-3, CA-4)
 - [ ] **T4** — Testes de partida inteira e de conhecimento público: nunca repete, termina, e precisa de menos tiros que o `RandomShot`. (cobre CA-6)

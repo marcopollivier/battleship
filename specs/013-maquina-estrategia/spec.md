@@ -1,6 +1,6 @@
 # 013 — Máquina com estratégia
 
-- **Status:** Aprovada
+- **Status:** Em andamento
 - **Roadmap:** #013 (onda 6)
 - **Depende de:** 007 (jogador contra a máquina)
 
