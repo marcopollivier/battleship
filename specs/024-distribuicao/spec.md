@@ -1,6 +1,6 @@
 # 024 — Distribuição
 
-- **Status:** Aprovada
+- **Status:** Em andamento
 - **Roadmap:** #024 (onda 8), issue #37
 - **Depende de:** nenhuma
 
