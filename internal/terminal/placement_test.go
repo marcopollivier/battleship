@@ -290,6 +290,55 @@ func TestPlayVsMachine_PlacementUndo(t *testing.T) {
 	}
 }
 
+// CA-4, CA-5 and CA-6 (spec 014): with 7 battleships and a cruiser, six
+// battleships two per row in rows 2, 5 and 8 leave only row 10. The seventh
+// at D10 leaves no room for the cruiser, so the warning comes before the
+// board; after desfazer it is gone, and the seventh at C10 leaves exactly
+// H10 to J10 for the cruiser, with no warning.
+func TestPlayVsMachine_PlacementWarning(t *testing.T) {
+	const (
+		battleshipPrompt = "Encouraçado, 4 casas (horizontal, vertical): "
+		cruiserPrompt    = "Cruzador, 3 casas (horizontal, vertical): "
+		warning          = "Atenção: o resto da frota não cabe mais no tabuleiro. Use desfazer ou recomecar.\n" //nolint:misspell // Portuguese text for the player
+	)
+	fleet := []board.FleetEntry{{Type: board.Battleship, Count: 7}, {Type: board.Cruiser, Count: 1}}
+	replay := board.NewBoard(fleet)
+	want := placementIntro
+	var input []string
+	for _, line := range []string{"A2 h", "F2 h", "A5 h", "F5 h", "A8 h", "F8 h"} {
+		want += placementAsk(t, replay, battleshipPrompt)
+		c, o, err := parsePlacement(line, board.Battleship)
+		if err != nil {
+			t.Fatalf("parsePlacement(%q): %v", line, err)
+		}
+		if err := replay.Place(board.Battleship, c, o); err != nil {
+			t.Fatalf("Place(%q): %v", line, err)
+		}
+		input = append(input, line)
+	}
+	sixShips := placementAsk(t, replay, battleshipPrompt)
+	want += sixShips
+	if err := replay.Place(board.Battleship, board.Coord{Col: 3, Row: 9}, board.Horizontal); err != nil {
+		t.Fatalf("Place(D10): %v", err)
+	}
+	want += warning + placementAsk(t, replay, cruiserPrompt) + sixShips
+	replay.RemoveLast()
+	if err := replay.Place(board.Battleship, board.Coord{Col: 2, Row: 9}, board.Horizontal); err != nil {
+		t.Fatalf("Place(C10): %v", err)
+	}
+	want += placementAsk(t, replay, cruiserPrompt) + "Você desistiu antes da partida.\n"
+	input = append(input, "D10 h", "desfazer", "C10 h", "sair")
+
+	var sb strings.Builder
+	err := PlayVsMachine(strings.NewReader(strings.Join(input, "\n")+"\n"), &sb, board.NewBoard(fleet), machineEnemyBoard(t), rand.New(rand.NewPCG(1, 0)), Plain, board.RandomShot)
+	if err != nil {
+		t.Fatalf("PlayVsMachine: %v", err)
+	}
+	if got := sb.String(); got != want {
+		t.Errorf("PlayVsMachine() =\n%s\nwant\n%s", got, want)
+	}
+}
+
 // CA-8: "sair" or the end of the input gives up before the game.
 func TestPlayVsMachine_PlacementGiveUp(t *testing.T) {
 	empty, withCarrier := placementWithCarrier(t)

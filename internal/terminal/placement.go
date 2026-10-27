@@ -53,6 +53,10 @@ const placementInstructions = "Posicione a sua frota. Para cada navio, digite a 
 	"A casa é a primeira do navio (a de cima ou a da esquerda). No Porta-Aviões, é o meio da barra do T.\n" +
 	"Comandos: aleatorio sorteia o resto da frota, desfazer tira o último navio, recomecar tira todos os navios, sair desiste.\n" //nolint:misspell // Portuguese text for the player
 
+// placementWarning is shown before the board while the ships still missing
+// no longer fit on it. It does not stop the player.
+const placementWarning = "Atenção: o resto da frota não cabe mais no tabuleiro. Use desfazer ou recomecar.\n" //nolint:misspell // Portuguese text for the player
+
 // placeFleet asks for the missing ships of the player's board, largest
 // first, and reports false if the player gave up or a write failed.
 func (g *machineGame) placeFleet(scanner *bufio.Scanner) bool {
@@ -62,6 +66,9 @@ func (g *machineGame) placeFleet(scanner *bufio.Scanner) bool {
 		if len(remaining) == 0 {
 			g.write("Frota posicionada!\n\n")
 			return g.err == nil
+		}
+		if len(g.player.Ships()) > 0 && !board.Fits(g.player) {
+			g.write(placementWarning)
 		}
 		g.render(RenderBoard, g.player)
 		g.write("\n")
