@@ -17,17 +17,17 @@ Features da mesma onda não dependem umas das outras e são tocadas em paralelo 
 | 008 | Frota configurável pelo jogador | TODO do README | 002, 004 | 2 | Concluída |
 | 006 | Modo solo: atacar um tabuleiro gerado aleatoriamente | TODO do README | 003, 005, 009 | 3 | Concluída |
 | 007 | Jogador vs. máquina: jogar com a frota sorteada contra jogadas aleatórias, com turno extra após acerto | TODO do README | 006 | 4 | Concluída |
-| 012 | Posicionar a própria frota: o jogador escolhe onde fica cada navio antes da partida contra a máquina | Divisão da 007 | 007 | 5 | Spec |
-| 010 | Cores no terminal: água, navios e disparos em cores diferentes | Fora de escopo da 004 | 009 | — | Backlog |
-| 011 | `make run` repassar opções ao jogo (`make run ARGS="--semente 42"`) | Encerramento da 006 | 006 | — | Backlog |
-| 013 | Máquina com estratégia: atirar em volta de um acerto até afundar o navio | Encerramento da 007 | 007 | — | Backlog |
+| 012 | Posicionar a própria frota: o jogador escolhe onde fica cada navio antes da partida contra a máquina | Divisão da 007 | 007 | 5 | Concluída |
+| 010 | Cores no terminal: água, navios e disparos em cores diferentes | Fora de escopo da 004 | 009 | 6 | Spec |
+| 011 | `make run` repassar opções ao jogo (`make run ARGS="--semente 42"`) | Encerramento da 006 | 006 | 6 | Spec |
+| 013 | Máquina com estratégia: atirar em volta de um acerto até afundar o navio | Encerramento da 007 | 007 | 6 | Spec |
+| 014 | Posicionamento mais fácil: desfazer só o último navio, e avisar quando o resto da frota não cabe mais | Encerramento da 012 | 012 | — | Backlog |
 
 ## Notas das specs concluídas
 
 Pendências que specs anteriores deixaram para as próximas:
 
-- **#012:** usar `board.ValidOrientations` para mostrar as orientações possíveis de cada navio ao jogador (005).
-- **#012:** trocar o sorteio do tabuleiro do jogador no `play` do `cmd`; hoje a semente sorteia o tabuleiro do jogador, depois o da máquina, depois os tiros da máquina, e a 012 decide como a semente se comporta quando o jogador posiciona a frota (007).
+Nenhuma no momento. As duas notas para a 012 (orientações lidas do domínio e ordem da semente) foram resolvidas por ela.
 
 ## Questões em aberto do jogo
 
