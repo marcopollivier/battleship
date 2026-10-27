@@ -1,6 +1,6 @@
 # 022 — Tela da partida
 
-- **Status:** Aprovada
+- **Status:** Em andamento
 - **Roadmap:** #022 (onda 8), issue #32
 - **Depende de:** 015 (mais cores)
 
