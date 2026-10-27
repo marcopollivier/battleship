@@ -83,7 +83,7 @@ func Run(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
 	if !flagGiven(fs, seedFlag) {
 		*seed = rand.Uint64() //nolint:gosec // a game seed, not security-sensitive
 	}
-	if err := play(*mode, fleet, strategy, newRNG(*seed), style, stdin, stdout); err != nil {
+	if err := play(*mode, fleet, strategy, newRNG(*seed), terminal.Display{Style: style}, stdin, stdout); err != nil {
 		fmt.Fprintln(stderr, terminal.FleetErrorMessage(err))
 		return 1
 	}
@@ -97,16 +97,16 @@ func Run(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
 // Against the machine, rng draws the machine's board first, then the ships
 // the player asks to draw while placing, then the machine's shots, which
 // strategy chooses; the player starts with an empty board and places the fleet.
-// The boards are drawn with style.
-func play(mode string, fleet []board.FleetEntry, strategy board.ShotStrategy, rng *rand.Rand, style terminal.Style, stdin io.Reader, stdout io.Writer) error {
+// The game is shown with display.
+func play(mode string, fleet []board.FleetEntry, strategy board.ShotStrategy, rng *rand.Rand, display terminal.Display, stdin io.Reader, stdout io.Writer) error {
 	target, err := board.RandomBoard(fleet, rng)
 	if err != nil {
 		return err
 	}
 	if strings.EqualFold(mode, soloMode) {
-		return terminal.PlaySolo(stdin, stdout, target, style)
+		return terminal.PlaySolo(stdin, stdout, target, display)
 	}
-	return terminal.PlayVsMachine(stdin, stdout, board.NewBoard(fleet), target, rng, style, strategy)
+	return terminal.PlayVsMachine(stdin, stdout, board.NewBoard(fleet), target, rng, display, strategy)
 }
 
 // chooseStyle returns the board style for the colors option (sim, nao or

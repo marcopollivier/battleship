@@ -13,10 +13,10 @@ import (
 // with shots read from in, the machine shoots at player with the cells shoot
 // chooses, drawing with rng, and whoever hits shoots again. The player gives
 // up with "sair" or the end of the input. It writes the game to out, with the
-// boards drawn with style, and returns an error if reading, writing or
+// boards drawn as display says, and returns an error if reading, writing or
 // choosing a machine shot fails.
-func PlayVsMachine(in io.Reader, out io.Writer, player, enemy *board.Board, rng *rand.Rand, style Style, shoot board.ShotStrategy) error {
-	g := &machineGame{playerAttack: playerAttack{out: out, target: enemy, style: style}, player: player, rng: rng, strategy: shoot}
+func PlayVsMachine(in io.Reader, out io.Writer, player, enemy *board.Board, rng *rand.Rand, display Display, shoot board.ShotStrategy) error {
+	g := &machineGame{playerAttack: playerAttack{out: out, target: enemy, style: display.Style}, player: player, rng: rng, strategy: shoot}
 	scanner := bufio.NewScanner(in)
 	if !player.Complete() && !g.placeFleet(scanner) {
 		return g.err

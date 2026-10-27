@@ -29,7 +29,7 @@ func soloPlay(t *testing.T, b *board.Board, input string) string {
 func soloPlayStyle(t *testing.T, b *board.Board, input string, style Style) string {
 	t.Helper()
 	var sb strings.Builder
-	if err := PlaySolo(strings.NewReader(input), &sb, b, style); err != nil {
+	if err := PlaySolo(strings.NewReader(input), &sb, b, Display{Style: style}); err != nil {
 		t.Fatalf("PlaySolo: %v", err)
 	}
 	return sb.String()
@@ -126,7 +126,7 @@ func TestPlaySolo_InvalidInput(t *testing.T) {
 // incomplete board, ends the game and is returned.
 func TestPlaySolo_UnexpectedError(t *testing.T) {
 	var sb strings.Builder
-	err := PlaySolo(strings.NewReader("A1\n"), &sb, board.NewBoard(board.DefaultFleet()), Plain)
+	err := PlaySolo(strings.NewReader("A1\n"), &sb, board.NewBoard(board.DefaultFleet()), Display{Style: Plain})
 	if !errors.Is(err, board.ErrIncompleteBoard) {
 		t.Errorf("PlaySolo() error = %v, want ErrIncompleteBoard", err)
 	}
@@ -219,7 +219,7 @@ func TestPlaySolo_IOErrors(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if err := PlaySolo(tt.in, tt.out, attackExampleBoard(t), Plain); !errors.Is(err, tt.want) {
+			if err := PlaySolo(tt.in, tt.out, attackExampleBoard(t), Display{Style: Plain}); !errors.Is(err, tt.want) {
 				t.Errorf("PlaySolo() error = %v, want %v", err, tt.want)
 			}
 		})

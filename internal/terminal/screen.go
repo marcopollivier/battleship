@@ -2,6 +2,13 @@ package terminal
 
 import "strings"
 
+// Display is how a game is shown: the colors of the boards and messages,
+// and whether the terminal is cleared before each screen.
+type Display struct {
+	Style Style
+	Clear bool
+}
+
 // clearScreen moves the cursor home and erases the terminal.
 const clearScreen = "\x1b[H\x1b[2J"
 

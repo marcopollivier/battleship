@@ -103,7 +103,7 @@ func placementPlayStyle(t *testing.T, input string, style Style) string {
 	t.Helper()
 	var sb strings.Builder
 	player := board.NewBoard(board.DefaultFleet())
-	err := PlayVsMachine(strings.NewReader(input), &sb, player, machineEnemyBoard(t), rand.New(rand.NewPCG(1, 0)), style, board.RandomShot)
+	err := PlayVsMachine(strings.NewReader(input), &sb, player, machineEnemyBoard(t), rand.New(rand.NewPCG(1, 0)), Display{Style: style}, board.RandomShot)
 	if err != nil {
 		t.Fatalf("PlayVsMachine: %v", err)
 	}
@@ -241,7 +241,7 @@ func TestPlayVsMachine_PlacementRandomDoesNotFit(t *testing.T) {
 		"Não foi possível sortear o resto da frota. Mude a posição dos navios com recomecar.\n" + prompt
 
 	var sb strings.Builder
-	err := PlayVsMachine(strings.NewReader("aleatorio\n"), &sb, board.NewBoard(fleet), machineEnemyBoard(t), rand.New(rand.NewPCG(1, 0)), Plain, board.RandomShot)
+	err := PlayVsMachine(strings.NewReader("aleatorio\n"), &sb, board.NewBoard(fleet), machineEnemyBoard(t), rand.New(rand.NewPCG(1, 0)), Display{Style: Plain}, board.RandomShot)
 	if err != nil {
 		t.Fatalf("PlayVsMachine: %v", err)
 	}
@@ -330,7 +330,7 @@ func TestPlayVsMachine_PlacementWarning(t *testing.T) {
 	input = append(input, "D10 h", "desfazer", "C10 h", "sair")
 
 	var sb strings.Builder
-	err := PlayVsMachine(strings.NewReader(strings.Join(input, "\n")+"\n"), &sb, board.NewBoard(fleet), machineEnemyBoard(t), rand.New(rand.NewPCG(1, 0)), Plain, board.RandomShot)
+	err := PlayVsMachine(strings.NewReader(strings.Join(input, "\n")+"\n"), &sb, board.NewBoard(fleet), machineEnemyBoard(t), rand.New(rand.NewPCG(1, 0)), Display{Style: Plain}, board.RandomShot)
 	if err != nil {
 		t.Fatalf("PlayVsMachine: %v", err)
 	}
@@ -392,7 +392,7 @@ func TestPlayVsMachine_PlacementColoredErrors(t *testing.T) {
 	const prompt = "Submarino, 1 casa: "
 	fleet := []board.FleetEntry{{Type: board.Submarine, Count: 26}}
 	var sb strings.Builder
-	err := PlayVsMachine(strings.NewReader("aleatorio\n"), &sb, board.NewBoard(fleet), machineEnemyBoard(t), rand.New(rand.NewPCG(1, 0)), Colored, board.RandomShot)
+	err := PlayVsMachine(strings.NewReader("aleatorio\n"), &sb, board.NewBoard(fleet), machineEnemyBoard(t), rand.New(rand.NewPCG(1, 0)), Display{Style: Colored}, board.RandomShot)
 	if err != nil {
 		t.Fatalf("PlayVsMachine: %v", err)
 	}
@@ -415,7 +415,7 @@ func TestPlayVsMachine_PlacementColoredUndoAndWarning(t *testing.T) {
 	fleet := []board.FleetEntry{{Type: board.Battleship, Count: 7}, {Type: board.Cruiser, Count: 1}}
 	input := "A2 h\nF2 h\nA5 h\nF5 h\nA8 h\nF8 h\nD10 h\nsair\n"
 	var sb strings.Builder
-	err := PlayVsMachine(strings.NewReader(input), &sb, board.NewBoard(fleet), machineEnemyBoard(t), rand.New(rand.NewPCG(1, 0)), Colored, board.RandomShot)
+	err := PlayVsMachine(strings.NewReader(input), &sb, board.NewBoard(fleet), machineEnemyBoard(t), rand.New(rand.NewPCG(1, 0)), Display{Style: Colored}, board.RandomShot)
 	if err != nil {
 		t.Fatalf("PlayVsMachine: %v", err)
 	}

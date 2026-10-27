@@ -20,10 +20,10 @@ const (
 // PlaySolo runs a solo game: it reads shots from in, one per line, and
 // writes the attack board and messages to out until every ship of b is sunk
 // or the player gives up, with "sair" or the end of the input. The boards
-// are drawn with style. It returns an error if writing to out or reading
+// are drawn as display says. It returns an error if writing to out or reading
 // from in fails.
-func PlaySolo(in io.Reader, out io.Writer, b *board.Board, style Style) error {
-	g := &playerAttack{out: out, target: b, style: style}
+func PlaySolo(in io.Reader, out io.Writer, b *board.Board, display Display) error {
+	g := &playerAttack{out: out, target: b, style: display.Style}
 	g.showBoard()
 	scanner := bufio.NewScanner(in)
 	for {
