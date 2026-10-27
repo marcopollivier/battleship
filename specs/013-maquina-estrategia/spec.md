@@ -1,6 +1,6 @@
 # 013 — Máquina com estratégia
 
-- **Status:** Rascunho
+- **Status:** Aprovada
 - **Roadmap:** #013 (onda 6)
 - **Depende de:** 007 (jogador contra a máquina)
 
@@ -18,7 +18,7 @@ Na partida da 007, cada tiro da máquina é sorteado, mesmo logo depois de um ac
 **Procura:**
 
 - Quando não há acerto em navio ainda boiando, a máquina sorteia uma casa, como na 007.
-- A máquina não sorteia casas encostadas, nem pela diagonal, num navio já afundado, porque ali não pode haver navio (questão 2).
+- A máquina não sorteia casas encostadas, nem pela diagonal, num navio já afundado, porque ali não pode haver navio (questão 2, decisão provisória na issue #25).
 
 **Cerco:**
 
@@ -60,10 +60,12 @@ Na partida da 007, cada tiro da máquina é sorteado, mesmo logo depois de um ac
 
 ## Questões em aberto
 
-- [ ] **1. Nível:** a estratégia vira o padrão, e `--nivel facil` mantém a máquina da 007, como proposto. Alternativas: a estratégia substitui a máquina sorteada, sem opção; ou a máquina sorteada continua o padrão, como diz o README ("jogadas aleatórias"), e a estratégia fica em `--nivel dificil`.
-- [ ] **2. Casas em volta de navio afundado:** a máquina pula essas casas, porque a regra de navios que não se encostam garante que ali só há água, como proposto. Um jogador de papel experiente faz o mesmo. A alternativa é a máquina não usar essa regra e continuar sorteando essas casas.
-- [ ] **3. Continuar a linha:** com dois acertos em linha, a máquina prefere as pontas da linha, como proposto. A alternativa, mais simples, é sempre sortear entre as vizinhas de todos os acertos.
-- [ ] **4. Nome e textos:** `--nivel` com `facil` e `dificil`, sem acento como os comandos da 012, e a mensagem `Nível inválido: use facil ou dificil.`.
+Todas decididas em 2026-10-26:
+
+- [x] **1. Nível:** a estratégia vira o padrão (`dificil`), e `--nivel facil` mantém a máquina da 007. As alternativas eram substituir a máquina sorteada sem opção, ou manter a sorteada como padrão.
+- [x] **2. Casas em volta de navio afundado:** a máquina pula essas casas. A decisão é provisória: o jogador quer testar jogando, e a alternativa (continuar sorteando essas casas) está registrada na issue #25.
+- [x] **3. Continuar a linha:** com dois acertos em linha, a máquina prefere as pontas da linha.
+- [x] **4. Nome e textos:** `--nivel` com `facil` e `dificil`, e a mensagem `Nível inválido: use facil ou dificil.`.
 
 ## Encerramento
 
