@@ -18,16 +18,20 @@ Features da mesma onda não dependem umas das outras e são tocadas em paralelo 
 | 006 | Modo solo: atacar um tabuleiro gerado aleatoriamente | TODO do README | 003, 005, 009 | 3 | Concluída |
 | 007 | Jogador vs. máquina: jogar com a frota sorteada contra jogadas aleatórias, com turno extra após acerto | TODO do README | 006 | 4 | Concluída |
 | 012 | Posicionar a própria frota: o jogador escolhe onde fica cada navio antes da partida contra a máquina | Divisão da 007 | 007 | 5 | Concluída |
-| 010 | Cores no terminal: água, navios e disparos em cores diferentes | Fora de escopo da 004 | 009 | 6 | Spec |
-| 011 | `make run` repassar opções ao jogo (`make run ARGS="--semente 42"`) | Encerramento da 006 | 006 | 6 | Spec |
-| 013 | Máquina com estratégia: atirar em volta de um acerto até afundar o navio | Encerramento da 007 | 007 | 6 | Spec |
+| 010 | Cores no terminal: água, navios e disparos em cores diferentes | Fora de escopo da 004 | 009 | 6 | Concluída |
+| 011 | `make run` repassar opções ao jogo (`make run ARGS="--semente 42"`) | Encerramento da 006 | 006 | 6 | Concluída |
+| 013 | Máquina com estratégia: atirar em volta de um acerto até afundar o navio | Encerramento da 007 | 007 | 6 | Concluída |
 | 014 | Posicionamento mais fácil: desfazer só o último navio, e avisar quando o resto da frota não cabe mais | Encerramento da 012 | 012 | — | Backlog |
+| 015 | Cores nas mensagens: `Acerto!`, `Água.`, vitória e derrota | Encerramento da 010 | 010 | — | Backlog |
+| 016 | Desligar as cores sozinho quando a saída não é um terminal, ou com a variável `NO_COLOR` | Encerramento da 010 | 010 | — | Backlog |
+| 017 | `make run` devolver o código de saída do jogo (compilar e rodar o binário, no lugar do `go run`) | Encerramento da 011 | 011 | — | Backlog |
+| 018 | Terceiro nível da máquina, com procura mais forte (xadrez ou onde cada navio ainda cabe) | Encerramento da 013 | 013 | — | Backlog |
 
 ## Notas das specs concluídas
 
 Pendências que specs anteriores deixaram para as próximas:
 
-Nenhuma no momento. As duas notas para a 012 (orientações lidas do domínio e ordem da semente) foram resolvidas por ela.
+- **Issue #25 (013):** a máquina `dificil` não atira nas casas em volta de um navio afundado. A decisão é provisória: o jogador quer testar jogando. A regra tira cerca de 24 tiros da média (59,7 com a regra, 83,8 sem), e fica numa função separada (`aroundSunk`) para sair fácil.
 
 ## Questões em aberto do jogo
 
