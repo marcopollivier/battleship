@@ -16,9 +16,9 @@ build: ## Compila o projeto
 	@go build -o $(BUILD_DIR)/$(BINARY_NAME) $(MAIN_PATH)
 	@echo "✅ Compilação concluída: $(BUILD_DIR)/$(BINARY_NAME)"
 
-run: ## Executa o projeto
+run: ## Executa o jogo (opções: make run ARGS="--modo solo --semente 42")
 	@echo "🚀 Executando..."
-	@go run $(MAIN_PATH)
+	@go run $(MAIN_PATH) $(ARGS)
 
 test: ## Executa os testes
 	@echo "🧪 Executando testes..."
