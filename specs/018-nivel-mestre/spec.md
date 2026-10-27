@@ -1,6 +1,6 @@
 # 018 — Terceiro nível da máquina
 
-- **Status:** Rascunho
+- **Status:** Aprovada
 - **Roadmap:** #018 (onda 7)
 - **Depende de:** 013 (máquina com estratégia)
 
@@ -48,10 +48,12 @@ A máquina `dificil` da 013 cerca um navio depois de acertá-lo, mas procura os 
 
 ## Questões em aberto
 
-- [ ] **1. Nome e padrão:** `mestre`, com `dificil` continuando o padrão. Alternativas: chamar de `especialista`; ou tornar o novo nível o padrão.
-- [ ] **2. Estratégia:** contar de quantos jeitos os navios que faltam passam por cada casa, na procura e no cerco, como proposto. A alternativa, mais simples e mais fraca, é a `dificil` atirando em xadrez na procura (uma casa sim, outra não), porque todo navio ocupa pelo menos duas casas vizinhas, menos o Submarino.
-- [ ] **3. Regra da issue #25:** na `mestre`, as casas em volta de navio afundado ficam fora naturalmente, porque nenhum navio pode encostar nele. Se a issue #25 decidir tirar a regra da `dificil`, a `mestre` continua com ela, já que é a regra do jogo usada a favor da máquina.
-- [ ] **4. Texto:** `Nível inválido: use facil, dificil ou mestre.`.
+Todas decididas em 2026-10-27, como propostas:
+
+- [x] **1. Nome e padrão:** `mestre`, com `dificil` continuando o padrão. Alternativas: chamar de `especialista`; ou tornar o novo nível o padrão.
+- [x] **2. Estratégia:** contar de quantos jeitos os navios que faltam passam por cada casa, na procura e no cerco, como proposto. A alternativa, mais simples e mais fraca, é a `dificil` atirando em xadrez na procura (uma casa sim, outra não), porque todo navio ocupa pelo menos duas casas vizinhas, menos o Submarino.
+- [x] **3. Regra da issue #25:** na `mestre`, as casas em volta de navio afundado ficam fora naturalmente, porque nenhum navio pode encostar nele. Se a issue #25 decidir tirar a regra da `dificil`, a `mestre` continua com ela, já que é a regra do jogo usada a favor da máquina.
+- [x] **4. Texto:** `Nível inválido: use facil, dificil ou mestre.`.
 
 ## Encerramento
 
