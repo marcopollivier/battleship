@@ -1,6 +1,6 @@
 # 025 — Placar entre partidas
 
-- **Status:** Aprovada
+- **Status:** Em andamento
 - **Roadmap:** #025 (onda 8), issue #35
 - **Depende de:** 018 (nível `mestre`)
 
