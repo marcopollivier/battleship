@@ -306,17 +306,25 @@ func TestSmartShot_PublicKnowledge(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			b1, b2 := exampleBoard(t), smartOtherBoard(t)
-			fire(t, b1, tt.shots...)
-			fire(t, b2, tt.shots...)
-			for seed := range uint64(smartSeeds) {
-				c1, err1 := SmartShot(b1, seeded(seed))
-				c2, err2 := SmartShot(b2, seeded(seed))
-				if c1 != c2 || err1 != nil || err2 != nil {
-					t.Fatalf("seed %d: SmartShot = %v, %v on one board and %v, %v on the other", seed, c1, err1, c2, err2)
-				}
-			}
+			samePublicShots(t, SmartShot, tt.shots)
 		})
+	}
+}
+
+// samePublicShots fires shots at exampleBoard and at smartOtherBoard and
+// fails the test if strategy, with the same seed, chooses differently on
+// the two boards.
+func samePublicShots(t *testing.T, strategy ShotStrategy, shots []string) {
+	t.Helper()
+	b1, b2 := exampleBoard(t), smartOtherBoard(t)
+	fire(t, b1, shots...)
+	fire(t, b2, shots...)
+	for seed := range uint64(smartSeeds) {
+		c1, err1 := strategy(b1, seeded(seed))
+		c2, err2 := strategy(b2, seeded(seed))
+		if c1 != c2 || err1 != nil || err2 != nil {
+			t.Fatalf("seed %d: the shot is %v, %v on one board and %v, %v on the other", seed, c1, err1, c2, err2)
+		}
 	}
 }
 

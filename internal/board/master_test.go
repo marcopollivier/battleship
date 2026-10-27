@@ -214,4 +214,43 @@ func TestMasterShot_Target(t *testing.T) {
 	}
 }
 
+// CA-5: MasterShot only uses what the shooter knows: two boards with the
+// same shots and results, but ships not found yet in different places, give
+// the same shot with the same seed.
+func TestMasterShot_PublicKnowledge(t *testing.T) {
+	tests := []struct {
+		name  string
+		shots []string
+	}{
+		{"no shots", nil},
+		{"hunt after sinking", []string{"J10", "H5", "A5", "B5"}},
+		{"one hit", []string{"J10", "E3"}},
+		{"hits in line", []string{"E1", "F1"}},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			samePublicShots(t, MasterShot, tt.shots)
+		})
+	}
+}
+
+// CA-6: on any board of the default fleet, MasterShot never shoots the same
+// cell twice and sinks the whole fleet, with fewer shots on average than
+// SmartShot. RandomShot is measured for reference.
+func TestMasterShot_Game(t *testing.T) {
+	const games = 200
+	masterTotal, smartTotal, randomTotal := 0, 0, 0
+	for seed := range uint64(games) {
+		masterTotal += smartGameShots(t, MasterShot, seed)
+		smartTotal += smartGameShots(t, SmartShot, seed)
+		randomTotal += smartGameShots(t, RandomShot, seed)
+	}
+	masterAvg, smartAvg := float64(masterTotal)/games, float64(smartTotal)/games
+	t.Logf("average shots to sink the fleet in %d games: MasterShot %.1f, SmartShot %.1f, RandomShot %.1f",
+		games, masterAvg, smartAvg, float64(randomTotal)/games)
+	if masterAvg >= smartAvg {
+		t.Errorf("MasterShot took %.1f shots on average, want fewer than SmartShot's %.1f", masterAvg, smartAvg)
+	}
+}
+
 var _ ShotStrategy = MasterShot
