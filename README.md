@@ -77,9 +77,15 @@ AKA: Couraçado
 
 ## Como jogar
 
-Com Go instalado, rode `make run` (ou `go run .`). O computador arma a sua frota e a dele em tabuleiros aleatórios. Você atira primeiro; quem acerta atira de novo, e quem erra passa a vez. Ganha quem afundar primeiro a frota inteira do outro:
+Com Go instalado, rode `make run` (ou `go run .`). Primeiro você arma a sua frota; o computador arma a dele em segredo. Você atira primeiro; quem acerta atira de novo, e quem erra passa a vez. Ganha quem afundar primeiro a frota inteira do outro:
 
 ```
+Porta-Aviões, 5 casas (cima, baixo, esquerda, direita): E5 baixo
+Encouraçado, 4 casas (horizontal, vertical): a1 h
+...
+Submarino, 1 casa: J10
+Frota posicionada!
+
 Disparo: b7
 Água.
 ...
@@ -95,7 +101,9 @@ Semente: 1729901234
 
 A cada vez que o turno volta para você, a tela mostra `Sua frota:` (seus navios e os tiros da máquina) e `Frota inimiga:` (os seus tiros).
 
-- Digite uma coordenada por vez, como `B7` ou `j10`.
+- Para armar a frota, digite a casa e a orientação de cada navio, como `E5 vertical` ou `e5 v`. A casa é a primeira do navio (a de cima ou a da esquerda); no Porta-Aviões, é o meio da barra do T. O Submarino só precisa da casa.
+- Enquanto arma a frota, `aleatorio` sorteia os navios que faltam e `recomecar` tira todos os navios.
+- Na partida, digite uma coordenada por vez, como `B7` ou `j10`.
 - Digite `sair` (ou aperte Ctrl+D) para desistir e ver onde estavam os navios inimigos.
 
 As opções vão depois de `go run .`, como em `go run . --frota S=2,P=1 --semente 42`:
@@ -103,11 +111,11 @@ As opções vão depois de `go run .`, como em `go run . --frota S=2,P=1 --semen
 Opção | Exemplo | O que faz
 ----- | ------- | ---------
 `--frota` | `--frota S=2,D=1,P=1` | Escolhe quantos navios de cada tipo, pelas letras da legenda: `S` Submarino, `D` Destroyer, `C` Cruzador, `E` Encouraçado, `P` Porta-Aviões. Sem a opção, vale a frota da cartela.
-`--semente` | `--semente 42` | Repete uma partida anterior: os tabuleiros e os tiros da máquina. A semente aparece no fim de cada partida.
+`--semente` | `--semente 42` | Repete uma partida anterior: o tabuleiro da máquina, os navios sorteados com `aleatorio` e os tiros da máquina, desde que você digite as mesmas coisas. A semente aparece no fim de cada partida.
 `--modo` | `--modo solo` | `maquina` (padrão) joga contra a máquina; `solo` só ataca um tabuleiro sorteado, sem a máquina atirar de volta.
 
 ## TODO - Evolução do projeto
 
 - [x] Permitir que uma pessoa ataque um tabuleiro armado aleatoriamente
-- [ ] Permitir que arme seu próprio tabuleiro e jogue contra a máquina e jogadas aleatórias (jogar contra a máquina já funciona; falta armar o próprio tabuleiro)
+- [x] Permitir que arme seu próprio tabuleiro e jogue contra a máquina e jogadas aleatórias
 - [x] Permitir que a pessoa defina a quantidade de navios que ela quer jogar

@@ -72,9 +72,10 @@ func TestRun_GiveUp(t *testing.T) {
 	}
 }
 
-// CA-8: the same seed repeats the whole game, both boards and every machine shot.
+// CA-9 (spec 012): with the same seed and input the game repeats: the
+// machine's board, the ships drawn with aleatorio and every machine shot.
 func TestRun_SameSeed(t *testing.T) {
-	const input = "A1\nB2\nC3\nsair\n"
+	const input = "B1 baixo\naleatorio\nA1\nB2\nC3\nsair\n"
 	_, first, _ := run(input, "--semente", "42")
 	_, second, _ := run(input, "--semente", "42")
 	if first != second {
@@ -141,20 +142,15 @@ func TestRun_InvalidOption(t *testing.T) {
 	}
 }
 
-// machineBoards returns the player's and the machine's boards the program
-// draws in machine mode for fleet and seed.
-func machineBoards(t *testing.T, fleet []board.FleetEntry, seed uint64) (player, enemy *board.Board) {
+// machineEnemy returns the machine's board the program draws in machine
+// mode for fleet and seed: it is the first board drawn.
+func machineEnemy(t *testing.T, fleet []board.FleetEntry, seed uint64) *board.Board {
 	t.Helper()
-	rng := newRNG(seed)
-	player, err := board.RandomBoard(fleet, rng)
+	enemy, err := board.RandomBoard(fleet, newRNG(seed))
 	if err != nil {
-		t.Fatalf("RandomBoard (player): %v", err)
+		t.Fatalf("RandomBoard: %v", err)
 	}
-	enemy, err = board.RandomBoard(fleet, rng)
-	if err != nil {
-		t.Fatalf("RandomBoard (enemy): %v", err)
-	}
-	return player, enemy
+	return enemy
 }
 
 // machineCells lists the cells of b with or without a ship, one per line.
@@ -176,16 +172,17 @@ func machineCells(b *board.Board, withShip bool) string {
 	return strings.Join(cells, "\n") + "\n"
 }
 
-// CA-1 and CA-9: without --modo the game is against the machine, and
-// --modo solo, in any case, is the solo game.
+// Without --modo the game is against the machine and starts by placing the
+// fleet (spec 012 CA-1); --modo solo, in any case, is the solo game with no
+// placing (spec 012 CA-10).
 func TestRun_Mode(t *testing.T) {
 	tests := []struct {
 		name       string
 		args       []string
 		wantPrefix string
 	}{
-		{"default", nil, "Sua frota:\n"},
-		{"maquina", []string{"--modo", "MAQUINA"}, "Sua frota:\n"},
+		{"default", nil, "Posicione a sua frota."},
+		{"maquina", []string{"--modo", "MAQUINA"}, "Posicione a sua frota."},
 		{"solo", []string{"--modo", "Solo"}, emptyAttackBoard(t) + "\nDisparo: "},
 	}
 	for _, tt := range tests {
@@ -204,8 +201,8 @@ func TestRun_Mode(t *testing.T) {
 // CA-5: sinking the machine's fleet wins, with the seed at the end.
 func TestRun_PlayerWins(t *testing.T) {
 	oneSub := []board.FleetEntry{{Type: board.Submarine, Count: 1}}
-	_, enemy := machineBoards(t, oneSub, 5)
-	code, stdout, stderr := run(machineCells(enemy, true), "--frota", "S=1", "--semente", "5")
+	enemy := machineEnemy(t, oneSub, 5)
+	code, stdout, stderr := run(randomPlacement+machineCells(enemy, true), "--frota", "S=1", "--semente", "5")
 	if code != 0 {
 		t.Errorf("Run() code = %d, want 0 (stderr %q)", code, stderr)
 	}
@@ -218,8 +215,8 @@ func TestRun_PlayerWins(t *testing.T) {
 // fleet is revealed before the seed.
 func TestRun_MachineWins(t *testing.T) {
 	oneSub := []board.FleetEntry{{Type: board.Submarine, Count: 1}}
-	_, enemy := machineBoards(t, oneSub, 5)
-	code, stdout, stderr := run(machineCells(enemy, false), "--frota", "S=1", "--semente", "5")
+	enemy := machineEnemy(t, oneSub, 5)
+	code, stdout, stderr := run(randomPlacement+machineCells(enemy, false), "--frota", "S=1", "--semente", "5")
 	if code != 0 {
 		t.Errorf("Run() code = %d, want 0 (stderr %q)", code, stderr)
 	}
@@ -242,5 +239,19 @@ func TestRun_InvalidMode(t *testing.T) {
 	}
 	if want := "Modo inválido: use maquina ou solo.\n"; stderr != want {
 		t.Errorf("Run(--modo xyz) stderr = %q, want %q", stderr, want)
+	}
+}
+
+// randomPlacement places the whole player's fleet at random.
+const randomPlacement = "aleatorio\n"
+
+// CA-8 (spec 012): giving up while placing ends before the game, with the seed.
+func TestRun_PlacementGiveUp(t *testing.T) {
+	code, stdout, stderr := run("sair\n", "--semente", "7")
+	if code != 0 {
+		t.Errorf("Run() code = %d, want 0 (stderr %q)", code, stderr)
+	}
+	if want := "Você desistiu antes da partida.\nSemente: 7\n"; !strings.HasSuffix(stdout, want) {
+		t.Errorf("Run() stdout =\n%s\nwant suffix\n%s", stdout, want)
 	}
 }

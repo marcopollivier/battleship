@@ -64,22 +64,19 @@ func Run(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
 	return 0
 }
 
-// play draws the boards for fleet with rng and runs a game in mode. Against
-// the machine, the player's board is drawn first, then the machine's, and rng
-// then draws the machine's shots.
+// play runs a game in mode with fleet. Solo, rng draws the board to attack.
+// Against the machine, rng draws the machine's board first, then the ships
+// the player asks to draw while placing, then the machine's shots; the
+// player starts with an empty board and places the fleet.
 func play(mode string, fleet []board.FleetEntry, rng *rand.Rand, stdin io.Reader, stdout io.Writer) error {
-	first, err := board.RandomBoard(fleet, rng)
+	target, err := board.RandomBoard(fleet, rng)
 	if err != nil {
 		return err
 	}
 	if strings.EqualFold(mode, soloMode) {
-		return terminal.PlaySolo(stdin, stdout, first)
+		return terminal.PlaySolo(stdin, stdout, target)
 	}
-	enemy, err := board.RandomBoard(fleet, rng)
-	if err != nil {
-		return err
-	}
-	return terminal.PlayVsMachine(stdin, stdout, first, enemy, rng)
+	return terminal.PlayVsMachine(stdin, stdout, board.NewBoard(fleet), target, rng)
 }
 
 // newRNG returns the random source that draws the boards for seed.

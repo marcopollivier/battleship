@@ -22,19 +22,30 @@ const (
 // RandomBoard returns a complete board with the fleet placed at random.
 // The same rng state always produces the same board.
 func RandomBoard(fleet []FleetEntry, rng *rand.Rand) (*Board, error) {
-	ships := shipsBySize(fleet)
+	b := NewBoard(fleet)
+	if err := FillRandom(b, rng); err != nil {
+		return nil, err
+	}
+	return b, nil
+}
+
+// FillRandom places the ships that are still missing at random, keeping the
+// ships already on b. On ErrFleetDoesNotFit, b is left unchanged.
+func FillRandom(b *Board, rng *rand.Rand) error {
+	ships := b.Remaining()
 	for _, t := range ships {
 		// A type with no orientations can never be placed, so no attempt is spent on it.
 		if len(ValidOrientations(t)) == 0 {
-			return nil, fmt.Errorf("%w: unknown ship type %v", ErrFleetDoesNotFit, t)
+			return fmt.Errorf("%w: unknown ship type %v", ErrFleetDoesNotFit, t)
 		}
 	}
 	for range maxRestarts {
-		if b, ok := tryRandomBoard(fleet, ships, rng); ok {
-			return b, nil
+		if filled, ok := tryRandomBoard(b, ships, rng); ok {
+			b.ships = filled.ships
+			return nil
 		}
 	}
-	return nil, ErrFleetDoesNotFit
+	return ErrFleetDoesNotFit
 }
 
 // shipsBySize lists one entry per ship in the fleet, largest first. The sort
@@ -53,10 +64,10 @@ func shipsBySize(fleet []FleetEntry) []ShipType {
 	return ships
 }
 
-// tryRandomBoard places every ship in order and reports false as soon as one
-// of them cannot be placed.
-func tryRandomBoard(fleet []FleetEntry, ships []ShipType, rng *rand.Rand) (*Board, bool) {
-	b := NewBoard(fleet)
+// tryRandomBoard places every ship in order on a copy of base and reports
+// false as soon as one of them cannot be placed.
+func tryRandomBoard(base *Board, ships []ShipType, rng *rand.Rand) (*Board, bool) {
+	b := base.clone()
 	for _, t := range ships {
 		if !placeRandomly(b, t, rng) {
 			return nil, false

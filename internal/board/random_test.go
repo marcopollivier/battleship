@@ -235,3 +235,39 @@ func TestRandomBoard_DoesNotFit(t *testing.T) {
 		})
 	}
 }
+
+// CA-5 (spec 012): FillRandom keeps the ships already placed and places the
+// missing ones following the placement rules.
+func TestFillRandom(t *testing.T) {
+	for seed := range uint64(20) {
+		b := NewBoard(DefaultFleet())
+		place(t, b, placement{AircraftCarrier, "E5", Down}, placement{Destroyer, "A1", Horizontal})
+		before := b.Ships()
+
+		if err := FillRandom(b, seeded(seed)); err != nil {
+			t.Fatalf("seed %d: FillRandom: %v", seed, err)
+		}
+		if !b.Complete() {
+			t.Errorf("seed %d: board is not complete", seed)
+		}
+		assertValidBoard(t, DefaultFleet(), b)
+		if after := b.Ships(); !sameShips(before, after[:len(before)]) {
+			t.Errorf("seed %d: placed ships changed: before %v, after %v", seed, before, after[:len(before)])
+		}
+	}
+}
+
+// CA-6 (spec 012): when the missing ships do not fit, FillRandom fails and
+// leaves the board unchanged. At most 25 submarines fit on the board.
+func TestFillRandom_DoesNotFit(t *testing.T) {
+	b := NewBoard([]FleetEntry{{Type: Submarine, Count: 26}})
+	place(t, b, placement{Submarine, "E5", Horizontal})
+	before := b.Ships()
+
+	if err := FillRandom(b, seeded(1)); !errors.Is(err, ErrFleetDoesNotFit) {
+		t.Errorf("FillRandom error = %v, want ErrFleetDoesNotFit", err)
+	}
+	if after := b.Ships(); !sameShips(before, after) {
+		t.Errorf("board changed after a failed FillRandom: before %v, after %v", before, after)
+	}
+}

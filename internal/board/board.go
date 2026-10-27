@@ -3,6 +3,7 @@ package board
 import (
 	"errors"
 	"fmt"
+	"maps"
 	"slices"
 )
 
@@ -86,6 +87,35 @@ func (b *Board) Complete() bool {
 		}
 	}
 	return true
+}
+
+// Remaining returns the ships of the fleet that are not placed yet, one
+// entry per ship, largest first.
+func (b *Board) Remaining() []ShipType {
+	placed := map[ShipType]int{}
+	for _, s := range b.ships {
+		placed[s.Type]++
+	}
+	var remaining []ShipType
+	for _, t := range shipsBySize(b.fleet) {
+		if placed[t] > 0 {
+			placed[t]--
+			continue
+		}
+		remaining = append(remaining, t)
+	}
+	return remaining
+}
+
+// clone returns a copy of b that can be changed without changing b.
+func (b *Board) clone() *Board {
+	return &Board{fleet: slices.Clone(b.fleet), ships: b.Ships(), shots: maps.Clone(b.shots)}
+}
+
+// Clear removes every ship and every shot from the board.
+func (b *Board) Clear() {
+	b.ships = nil
+	b.shots = map[Coord]bool{}
 }
 
 func (b *Board) fleetCount(t ShipType) int {
