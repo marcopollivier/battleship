@@ -28,6 +28,10 @@ Features da mesma onda não dependem umas das outras e são tocadas em paralelo 
 | 019 | Busca do aviso de posicionamento mais rápida: o Submarino tenta uma orientação só, e frotas grandes do `--frota` não esperam cerca de 1 s antes de cada tabuleiro | Encerramento da 014 | 014 | — | Backlog |
 | 020 | Nível `mestre` mais forte: contar as posições de todos os navios juntos, e não de cada navio sozinho | Encerramento da 018 | 018 | — | Backlog |
 | 021 | Ajustes de cores: sem cores com `TERM=dumb`, e cores nas mensagens de erro do `stderr` | Encerramento da 015 | 015 | — | Backlog |
+| 022 | Tela da partida: limpar a tela a cada turno e mostrar os dois tabuleiros lado a lado (issue #32) | Fora de escopo da 006 e da 007 | 015 | 8 | Spec |
+| 023 | Navios afundados no próprio tabuleiro, diferentes dos só atingidos (issue #33) | Fora de escopo da 009 | 015 | 8 | Spec |
+| 024 | Distribuição: `go install` documentado e releases com binários (issue #37) | Usabilidade | — | 8 | Spec |
+| 025 | Placar entre partidas: vitórias e derrotas por nível (issue #35) | Fora de escopo da 006 | 018 | 8 | Spec |
 
 ## Notas das specs concluídas
 
