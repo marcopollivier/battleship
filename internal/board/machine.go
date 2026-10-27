@@ -24,17 +24,56 @@ func RandomShot(b *Board, rng *rand.Rand) (Coord, error) {
 func SmartShot(b *Board, rng *rand.Rand) (Coord, error) {
 	sunk := sunkCells(b)
 	skip := aroundSunk(sunk)
-	targets := targetCells(pendingHits(b, sunk))
-	candidates := freeCells(b, func(c Coord) bool { return targets[c] && !skip[c] })
-	if len(candidates) == 0 {
-		// No hit on a ship afloat: hunt.
-		candidates = freeCells(b, func(c Coord) bool { return !skip[c] })
+	hits := pendingHits(b, sunk)
+	ends, targets := lineEnds(hits), targetCells(hits)
+	// From the best choice to the last resort: the ends of the line of hits,
+	// the cells next to the hits, a hunt away from sunk ships and, only when
+	// every ship has sunk, any cell.
+	for _, keep := range []func(Coord) bool{
+		func(c Coord) bool { return ends[c] && !skip[c] },
+		func(c Coord) bool { return targets[c] && !skip[c] },
+		func(c Coord) bool { return !skip[c] },
+		nil,
+	} {
+		if cells := freeCells(b, keep); len(cells) > 0 {
+			return draw(cells, rng)
+		}
 	}
-	if len(candidates) == 0 {
-		// Only when every ship has sunk: any cell is as good as another.
-		candidates = freeCells(b, nil)
+	return Coord{}, ErrNoCellsLeft
+}
+
+// lineEnds returns the cell before the first hit and the cell after the
+// last one when there are two or more hits, all in one row or all in one
+// column, and nil otherwise. The hits must be row by row, as pendingHits
+// lists them. The ends may be off the board.
+func lineEnds(hits []Coord) map[Coord]bool {
+	if len(hits) < 2 {
+		return nil
 	}
-	return draw(candidates, rng)
+	first, last := hits[0], hits[len(hits)-1]
+	switch {
+	case allOn(hits, func(c Coord) bool { return c.Row == first.Row }):
+		return map[Coord]bool{
+			{Col: first.Col - 1, Row: first.Row}: true,
+			{Col: last.Col + 1, Row: last.Row}:   true,
+		}
+	case allOn(hits, func(c Coord) bool { return c.Col == first.Col }):
+		return map[Coord]bool{
+			{Col: first.Col, Row: first.Row - 1}: true,
+			{Col: last.Col, Row: last.Row + 1}:   true,
+		}
+	}
+	return nil
+}
+
+// allOn reports whether on is true for every cell.
+func allOn(cells []Coord, on func(Coord) bool) bool {
+	for _, c := range cells {
+		if !on(c) {
+			return false
+		}
+	}
+	return true
 }
 
 // pendingHits lists the hit cells of b that are not part of a sunk ship,

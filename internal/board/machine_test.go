@@ -207,6 +207,26 @@ func TestSmartShot_TargetNeighbors(t *testing.T) {
 	})
 }
 
+// CA-3: with two or more hits in line on a ship afloat, SmartShot shoots at
+// the ends of the line that are on the board and not shot yet.
+func TestSmartShot_TargetLine(t *testing.T) {
+	smartRunTargets(t, []smartTargetTest{
+		{"horizontal", []string{"F1", "G1"}, []string{"E1", "H1"}},
+		{"vertical", []string{"J2", "J3"}, []string{"J1", "J4"}},
+		{"one end already shot", []string{"D1", "E1", "F1"}, []string{"G1"}},
+		{"one end off the board", []string{"J1", "J2"}, []string{"J3"}},
+	})
+}
+
+// CA-4: when both ends of the line are shot or off the board, or the hits
+// are not in line, SmartShot shoots next to any of the hits.
+func TestSmartShot_TargetLineBlocked(t *testing.T) {
+	smartRunTargets(t, []smartTargetTest{
+		{"Porta-Aviões bar with both ends blocked", []string{"D1", "A1", "B1", "C1"}, []string{"A2", "B2", "C2"}},
+		{"hits not in line", []string{"A1", "B1", "B2"}, []string{"C1", "A2", "C2", "B3"}},
+	})
+}
+
 // The strategies fit the ShotStrategy type.
 var (
 	_ ShotStrategy = RandomShot
