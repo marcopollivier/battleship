@@ -1,6 +1,6 @@
 # 023 — Navios afundados no próprio tabuleiro
 
-- **Status:** Aprovada
+- **Status:** Em andamento
 - **Roadmap:** #023 (onda 8), issue #33
 - **Depende de:** 015 (mais cores)
 

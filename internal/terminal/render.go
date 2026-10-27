@@ -9,13 +9,15 @@ import (
 )
 
 // Legend explains the symbols of the player's own board.
-const Legend = "Legenda: ~ água, S Submarino, D Destroyer, C Cruzador, E Encouraçado, P Porta-Aviões, X atingido, o tiro na água"
+const Legend = "Legenda: ~ água, S Submarino, D Destroyer, C Cruzador, E Encouraçado, P Porta-Aviões, X atingido, # afundado, o tiro na água"
 
 const (
 	// water is the symbol of a cell without a ship.
 	water = "~"
 	// hitSymbol is the symbol of a ship cell that was shot.
 	hitSymbol = "X"
+	// sunkSymbol is the symbol of a cell of a sunk ship on the own board.
+	sunkSymbol = "#"
 	// missSymbol is the symbol of a water cell that was shot.
 	missSymbol = "o"
 )
@@ -30,8 +32,9 @@ var shipSymbols = map[board.ShipType]string{
 }
 
 // RenderBoard writes the player's own board, including the shots it has
-// received, followed by a blank line and the legend. With Colored, each cell
-// is drawn in the color of its symbol.
+// received, followed by a blank line and the legend. The cells of a sunk
+// ship are drawn as #. With Colored, each cell is drawn in the color of its
+// symbol.
 func RenderBoard(w io.Writer, b *board.Board, style Style) error {
 	var grid [board.Size][board.Size]string
 	for row := range grid {
@@ -52,6 +55,14 @@ func RenderBoard(w io.Writer, b *board.Board, style Style) error {
 			case board.CellMiss:
 				grid[row][col] = style.paint(missSymbol, missColor)
 			}
+		}
+	}
+	for _, ship := range b.Ships() {
+		if !shipSunk(b, ship) {
+			continue
+		}
+		for _, c := range ship.Cells {
+			grid[c.Row][c.Col] = style.paint(sunkSymbol, sunkColor)
 		}
 	}
 	return writeBoard(w, &grid, Legend)
