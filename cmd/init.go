@@ -22,6 +22,9 @@ const (
 	modeFlag  = "modo"
 	levelFlag = "nivel"
 	colorFlag = "cores"
+
+	showScoreFlag  = "placar"
+	resetScoreFlag = "zerar-placar"
 )
 
 // Values of the mode option.
@@ -66,11 +69,16 @@ func run(args []string, stdin io.Reader, stdout, stderr io.Writer, scorePath str
 	mode := fs.String(modeFlag, machineMode, "maquina para jogar contra a máquina, ou solo para só atacar um tabuleiro sorteado")
 	level := fs.String(levelFlag, hardLevel, "dificil para a máquina cercar os navios que acerta, facil para ela sortear todos os tiros, ou mestre para ela atirar onde ainda cabem mais navios")
 	colors := fs.String(colorFlag, colorsAuto, "auto para usar cores só quando a saída é um terminal e NO_COLOR não está definida, sim para usar sempre, ou nao para nunca usar")
+	showScore := fs.Bool(showScoreFlag, false, "mostra o placar contra a máquina em cada nível, sem começar partida")
+	resetScore := fs.Bool(resetScoreFlag, false, "apaga o placar contra a máquina, sem começar partida")
 	if err := fs.Parse(args); err != nil {
 		if errors.Is(err, flag.ErrHelp) {
 			return 0
 		}
 		return 2
+	}
+	if code, done := scoreCommand(stdout, scorePath, *showScore, *resetScore); done {
+		return code
 	}
 	if !strings.EqualFold(*mode, machineMode) && !strings.EqualFold(*mode, soloMode) {
 		fmt.Fprintln(stderr, "Modo inválido: use maquina ou solo.")
@@ -152,6 +160,32 @@ func recordScore(stdout io.Writer, scorePath, level string, result terminal.Resu
 		return
 	}
 	fmt.Fprintln(stdout, terminal.ScoreLine(level, b[level]))
+}
+
+// scoreCommand runs the score options instead of a game: with reset it
+// empties the score in the file at scorePath, and with show it writes the
+// score line of every level to stdout. It returns the exit code, and false
+// when neither option was given and the game should start.
+func scoreCommand(stdout io.Writer, scorePath string, show, reset bool) (int, bool) {
+	if !show && !reset {
+		return 0, false
+	}
+	if reset {
+		if err := score.Save(scorePath, score.Board{}); err != nil {
+			return 0, true
+		}
+		fmt.Fprintln(stdout, "Placar zerado.")
+	}
+	if show {
+		b, err := score.Load(scorePath)
+		if err != nil {
+			return 0, true
+		}
+		for _, level := range []string{easyLevel, hardLevel, masterLevel} {
+			fmt.Fprintln(stdout, terminal.ScoreLine(level, b[level]))
+		}
+	}
+	return 0, true
 }
 
 // chooseStyle returns the board style for the colors option (sim, nao or

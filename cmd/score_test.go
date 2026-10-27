@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"os"
+	"path/filepath"
 	"reflect"
 	"strings"
 	"testing"
@@ -113,6 +114,74 @@ func TestRun_ScoreNotCounted(t *testing.T) {
 			}
 			if strings.Contains(stdout, "Placar") {
 				t.Errorf("Run(%q) stdout =\n%s\nwant no score line", tt.args, stdout)
+			}
+		})
+	}
+}
+
+// CA-5 (spec 025): --placar shows one line per level, from facil to mestre,
+// and ends with code 0 without a game and without changing the score.
+func TestRun_ShowScore(t *testing.T) {
+	const zero = "Placar no nível facil: 0 vitórias, 0 derrotas.\n" +
+		"Placar no nível dificil: 0 vitórias, 0 derrotas.\n" +
+		"Placar no nível mestre: 0 vitórias, 0 derrotas.\n"
+	saved := scoreFile(t, score.Board{"dificil": {Wins: 3, Losses: 2, BestWin: 41}, "mestre": {Losses: 1}})
+	tests := []struct {
+		name string
+		path string
+		args []string
+		want string
+	}{
+		{"saved score", saved, []string{"--placar"}, "Placar no nível facil: 0 vitórias, 0 derrotas.\n" +
+			"Placar no nível dificil: 3 vitórias, 2 derrotas. Melhor vitória: 41 disparos.\n" +
+			"Placar no nível mestre: 0 vitórias, 1 derrota.\n"},
+		{"no score file", filepath.Join(t.TempDir(), "placar.json"), []string{"--placar", "--modo", "solo"}, zero},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			before, _ := os.ReadFile(tt.path)
+			code, stdout, stderr := runScore(tt.path, "A1\n", tt.args...)
+			if code != 0 || stderr != "" {
+				t.Errorf("Run(%q) code = %d, stderr %q, want 0 and no error", tt.args, code, stderr)
+			}
+			if stdout != tt.want {
+				t.Errorf("Run(%q) stdout =\n%s\nwant\n%s", tt.args, stdout, tt.want)
+			}
+			if after, _ := os.ReadFile(tt.path); string(after) != string(before) {
+				t.Errorf("score file after Run(%q) = %s, want %s", tt.args, after, before)
+			}
+		})
+	}
+}
+
+// CA-6 (spec 025): --zerar-placar empties the score, shows "Placar
+// zerado." and ends with code 0 without a game; with --placar, the empty
+// score follows.
+func TestRun_ResetScore(t *testing.T) {
+	tests := []struct {
+		name string
+		path string
+		args []string
+		want string
+	}{
+		{"saved score", scoreFile(t, scoreStart), []string{"--zerar-placar"}, "Placar zerado.\n"},
+		{"no score file", filepath.Join(t.TempDir(), "battleship", "placar.json"), []string{"--zerar-placar"}, "Placar zerado.\n"},
+		{"and show it", scoreFile(t, scoreStart), []string{"--placar", "--zerar-placar"}, "Placar zerado.\n" +
+			"Placar no nível facil: 0 vitórias, 0 derrotas.\n" +
+			"Placar no nível dificil: 0 vitórias, 0 derrotas.\n" +
+			"Placar no nível mestre: 0 vitórias, 0 derrotas.\n"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			code, stdout, stderr := runScore(tt.path, "aleatorio\nA1\nsair\n", tt.args...)
+			if code != 0 || stderr != "" {
+				t.Errorf("Run(%q) code = %d, stderr %q, want 0 and no error", tt.args, code, stderr)
+			}
+			if stdout != tt.want {
+				t.Errorf("Run(%q) stdout =\n%s\nwant\n%s", tt.args, stdout, tt.want)
+			}
+			if got := loadScore(t, tt.path); len(got) != 0 {
+				t.Errorf("score after Run(%q) = %+v, want it empty", tt.args, got)
 			}
 		})
 	}
