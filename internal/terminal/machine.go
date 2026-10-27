@@ -12,10 +12,10 @@ import (
 // the player first places the missing ships. Then the player shoots at enemy
 // with shots read from in, the machine shoots at player with cells drawn
 // from rng, and whoever hits shoots again. The player gives up with "sair"
-// or the end of the input. It writes the game to out and returns an error if
-// reading or writing fails.
-func PlayVsMachine(in io.Reader, out io.Writer, player, enemy *board.Board, rng *rand.Rand) error {
-	g := &machineGame{playerAttack: playerAttack{out: out, target: enemy}, player: player, rng: rng}
+// or the end of the input. It writes the game to out, with the boards drawn
+// with style, and returns an error if reading or writing fails.
+func PlayVsMachine(in io.Reader, out io.Writer, player, enemy *board.Board, rng *rand.Rand, style Style) error {
+	g := &machineGame{playerAttack: playerAttack{out: out, target: enemy, style: style}, player: player, rng: rng}
 	scanner := bufio.NewScanner(in)
 	if !player.Complete() && !g.placeFleet(scanner) {
 		return g.err

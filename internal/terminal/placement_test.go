@@ -95,9 +95,15 @@ var placementExample = []struct {
 // player and returns what it wrote.
 func placementPlay(t *testing.T, input string) string {
 	t.Helper()
+	return placementPlayStyle(t, input, Plain)
+}
+
+// placementPlayStyle is placementPlay drawing the boards with style.
+func placementPlayStyle(t *testing.T, input string, style Style) string {
+	t.Helper()
 	var sb strings.Builder
 	player := board.NewBoard(board.DefaultFleet())
-	err := PlayVsMachine(strings.NewReader(input), &sb, player, machineEnemyBoard(t), rand.New(rand.NewPCG(1, 0)))
+	err := PlayVsMachine(strings.NewReader(input), &sb, player, machineEnemyBoard(t), rand.New(rand.NewPCG(1, 0)), style)
 	if err != nil {
 		t.Fatalf("PlayVsMachine: %v", err)
 	}
@@ -235,7 +241,7 @@ func TestPlayVsMachine_PlacementRandomDoesNotFit(t *testing.T) {
 		"Não foi possível sortear o resto da frota. Mude a posição dos navios com recomecar.\n" + prompt
 
 	var sb strings.Builder
-	err := PlayVsMachine(strings.NewReader("aleatorio\n"), &sb, board.NewBoard(fleet), machineEnemyBoard(t), rand.New(rand.NewPCG(1, 0)))
+	err := PlayVsMachine(strings.NewReader("aleatorio\n"), &sb, board.NewBoard(fleet), machineEnemyBoard(t), rand.New(rand.NewPCG(1, 0)), Plain)
 	if err != nil {
 		t.Fatalf("PlayVsMachine: %v", err)
 	}
@@ -275,4 +281,19 @@ func TestPlayVsMachine_PlacementGiveUp(t *testing.T) {
 			}
 		})
 	}
+}
+
+// CA-7 (spec 010): with Colored, the boards shown while placing the fleet
+// are drawn with colors.
+func TestPlayVsMachine_PlacementColored(t *testing.T) {
+	empty, withCarrier := placementWithCarrier(t)
+	want := placementIntro + renderColored(t, RenderBoard, empty) + "\n" + placementCarrierPrompt +
+		renderColored(t, RenderBoard, withCarrier) + "\n" + placementBattleshipPrompt
+
+	const input = "B1 baixo\naleatorio\nA1\nsair\n"
+	got := placementPlayStyle(t, input, Colored)
+	if !strings.HasPrefix(got, want) {
+		t.Errorf("PlayVsMachine() =\n%s\nwant prefix\n%s", got, want)
+	}
+	assertBoardsColored(t, got, placementPlay(t, input))
 }

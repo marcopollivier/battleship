@@ -44,7 +44,7 @@ func attackFire(t *testing.T, b *board.Board, cells ...string) {
 func attackRender(t *testing.T, b *board.Board) string {
 	t.Helper()
 	var sb strings.Builder
-	if err := RenderAttackBoard(&sb, b); err != nil {
+	if err := RenderAttackBoard(&sb, b, Plain); err != nil {
 		t.Fatalf("RenderAttackBoard: %v", err)
 	}
 	return sb.String()

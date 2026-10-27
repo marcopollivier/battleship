@@ -22,8 +22,14 @@ var soloShipCells = []string{
 // soloPlay runs PlaySolo on b with input and returns what it wrote.
 func soloPlay(t *testing.T, b *board.Board, input string) string {
 	t.Helper()
+	return soloPlayStyle(t, b, input, Plain)
+}
+
+// soloPlayStyle is soloPlay drawing the boards with style.
+func soloPlayStyle(t *testing.T, b *board.Board, input string, style Style) string {
+	t.Helper()
 	var sb strings.Builder
-	if err := PlaySolo(strings.NewReader(input), &sb, b); err != nil {
+	if err := PlaySolo(strings.NewReader(input), &sb, b, style); err != nil {
 		t.Fatalf("PlaySolo: %v", err)
 	}
 	return sb.String()
@@ -120,7 +126,7 @@ func TestPlaySolo_InvalidInput(t *testing.T) {
 // incomplete board, ends the game and is returned.
 func TestPlaySolo_UnexpectedError(t *testing.T) {
 	var sb strings.Builder
-	err := PlaySolo(strings.NewReader("A1\n"), &sb, board.NewBoard(board.DefaultFleet()))
+	err := PlaySolo(strings.NewReader("A1\n"), &sb, board.NewBoard(board.DefaultFleet()), Plain)
 	if !errors.Is(err, board.ErrIncompleteBoard) {
 		t.Errorf("PlaySolo() error = %v, want ErrIncompleteBoard", err)
 	}
@@ -130,7 +136,7 @@ func TestPlaySolo_UnexpectedError(t *testing.T) {
 func soloReveal(t *testing.T, b *board.Board) string {
 	t.Helper()
 	var sb strings.Builder
-	if err := RenderBoard(&sb, b); err != nil {
+	if err := RenderBoard(&sb, b, Plain); err != nil {
 		t.Fatalf("RenderBoard: %v", err)
 	}
 	return sb.String()
@@ -213,9 +219,25 @@ func TestPlaySolo_IOErrors(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if err := PlaySolo(tt.in, tt.out, attackExampleBoard(t)); !errors.Is(err, tt.want) {
+			if err := PlaySolo(tt.in, tt.out, attackExampleBoard(t), Plain); !errors.Is(err, tt.want) {
 				t.Errorf("PlaySolo() error = %v, want %v", err, tt.want)
 			}
 		})
 	}
+}
+
+// CA-7 (spec 010): with Colored, the attack boards and the revealed fleet
+// are drawn with colors.
+func TestPlaySolo_Colored(t *testing.T) {
+	replay := attackExampleBoard(t)
+	want := renderColored(t, RenderAttackBoard, replay) + "\n" + soloPrompt
+	attackFire(t, replay, "J10")
+	want += "Água.\n\n" + renderColored(t, RenderAttackBoard, replay) + "\n" + soloPrompt +
+		"Você desistiu depois de 1 disparo. A frota era:\n\n" + renderColored(t, RenderBoard, replay)
+
+	if got := soloPlayStyle(t, attackExampleBoard(t), "J10\nsair\n", Colored); got != want {
+		t.Errorf("PlaySolo() =\n%s\nwant\n%s", got, want)
+	}
+	input := strings.Join(soloShipCells, "\n") + "\n"
+	assertBoardsColored(t, soloPlayStyle(t, attackExampleBoard(t), input, Colored), soloPlay(t, attackExampleBoard(t), input))
 }
