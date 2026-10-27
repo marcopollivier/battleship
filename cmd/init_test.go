@@ -73,7 +73,7 @@ func TestRun_GiveUp(t *testing.T) {
 	}
 }
 
-// CA-9 (spec 012), CA-7 (spec 013) and CA-7 (spec 014): with the same seed,
+// CA-9 (spec 012), CA-7 (spec 013), CA-7 (spec 014) and CA-7 (spec 018): with the same seed,
 // level and input the game repeats: the machine's board, the ships drawn
 // with aleatorio and every machine shot, also after desfazer and the warning
 // that the rest of the fleet no longer fits.
@@ -93,6 +93,7 @@ func TestRun_SameSeed(t *testing.T) {
 		{"default level", input, nil},
 		{"dificil", input, []string{"--nivel", "dificil"}},
 		{"facil", input, []string{"--nivel", "facil"}},
+		{"mestre", input, []string{"--nivel", "mestre"}},
 		{"warning", warningInput, []string{"--frota", "E=7,C=1"}},
 	}
 	for _, tt := range tests {
@@ -132,13 +133,15 @@ func levelGame(t *testing.T, input string, seed uint64, strategy board.ShotStrat
 
 // CA-8 and the level option (spec 013): dificil, the default, plays with
 // SmartShot, and facil with RandomShot, the machine from before spec 013.
-// The player only hits water, so the machine shoots until it wins.
+// CA-7 (spec 018): mestre plays with MasterShot. The player only hits
+// water, so the machine shoots until it wins.
 func TestRun_Level(t *testing.T) {
 	const seed = 42
 	input := randomPlacement + machineCells(machineEnemy(t, board.DefaultFleet(), seed), false)
 	smart, random := levelGame(t, input, seed, board.SmartShot), levelGame(t, input, seed, board.RandomShot)
-	if smart == random {
-		t.Fatal("SmartShot and RandomShot played the same game; pick another seed")
+	master := levelGame(t, input, seed, board.MasterShot)
+	if smart == random || master == smart {
+		t.Fatal("two strategies played the same game; pick another seed")
 	}
 	tests := []struct {
 		name string
@@ -149,6 +152,8 @@ func TestRun_Level(t *testing.T) {
 		{"dificil", []string{"--nivel", "dificil"}, smart},
 		{"facil", []string{"--nivel", "facil"}, random},
 		{"any case", []string{"--nivel", "FACIL"}, random},
+		{"mestre", []string{"--nivel", "mestre"}, master},
+		{"mestre in any case", []string{"--nivel", "MESTRE"}, master},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -163,7 +168,7 @@ func TestRun_Level(t *testing.T) {
 	}
 }
 
-// CA-9 (spec 013): an unknown level is an option error, with exit code 2,
+// CA-9 (spec 013) and CA-8 (spec 018): an unknown level is an option error, with exit code 2,
 // in solo mode too.
 func TestRun_InvalidLevel(t *testing.T) {
 	for _, args := range [][]string{{"--nivel", "xyz"}, {"--modo", "solo", "--nivel", "xyz"}} {
@@ -174,7 +179,7 @@ func TestRun_InvalidLevel(t *testing.T) {
 		if stdout != "" {
 			t.Errorf("Run(%q) stdout = %q, want empty", args, stdout)
 		}
-		if want := "Nível inválido: use facil ou dificil.\n"; stderr != want {
+		if want := "Nível inválido: use facil, dificil ou mestre.\n"; stderr != want {
 			t.Errorf("Run(%q) stderr = %q, want %q", args, stderr, want)
 		}
 	}
