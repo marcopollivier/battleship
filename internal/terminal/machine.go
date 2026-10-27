@@ -57,9 +57,6 @@ type machineGame struct {
 	rng          *rand.Rand
 	strategy     board.ShotStrategy
 	machineShots int
-	// events are the lines of what happened since the last screen, shown
-	// below the boards of the next one.
-	events []string
 }
 
 // machineTurn makes the machine shoot at the player's board until it misses,
@@ -125,10 +122,8 @@ func (g *machineGame) showFinal(message string) {
 // the player's board side by side with enemy, the grid of the enemy board,
 // legends and the events since the last screen.
 func (g *machineGame) writeScreen(enemy []string, legends string) {
+	g.clearScreen()
 	var sb strings.Builder
-	if g.clear {
-		sb.WriteString(clearScreen)
-	}
 	sb.WriteString(boardTitles + "\n")
 	for _, line := range sideBySide(ownGrid(g.player, g.style), enemy) {
 		sb.WriteString(line + "\n")
@@ -136,13 +131,4 @@ func (g *machineGame) writeScreen(enemy []string, legends string) {
 	sb.WriteString("\n" + legends + "\n\n")
 	g.write(sb.String())
 	g.writeEvents()
-}
-
-// writeEvents writes the events since the last screen, one per line, and
-// forgets them.
-func (g *machineGame) writeEvents() {
-	for _, event := range g.events {
-		g.write(event + "\n")
-	}
-	g.events = nil
 }
