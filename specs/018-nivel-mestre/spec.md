@@ -1,6 +1,6 @@
 # 018 — Terceiro nível da máquina
 
-- **Status:** Em andamento
+- **Status:** Concluída
 - **Roadmap:** #018 (onda 7)
 - **Depende de:** 013 (máquina com estratégia)
 
@@ -57,4 +57,27 @@ Todas decididas em 2026-10-27, como propostas:
 
 ## Encerramento
 
-Preenchido na fase 5: desvios em relação ao plano e o que ficou para o roadmap.
+Concluída em 2026-10-27, nas tarefas T1–T4. Os 8 critérios de aceitação são cobertos por testes em `internal/board/master_test.go` (CA-1 em `TestMasterShot_Hunt`, CA-2 em `TestMasterShot_NoRoom`, CA-3 em `TestMasterShot_Target`, CA-4 em `TestMasterShot_AfterSunk`, CA-5 em `TestMasterShot_PublicKnowledge`, CA-6 em `TestMasterShot_Game`) e `cmd/init_test.go` (CA-7 em `TestRun_Level` e `TestRun_SameSeed`, CA-8 em `TestRun_InvalidLevel`). A cobertura ficou em 99,7% em `internal/board`, 97,5% em `internal/terminal` e 92,1% em `cmd`.
+
+Em 200 sementes da frota padrão, a máquina `mestre` precisa em média de 54,7 tiros para afundar a frota, a `dificil` de 59,7 e a `facil` de 95,6.
+
+O binário foi rodado com `--cores nao`, as sementes 1, 7, 8, 42, 99 e 2026, `aleatorio` e um tiro em cada casa do tabuleiro, com `--nivel dificil` e `--nivel mestre`. A máquina venceu as 12 partidas: a `mestre` em 44 a 67 tiros (média 55,3), a `dificil` em 54 a 78 (média 65,2). Cada partida rodada duas vezes deu a mesma saída. Nos tiros da `mestre`, dá para ver a procura começar pelo meio do tabuleiro e o cerco seguir o navio para o lado em que ele cabe. `--nivel xyz` mostra a mensagem nova e termina com código 2.
+
+**Desvios em relação ao plano:**
+
+- Os testes do T3 (CA-5 e CA-6) passaram de cara, porque conferem o comportamento feito no T1 e no T2. Os do T1 falharam primeiro na compilação e depois contra um `MasterShot` provisório que só chamava o `SmartShot`; os do T2 falharam contra o código do T1, que ainda contava os acertos pendentes como na procura e atirava longe deles.
+- Para conferir a contagem, os testes têm uma contagem própria (`masterBest`), mais simples, que só vale para tabuleiros sem acertos pendentes: cada casa atingida e cada casa em volta de um acerto ficam proibidas.
+- No CA-2, tirar os Submarinos afundados não muda as casas de maior contagem no meio do tabuleiro, porque um Submarino soma o mesmo em toda casa onde cabe. Por isso o teste usa um canto fechado por água onde só caberia um Submarino: com o Submarino afundado, a máquina nunca atira ali.
+- No CA-4, um subteste novo usa uma frota de um Destroyer e um Cruzador, com só uma linha de 5 casas e uma cruz de 5 casas livres: com o Destroyer afundado, a maior contagem é o meio da linha (onde o Cruzador cabe mais), e não o meio da cruz.
+- No CA-3, o caso da borda é um acerto em J2: a máquina atira em J3, para o lado em que o navio tem mais espaço, e não em J1 nem em I2.
+- A máquina monta, a cada tiro, um retrato do que sabe de cada casa (`chart`: água, acerto pendente ou navio afundado), para não percorrer os navios a cada consulta de casa. O plano não falava disso.
+- Os helpers `strategyChoices` e `samePublicShots` saíram dos testes do `SmartShot` em `machine_test.go`, e servem aos dois, para o `dupl` não acusar código repetido.
+- Um teste a mais, `TestMasterShot_FleetSunk`, cobre a volta para o `SmartShot` quando não há contagem (com a frota toda afundada) e o `ErrNoCellsLeft`. Numa partida, a contagem só fica vazia com a frota afundada, porque a posição real de um navio boiando sempre conta.
+- A ajuda da opção `--nivel` passou a descrever o `mestre`, e o `TestRun_SameSeed` também roda com `--nivel mestre`.
+
+**Para o roadmap:**
+
+- Decidir se o `mestre` vira o padrão, jogando algumas partidas contra ele.
+- A issue #25 continua aberta para a `dificil`; a `mestre` mantém a regra das casas em volta de navio afundado, como decidido na questão 3.
+- Uma contagem mais forte, que considera as posições de todos os navios juntos (e não de cada navio sozinho), se a `mestre` parecer fraca.
+- A fusão com a 015, que também mexe no `cmd/init.go` e no README.
