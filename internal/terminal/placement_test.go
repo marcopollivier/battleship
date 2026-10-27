@@ -72,7 +72,7 @@ func TestParsePlacement_Invalid(t *testing.T) {
 
 const placementIntro = "Posicione a sua frota. Para cada navio, digite a casa e a orientação, por exemplo E5 vertical.\n" +
 	"A casa é a primeira do navio (a de cima ou a da esquerda). No Porta-Aviões, é o meio da barra do T.\n" +
-	"Comandos: aleatorio sorteia o resto da frota, recomecar tira todos os navios, sair desiste.\n" + //nolint:misspell // Portuguese text for the player
+	"Comandos: aleatorio sorteia o resto da frota, desfazer tira o último navio, recomecar tira todos os navios, sair desiste.\n" + //nolint:misspell // Portuguese text for the player
 	"\n"
 
 // placementExample is the example board from spec 003 as the player types it.
@@ -259,6 +259,34 @@ func TestPlayVsMachine_PlacementRestart(t *testing.T) {
 
 	if got := placementPlay(t, "B1 baixo\nRECOMECAR\n"); !strings.HasPrefix(got, want) {
 		t.Errorf("PlayVsMachine() =\n%s\nwant prefix\n%s", got, want)
+	}
+}
+
+// CA-1, CA-2 and CA-3 (spec 014): "desfazer" removes the last ship placed
+// and asks for it again with the board, one ship at a time; on an empty
+// board it says so and asks for the same ship.
+func TestPlayVsMachine_PlacementUndo(t *testing.T) {
+	empty, withCarrier := placementWithCarrier(t)
+	withTwo := board.NewBoard(board.DefaultFleet())
+	for _, p := range placementExample[:2] {
+		c, o, err := parsePlacement(p.line, p.shipType)
+		if err != nil {
+			t.Fatalf("parsePlacement(%q): %v", p.line, err)
+		}
+		if err := withTwo.Place(p.shipType, c, o); err != nil {
+			t.Fatalf("Place(%q): %v", p.line, err)
+		}
+	}
+	want := placementIntro + placementAsk(t, empty, placementCarrierPrompt) +
+		"Não há navio para desfazer.\n" + placementCarrierPrompt +
+		placementAsk(t, withCarrier, placementBattleshipPrompt) +
+		placementAsk(t, withTwo, "Cruzador, 3 casas (horizontal, vertical): ") +
+		placementAsk(t, withCarrier, placementBattleshipPrompt) +
+		placementAsk(t, empty, placementCarrierPrompt) +
+		"Você desistiu antes da partida.\n"
+
+	if got := placementPlay(t, "desfazer\nB1 baixo\nE1 h\nDESFAZER\n desfazer \nsair\n"); got != want {
+		t.Errorf("PlayVsMachine() =\n%s\nwant\n%s", got, want)
 	}
 }
 
