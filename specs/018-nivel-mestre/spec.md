@@ -1,6 +1,6 @@
 # 018 — Terceiro nível da máquina
 
-- **Status:** Aprovada
+- **Status:** Em andamento
 - **Roadmap:** #018 (onda 7)
 - **Depende de:** 013 (máquina com estratégia)
 

@@ -56,18 +56,25 @@ func TestRandomShot(t *testing.T) {
 const smartSeeds = 200
 
 // smartChoices runs SmartShot on b with smartSeeds seeds, without firing,
+// and returns the set of cells it chose.
+func smartChoices(t *testing.T, b *Board) map[Coord]bool {
+	t.Helper()
+	return strategyChoices(t, SmartShot, b)
+}
+
+// strategyChoices runs strategy on b with smartSeeds seeds, without firing,
 // and returns the set of cells it chose. Every choice must be a cell that
 // has not been shot yet.
-func smartChoices(t *testing.T, b *Board) map[Coord]bool {
+func strategyChoices(t *testing.T, strategy ShotStrategy, b *Board) map[Coord]bool {
 	t.Helper()
 	chosen := map[Coord]bool{}
 	for seed := range uint64(smartSeeds) {
-		c, err := SmartShot(b, seeded(seed))
+		c, err := strategy(b, seeded(seed))
 		if err != nil {
-			t.Fatalf("SmartShot(seed %d): %v", seed, err)
+			t.Fatalf("seed %d: %v", seed, err)
 		}
 		if b.Cell(c) != CellUntouched {
-			t.Errorf("SmartShot(seed %d) chose %v, which was already shot", seed, c)
+			t.Errorf("seed %d: chose %v, which was already shot", seed, c)
 		}
 		chosen[c] = true
 	}
