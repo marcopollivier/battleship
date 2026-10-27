@@ -1,6 +1,6 @@
 # 011 — `make run` com opções
 
-- **Status:** Em andamento
+- **Status:** Concluída
 - **Roadmap:** #011 (onda 6)
 - **Depende de:** 006 (modo solo)
 
@@ -41,4 +41,29 @@ Todas decididas em 2026-10-26:
 
 ## Encerramento
 
-Preenchido na fase 5: desvios em relação ao plano e o que ficou para o roadmap.
+Concluída em 2026-10-26, nas tarefas T1 e T2. O código Go não mudou: a T1 trocou o alvo `run` do `Makefile` (`go run $(MAIN_PATH) $(ARGS)` e a nova descrição no `make help`), e a T2 atualizou o README ("Como jogar") e o `CLAUDE.md`. Como decidido na questão 4, os critérios foram conferidos à mão antes do commit da T1, com os comandos do plano:
+
+- **CA-1:** `printf 'sair\n' | make run ARGS="--modo solo --semente 42"` e `printf 'sair\n' | go run . --modo solo --semente 42`, cada um gravado num arquivo. Tirando a linha `🚀 Executando...`, o `diff` não mostrou diferença: as duas saídas trazem o tabuleiro vazio, `Você desistiu depois de 0 disparos.`, a frota sorteada e `Semente: 42`. Os dois terminaram com código 0.
+- **CA-2:** `printf 'sair\n' | make run` começou com as instruções do posicionamento (`Posicione a sua frota. ...`), pediu o Porta-Aviões, mostrou `Você desistiu antes da partida.` e uma semente nova, com código 0.
+- **CA-3:** `make run ARGS="--modo xyz"; echo $?` mostrou:
+
+  ```
+  🚀 Executando...
+  Modo inválido: use maquina ou solo.
+  exit status 2
+  make: *** [run] Error 1
+  2
+  ```
+
+- **CA-4:** `make help | grep run` mostrou `run             Executa o jogo (opções: make run ARGS="--modo solo --semente 42")`.
+
+O `make pre-commit` passou nas duas tarefas, sem mudança nos testes em Go.
+
+**Desvios em relação ao plano:**
+
+- A linha de erro do `make` é `make: *** [run] Error 1`, e não `Error 2` como no exemplo da spec. O `go run` não repassa o código do programa: ele escreve `exit status 2` e termina com 1. O `make` termina com 2 de qualquer jeito, então o CA-3 vale. A linha `exit status 2` também aparece em `go run . --modo xyz`, então as mensagens continuam as mesmas das duas formas.
+- No README, a frase das opções ficou "As opções vão em `ARGS`, como em `make run ARGS="..."`, ou depois de `go run .`, como em `go run . ...`", para caber na frase que já existia antes da tabela de opções.
+
+**Para o roadmap:**
+
+- Se o código de saída do jogo importar para quem usa o `make` (por exemplo, distinguir opção inválida de erro na frota), o `run` pode compilar o binário e rodá-lo, no lugar do `go run`, que troca o código 2 por 1.
