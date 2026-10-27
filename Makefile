@@ -1,4 +1,4 @@
-.PHONY: help build run test lint fmt vet sec install-tools install-deps setup clean
+.PHONY: help build run test lint fmt vet sec install-tools install-deps setup clean release-check
 
 # Configurações
 BINARY_NAME=battleship
@@ -15,6 +15,11 @@ build: ## Compila o projeto
 	@mkdir -p $(BUILD_DIR)
 	@go build -o $(BUILD_DIR)/$(BINARY_NAME) $(MAIN_PATH)
 	@echo "✅ Compilação concluída: $(BUILD_DIR)/$(BINARY_NAME)"
+
+release-check: ## Compila os binários de release em dist/
+	@echo "📦 Compilando os binários de release..."
+	@./scripts/build-release.sh dev
+	@echo "✅ Binários em dist/"
 
 run: ## Executa o jogo (opções: make run ARGS="--modo solo --semente 42")
 	@echo "🚀 Executando..."
