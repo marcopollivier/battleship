@@ -1,7 +1,7 @@
 # 011 — Tarefas
 
 - **Plano:** [plan.md](plan.md)
-- **Status:** Rascunho
+- **Status:** Aprovado
 
 Cada tarefa é um commit: conferência à mão (exceção ao teste primeiro, veja o plano) → mudança → `make pre-commit` → commit.
 
