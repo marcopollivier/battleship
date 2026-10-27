@@ -4,19 +4,50 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"path/filepath"
 	"regexp"
 	"strings"
 	"testing"
 
 	"github.com/marcopollivier/battleship/internal/board"
+	"github.com/marcopollivier/battleship/internal/score"
 	"github.com/marcopollivier/battleship/internal/terminal"
 )
 
-// run runs the program with stdin and args and returns the exit code, stdout and stderr.
-func run(stdin string, args ...string) (code int, stdout, stderr string) {
+// runCmd runs the program with stdin and args, keeping the score in a new
+// temporary folder so tests never touch the real score, and returns the
+// exit code, stdout and stderr.
+func runCmd(t *testing.T, stdin string, args ...string) (code int, stdout, stderr string) {
+	t.Helper()
+	return runScore(filepath.Join(t.TempDir(), "placar.json"), stdin, args...)
+}
+
+// runScore runs the program with stdin and args and the score file at
+// scorePath, and returns the exit code, stdout and stderr.
+func runScore(scorePath, stdin string, args ...string) (code int, stdout, stderr string) {
 	var out, errOut strings.Builder
-	code = Run(args, strings.NewReader(stdin), &out, &errOut)
+	code = run(args, strings.NewReader(stdin), &out, &errOut, scorePath)
 	return code, out.String(), errOut.String()
+}
+
+// scoreFile saves b to a new temporary score file and returns its path.
+func scoreFile(t *testing.T, b score.Board) string {
+	t.Helper()
+	path := filepath.Join(t.TempDir(), "battleship", "placar.json")
+	if err := score.Save(path, b); err != nil {
+		t.Fatalf("Save: %v", err)
+	}
+	return path
+}
+
+// loadScore reads the score file at path.
+func loadScore(t *testing.T, path string) score.Board {
+	t.Helper()
+	b, err := score.Load(path)
+	if err != nil {
+		t.Fatalf("Load: %v", err)
+	}
+	return b
 }
 
 // seedShots returns the cells of every ship on the board the program draws
@@ -48,7 +79,7 @@ func emptyAttackBoard(t *testing.T, style terminal.Style) string {
 
 // Solo mode (spec 006): shooting every ship cell wins, and the seed is shown at the end.
 func TestRun_Win(t *testing.T) {
-	code, stdout, stderr := run(seedShots(t, board.DefaultFleet(), 42), "--modo", "solo", "--semente", "42", "--cores", "nao")
+	code, stdout, stderr := runCmd(t, seedShots(t, board.DefaultFleet(), 42), "--modo", "solo", "--semente", "42", "--cores", "nao")
 	if code != 0 {
 		t.Errorf("Run() code = %d, want 0 (stderr %q)", code, stderr)
 	}
@@ -60,7 +91,7 @@ func TestRun_Win(t *testing.T) {
 // Solo mode (spec 006): without --semente the game starts with the empty
 // attack board, and giving up shows the fleet and the seed that was drawn.
 func TestRun_GiveUp(t *testing.T) {
-	code, stdout, stderr := run("sair\n", "--modo", "solo", "--cores", "nao")
+	code, stdout, stderr := runCmd(t, "sair\n", "--modo", "solo", "--cores", "nao")
 	if code != 0 {
 		t.Errorf("Run() code = %d, want 0 (stderr %q)", code, stderr)
 	}
@@ -100,16 +131,21 @@ func TestRun_SameSeed(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			_, first, _ := run(tt.input, append([]string{"--semente", "42"}, tt.args...)...)
-			_, second, _ := run(tt.input, append([]string{"--semente", "42"}, tt.args...)...)
+			// CA-8 (spec 025): each run starts from a copy of the same score.
+			start := score.Board{"dificil": {Wins: 2, Losses: 1, BestWin: 40}, "facil": {Wins: 1, BestWin: 70}}
+			_, first, _ := runScore(scoreFile(t, start), tt.input, append([]string{"--semente", "42"}, tt.args...)...)
+			_, second, _ := runScore(scoreFile(t, start), tt.input, append([]string{"--semente", "42"}, tt.args...)...)
 			if first != second {
 				t.Errorf("two runs with --semente 42 %q differ:\n%s\n---\n%s", tt.args, first, second)
 			}
-			if _, other, _ := run(tt.input, append([]string{"--semente", "43"}, tt.args...)...); other == first {
+			if _, other, _ := runCmd(t, tt.input, append([]string{"--semente", "43"}, tt.args...)...); other == first {
 				t.Error("runs with --semente 42 and 43 drew the same board")
 			}
 			if hasWarning := strings.Contains(first, warning); hasWarning != (tt.input == warningInput) {
 				t.Errorf("warning shown = %v, want %v:\n%s", hasWarning, !hasWarning, first)
+			}
+			if hasScore := strings.Contains(first, "\nPlacar no nível "); hasScore != (tt.input != warningInput) {
+				t.Errorf("score line shown = %v, want %v:\n%s", hasScore, !hasScore, first)
 			}
 		})
 	}
@@ -118,8 +154,9 @@ func TestRun_SameSeed(t *testing.T) {
 // levelGame returns what the program writes for a game against the machine
 // with the default fleet, seed and input, when the machine shoots with
 // strategy and the boards drawn with colors, as --cores sim asks: the boards
-// and the shots come from one random source, as in play.
-func levelGame(t *testing.T, input string, seed uint64, strategy board.ShotStrategy) string {
+// and the shots come from one random source, as in play. The machine wins,
+// so the game ends with the score line of level after one loss (spec 025).
+func levelGame(t *testing.T, input string, seed uint64, strategy board.ShotStrategy, level string) string {
 	t.Helper()
 	rng := newRNG(seed)
 	enemy, err := board.RandomBoard(board.DefaultFleet(), rng)
@@ -130,7 +167,7 @@ func levelGame(t *testing.T, input string, seed uint64, strategy board.ShotStrat
 	if _, err := terminal.PlayVsMachine(strings.NewReader(input), &sb, board.NewBoard(board.DefaultFleet()), enemy, rng, terminal.Colored, strategy); err != nil {
 		t.Fatalf("PlayVsMachine: %v", err)
 	}
-	return sb.String() + fmt.Sprintf("Semente: %d\n", seed)
+	return sb.String() + terminal.ScoreLine(level, score.Record{Losses: 1}) + "\n" + fmt.Sprintf("Semente: %d\n", seed)
 }
 
 // CA-8 and the level option (spec 013): dificil, the default, plays with
@@ -140,8 +177,8 @@ func levelGame(t *testing.T, input string, seed uint64, strategy board.ShotStrat
 func TestRun_Level(t *testing.T) {
 	const seed = 42
 	input := randomPlacement + machineCells(machineEnemy(t, board.DefaultFleet(), seed), false)
-	smart, random := levelGame(t, input, seed, board.SmartShot), levelGame(t, input, seed, board.RandomShot)
-	master := levelGame(t, input, seed, board.MasterShot)
+	smart, random := levelGame(t, input, seed, board.SmartShot, hardLevel), levelGame(t, input, seed, board.RandomShot, easyLevel)
+	master := levelGame(t, input, seed, board.MasterShot, masterLevel)
 	if smart == random || master == smart {
 		t.Fatal("two strategies played the same game; pick another seed")
 	}
@@ -159,7 +196,7 @@ func TestRun_Level(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			code, stdout, stderr := run(input, append([]string{"--semente", "42", "--cores", "sim"}, tt.args...)...)
+			code, stdout, stderr := runCmd(t, input, append([]string{"--semente", "42", "--cores", "sim"}, tt.args...)...)
 			if code != 0 {
 				t.Errorf("Run(%q) code = %d, want 0 (stderr %q)", tt.args, code, stderr)
 			}
@@ -174,7 +211,7 @@ func TestRun_Level(t *testing.T) {
 // in solo mode too.
 func TestRun_InvalidLevel(t *testing.T) {
 	for _, args := range [][]string{{"--nivel", "xyz"}, {"--modo", "solo", "--nivel", "xyz"}} {
-		code, stdout, stderr := run("sair\n", args...)
+		code, stdout, stderr := runCmd(t, "sair\n", args...)
 		if code != 2 {
 			t.Errorf("Run(%q) code = %d, want 2", args, code)
 		}
@@ -191,7 +228,7 @@ func TestRun_InvalidLevel(t *testing.T) {
 // program before the game, with the reason on stderr and exit code 1.
 func TestRun_Fleet(t *testing.T) {
 	twoSubs := []board.FleetEntry{{Type: board.Submarine, Count: 2}}
-	code, stdout, stderr := run(seedShots(t, twoSubs, 7), "--modo", "solo", "--frota", "S=2", "--semente", "7", "--cores", "nao")
+	code, stdout, stderr := runCmd(t, seedShots(t, twoSubs, 7), "--modo", "solo", "--frota", "S=2", "--semente", "7", "--cores", "nao")
 	if code != 0 {
 		t.Errorf("Run(--frota S=2) code = %d, want 0 (stderr %q)", code, stderr)
 	}
@@ -212,7 +249,7 @@ func TestRun_Fleet(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			code, stdout, stderr := run("sair\n", tt.args...)
+			code, stdout, stderr := runCmd(t, "sair\n", tt.args...)
 			if code != 1 {
 				t.Errorf("Run(%q) code = %d, want 1", tt.args, code)
 			}
@@ -230,7 +267,7 @@ func TestRun_Fleet(t *testing.T) {
 // and the game does not start.
 func TestRun_InvalidOption(t *testing.T) {
 	for _, args := range [][]string{{"--semente", "abc"}, {"--semente", "-1"}, {"--nope"}} {
-		code, stdout, stderr := run("sair\n", args...)
+		code, stdout, stderr := runCmd(t, "sair\n", args...)
 		if code != 2 {
 			t.Errorf("Run(%q) code = %d, want 2", args, code)
 		}
@@ -288,7 +325,7 @@ func TestRun_Mode(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			code, stdout, stderr := run("sair\n", tt.args...)
+			code, stdout, stderr := runCmd(t, "sair\n", tt.args...)
 			if code != 0 {
 				t.Errorf("Run(%q) code = %d, want 0 (stderr %q)", tt.args, code, stderr)
 			}
@@ -303,7 +340,7 @@ func TestRun_Mode(t *testing.T) {
 func TestRun_PlayerWins(t *testing.T) {
 	oneSub := []board.FleetEntry{{Type: board.Submarine, Count: 1}}
 	enemy := machineEnemy(t, oneSub, 5)
-	code, stdout, stderr := run(randomPlacement+machineCells(enemy, true), "--frota", "S=1", "--semente", "5", "--cores", "nao")
+	code, stdout, stderr := runCmd(t, randomPlacement+machineCells(enemy, true), "--frota", "S=1", "--semente", "5", "--cores", "nao")
 	if code != 0 {
 		t.Errorf("Run() code = %d, want 0 (stderr %q)", code, stderr)
 	}
@@ -317,7 +354,7 @@ func TestRun_PlayerWins(t *testing.T) {
 func TestRun_MachineWins(t *testing.T) {
 	oneSub := []board.FleetEntry{{Type: board.Submarine, Count: 1}}
 	enemy := machineEnemy(t, oneSub, 5)
-	code, stdout, stderr := run(randomPlacement+machineCells(enemy, false), "--frota", "S=1", "--semente", "5")
+	code, stdout, stderr := runCmd(t, randomPlacement+machineCells(enemy, false), "--frota", "S=1", "--semente", "5")
 	if code != 0 {
 		t.Errorf("Run() code = %d, want 0 (stderr %q)", code, stderr)
 	}
@@ -331,7 +368,7 @@ func TestRun_MachineWins(t *testing.T) {
 
 // CA-10: an unknown mode is an option error, with exit code 2.
 func TestRun_InvalidMode(t *testing.T) {
-	code, stdout, stderr := run("sair\n", "--modo", "xyz")
+	code, stdout, stderr := runCmd(t, "sair\n", "--modo", "xyz")
 	if code != 2 {
 		t.Errorf("Run(--modo xyz) code = %d, want 2", code)
 	}
@@ -361,7 +398,7 @@ func TestRun_Colors(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			args := append([]string{"--modo", "solo", "--semente", "42"}, tt.args...)
-			code, stdout, stderr := run("A1\nsair\n", args...)
+			code, stdout, stderr := runCmd(t, "A1\nsair\n", args...)
 			if code != 0 {
 				t.Errorf("Run(%q) code = %d, want 0 (stderr %q)", args, code, stderr)
 			}
@@ -376,11 +413,11 @@ func TestRun_Colors(t *testing.T) {
 
 	// Against the machine, the same seed plays the same game with or without colors.
 	const input = "aleatorio\nA1\nB2\nsair\n"
-	_, plain, _ := run(input, "--semente", "42", "--cores", "nao")
+	_, plain, _ := runCmd(t, input, "--semente", "42", "--cores", "nao")
 	if strings.Contains(plain, "\x1b") {
 		t.Errorf("Run(--cores nao) against the machine has color codes:\n%s", plain)
 	}
-	_, colored, _ := run(input, "--semente", "42", "--cores", "sim")
+	_, colored, _ := runCmd(t, input, "--semente", "42", "--cores", "sim")
 	if got := regexp.MustCompile("\x1b\\[[0-9;]*m").ReplaceAllString(colored, ""); got != plain {
 		t.Errorf("colored game without codes =\n%s\nwant\n%s", got, plain)
 	}
@@ -390,7 +427,7 @@ func TestRun_Colors(t *testing.T) {
 // option error, with exit code 2, checked before the fleet.
 func TestRun_InvalidColors(t *testing.T) {
 	for _, args := range [][]string{{"--cores", "xyz"}, {"--cores", "xyz", "--frota", "X=1"}} {
-		code, stdout, stderr := run("sair\n", args...)
+		code, stdout, stderr := runCmd(t, "sair\n", args...)
 		if code != 2 {
 			t.Errorf("Run(%q) code = %d, want 2", args, code)
 		}
@@ -408,7 +445,7 @@ const randomPlacement = "aleatorio\n"
 
 // CA-8 (spec 012): giving up while placing ends before the game, with the seed.
 func TestRun_PlacementGiveUp(t *testing.T) {
-	code, stdout, stderr := run("sair\n", "--semente", "7")
+	code, stdout, stderr := runCmd(t, "sair\n", "--semente", "7")
 	if code != 0 {
 		t.Errorf("Run() code = %d, want 0 (stderr %q)", code, stderr)
 	}

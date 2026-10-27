@@ -11,6 +11,7 @@ import (
 	"strings"
 
 	"github.com/marcopollivier/battleship/internal/board"
+	"github.com/marcopollivier/battleship/internal/score"
 	"github.com/marcopollivier/battleship/internal/terminal"
 )
 
@@ -45,8 +46,19 @@ const (
 
 // Run runs a game, against the machine or solo, with the command-line args (without the program name),
 // reading shots from stdin, writing the game to stdout and errors to stderr.
-// It returns the exit code.
+// It keeps the score in the user's configuration directory. It returns the
+// exit code.
 func Run(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
+	scorePath, err := score.DefaultPath()
+	if err != nil {
+		// With no configuration directory, every use of the score fails.
+		scorePath = ""
+	}
+	return run(args, stdin, stdout, stderr, scorePath)
+}
+
+// run is Run with the score kept in the file at scorePath.
+func run(args []string, stdin io.Reader, stdout, stderr io.Writer, scorePath string) int {
 	fs := flag.NewFlagSet("battleship", flag.ContinueOnError)
 	fs.SetOutput(stderr)
 	fleetText := fs.String(fleetFlag, "", "frota no formato letra=quantidade separados por vírgula, por exemplo S=2,D=1,P=1 (padrão: a frota da cartela)")
@@ -83,9 +95,13 @@ func Run(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
 	if !flagGiven(fs, seedFlag) {
 		*seed = rand.Uint64() //nolint:gosec // a game seed, not security-sensitive
 	}
-	if err := play(*mode, fleet, strategy, newRNG(*seed), style, stdin, stdout); err != nil {
+	result, err := play(*mode, fleet, strategy, newRNG(*seed), style, stdin, stdout)
+	if err != nil {
 		fmt.Fprintln(stderr, terminal.FleetErrorMessage(err))
 		return 1
+	}
+	if counts(*mode, flagGiven(fs, fleetFlag), result) {
+		recordScore(stdout, scorePath, strings.ToLower(*level), result)
 	}
 	if _, err := fmt.Fprintf(stdout, "Semente: %d\n", *seed); err != nil {
 		return 1
@@ -97,17 +113,45 @@ func Run(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
 // Against the machine, rng draws the machine's board first, then the ships
 // the player asks to draw while placing, then the machine's shots, which
 // strategy chooses; the player starts with an empty board and places the fleet.
-// The boards are drawn with style.
-func play(mode string, fleet []board.FleetEntry, strategy board.ShotStrategy, rng *rand.Rand, style terminal.Style, stdin io.Reader, stdout io.Writer) error {
+// The boards are drawn with style. It returns how a game against the
+// machine ended; a solo game returns the zero Result.
+func play(mode string, fleet []board.FleetEntry, strategy board.ShotStrategy, rng *rand.Rand, style terminal.Style, stdin io.Reader, stdout io.Writer) (terminal.Result, error) {
 	target, err := board.RandomBoard(fleet, rng)
 	if err != nil {
-		return err
+		return terminal.Result{}, err
 	}
 	if strings.EqualFold(mode, soloMode) {
-		return terminal.PlaySolo(stdin, stdout, target, style)
+		return terminal.Result{}, terminal.PlaySolo(stdin, stdout, target, style)
 	}
-	_, err = terminal.PlayVsMachine(stdin, stdout, board.NewBoard(fleet), target, rng, style, strategy)
-	return err
+	return terminal.PlayVsMachine(stdin, stdout, board.NewBoard(fleet), target, rng, style, strategy)
+}
+
+// counts reports whether a game in mode that ended with result goes into
+// the score: a game against the machine with the default fleet, won, lost
+// or given up after the player's first shot.
+func counts(mode string, fleetGiven bool, result terminal.Result) bool {
+	if !strings.EqualFold(mode, machineMode) || fleetGiven {
+		return false
+	}
+	return result.Outcome != terminal.GaveUp || result.Shots > 0
+}
+
+// recordScore adds result to the score of level in the file at scorePath
+// and writes the score line of level to stdout.
+func recordScore(stdout io.Writer, scorePath, level string, result terminal.Result) {
+	b, err := score.Load(scorePath)
+	if err != nil {
+		return
+	}
+	if result.Outcome == terminal.PlayerWon {
+		b.AddWin(level, result.Shots)
+	} else {
+		b.AddLoss(level)
+	}
+	if err := score.Save(scorePath, b); err != nil {
+		return
+	}
+	fmt.Fprintln(stdout, terminal.ScoreLine(level, b[level]))
 }
 
 // chooseStyle returns the board style for the colors option (sim, nao or

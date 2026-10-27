@@ -3,7 +3,6 @@ package terminal
 import (
 	"bufio"
 	"errors"
-	"fmt"
 	"io"
 	"strings"
 
@@ -107,10 +106,7 @@ func (g *playerAttack) giveUp(reveal string) {
 
 // shotCount writes n shots in Portuguese, such as "1 disparo" or "2 disparos".
 func shotCount(n int) string {
-	if n == 1 {
-		return "1 disparo"
-	}
-	return fmt.Sprintf("%d disparos", n)
+	return plural(n, "disparo", "disparos")
 }
 
 // reject shows the message for an invalid shot at c, in yellow. An error with no
