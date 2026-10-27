@@ -1,6 +1,6 @@
 # 010 — Cores no terminal
 
-- **Status:** Em andamento
+- **Status:** Concluída
 - **Roadmap:** #010 (onda 6)
 - **Depende de:** 009 (tabuleiro de ataque)
 
@@ -65,4 +65,17 @@ Todas decididas em 2026-10-26:
 
 ## Encerramento
 
-Preenchido na fase 5: desvios em relação ao plano e o que ficou para o roadmap.
+Concluída em 2026-10-26, nas tarefas T1–T5. Os 7 critérios de aceitação são cobertos por testes em `internal/terminal/color_test.go` (CA-1 em `TestRenderBoard_Colored`, CA-2 em `TestRenderAttackBoard_Colored`, CA-3 em `TestRender_ColoredMatchesPlain`), `solo_test.go`, `machine_test.go` e `placement_test.go` (CA-7 em `TestPlaySolo_Colored`, `TestPlayVsMachine_Colored` e `TestPlayVsMachine_PlacementColored`) e `cmd/init_test.go` (CA-4 e CA-5 em `TestRun_Colors`, CA-6 em `TestRun_InvalidColors`). Os testes que já existiam passaram a usar `Plain` sem mudar nenhum resultado, o que confere a regra "com as cores desligadas, a saída é exatamente a de hoje". A cobertura ficou em 99,5% em `internal/board`, 96,7% em `internal/terminal` e 90,6% em `cmd`.
+
+Executando `go run . --semente 42` com `aleatorio`, `A1` e `sair`, com a saída num arquivo: os tabuleiros saem com os códigos de cor (água azul, navios em branco negrito, casas não atingidas em cinza e o Submarino afundado em A1 em vermelho), e o cabeçalho, os números e as legendas saem sem cor. Com `--cores nao`, a mesma partida não tem nenhum código de cor e é igual à saída com cores depois de tirar os códigos. `--cores xyz` mostra `Cores inválidas: use sim ou nao.` e termina com código 2.
+
+**Desvios em relação ao plano:**
+
+- A leitura do `--cores` ficou numa função interna, `chooseStyle`, em vez de comparar o valor dentro do `Run`, para o `Run` não ficar mais complexo.
+- Na T1, o `playerAttack` ainda desenhava sempre com `Plain`; o `Style` guardado no `playerAttack` (e, por ele, no `machineGame`) entrou na T4, junto com a mudança de assinatura do `PlaySolo` e do `PlayVsMachine`.
+- Os testes do CA-7 conferem a saída exata de uma partida curta com cores e, numa partida mais longa (vitória no solo, vitória da máquina, posicionamento com `aleatorio`), que a saída sem os códigos é igual à sem cores e que toda fileira de tabuleiro tem cor. O `TestRun_Colors` também confere que a mesma semente joga a mesma partida contra a máquina com e sem cores.
+
+**Para o roadmap:**
+
+- Cores nas mensagens (`Acerto!`, `Água.`, vitória e derrota), que ficaram fora desta spec.
+- Desligar as cores sozinho quando a saída não é um terminal, ou com a variável `NO_COLOR`.
