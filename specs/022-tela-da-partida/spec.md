@@ -1,6 +1,6 @@
 # 022 — Tela da partida
 
-- **Status:** Rascunho
+- **Status:** Aprovada
 - **Roadmap:** #022 (onda 8), issue #32
 - **Depende de:** 015 (mais cores)
 
@@ -69,11 +69,13 @@ Hoje cada tabuleiro é impresso abaixo do anterior. Numa partida contra a máqui
 
 ## Questões em aberto
 
-- [ ] **1. Limpar a tela:** sim, a cada tela, só quando a saída é um terminal, como as cores da 015. A alternativa é nunca limpar e só pôr os tabuleiros lado a lado.
-- [ ] **2. Opção:** `--limpar auto|sim|nao`, com `auto` como padrão. A alternativa é não ter opção e seguir sempre o `auto`, ou ligar a limpeza junto com `--cores`.
-- [ ] **3. Resultado com a casa:** `Seu disparo em B7: Acerto!`, no lugar de só `Acerto!`, nos dois modos. As mensagens da máquina já citam a casa.
-- [ ] **4. Layout:** títulos `Sua frota` e `Frota inimiga` sem os dois-pontos, cinco espaços entre os tabuleiros, as legendas embaixo começando com o nome do tabuleiro. A alternativa é uma legenda só, juntando os símbolos dos dois.
-- [ ] **5. Posicionamento:** também limpa a tela a cada navio, mantendo as instruções no topo.
+Todas decididas em 2026-10-27, como propostas:
+
+- [x] **1. Limpar a tela:** sim, a cada tela, só quando a saída é um terminal, como as cores da 015. A alternativa é nunca limpar e só pôr os tabuleiros lado a lado.
+- [x] **2. Opção:** `--limpar auto|sim|nao`, com `auto` como padrão. A alternativa é não ter opção e seguir sempre o `auto`, ou ligar a limpeza junto com `--cores`.
+- [x] **3. Resultado com a casa:** `Seu disparo em B7: Acerto!`, no lugar de só `Acerto!`, nos dois modos. As mensagens da máquina já citam a casa.
+- [x] **4. Layout:** títulos `Sua frota` e `Frota inimiga` sem os dois-pontos, cinco espaços entre os tabuleiros, as legendas embaixo começando com o nome do tabuleiro. A alternativa é uma legenda só, juntando os símbolos dos dois.
+- [x] **5. Posicionamento:** também limpa a tela a cada navio, mantendo as instruções no topo.
 
 ## Encerramento
 
