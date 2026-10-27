@@ -1,6 +1,7 @@
 package terminal
 
 import (
+	"io"
 	"regexp"
 	"strings"
 	"testing"
@@ -21,12 +22,12 @@ func colored(code, symbol string) string {
 	return "\x1b[" + code + "m" + symbol + "\x1b[0m"
 }
 
-// renderColored draws the own board of b with colors.
-func renderColored(t *testing.T, b *board.Board) string {
+// renderColored draws b with draw, RenderBoard or RenderAttackBoard, with colors.
+func renderColored(t *testing.T, draw func(io.Writer, *board.Board, Style) error, b *board.Board) string {
 	t.Helper()
 	var sb strings.Builder
-	if err := RenderBoard(&sb, b, Colored); err != nil {
-		t.Fatalf("RenderBoard: %v", err)
+	if err := draw(&sb, b, Colored); err != nil {
+		t.Fatalf("draw: %v", err)
 	}
 	return sb.String()
 }
@@ -75,7 +76,7 @@ var ownBoardCodes = map[string]string{
 func TestRenderBoard_Colored(t *testing.T) {
 	b := attackExampleBoard(t)
 	attackFire(t, b, "J10", "E1")
-	got := renderColored(t, b)
+	got := renderColored(t, RenderBoard, b)
 
 	want := map[string]string{
 		"J10": colored("36", "o"),
@@ -101,7 +102,8 @@ func TestRender_ColoredMatchesPlain(t *testing.T) {
 		name           string
 		colored, plain string
 	}{
-		{"own board", renderColored(t, b), render(t, b)},
+		{"own board", renderColored(t, RenderBoard, b), render(t, b)},
+		{"attack board", renderColored(t, RenderAttackBoard, b), attackRender(t, b)},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -120,4 +122,33 @@ func TestRender_ColoredMatchesPlain(t *testing.T) {
 			}
 		})
 	}
+}
+
+// attackBoardCodes are the colors of the attack board's symbols.
+var attackBoardCodes = map[string]string{
+	".": "90",
+	"o": "36",
+	"X": "1;31",
+	"S": "31", "D": "31", "C": "31", "E": "31", "P": "31",
+}
+
+// CA-2: on the attack board, untouched cells are gray, misses cyan, hits
+// bold red and sunk ships red.
+func TestRenderAttackBoard_Colored(t *testing.T) {
+	b := attackExampleBoard(t)
+	attackFire(t, b, "J10", "E1", "A8")
+	got := renderColored(t, RenderAttackBoard, b)
+
+	want := map[string]string{
+		"J10": colored("36", "o"),
+		"E1":  colored("1;31", "X"),
+		"A8":  colored("31", "S"),
+		"F1":  colored("90", "."),
+	}
+	for cell, symbol := range want {
+		if s := coloredCellAt(t, got, cell); s != symbol {
+			t.Errorf("cell %s = %q, want %q", cell, s, symbol)
+		}
+	}
+	assertColoredCells(t, got, attackRender(t, b), attackBoardCodes)
 }

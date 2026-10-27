@@ -10,11 +10,13 @@ const (
 
 // ANSI codes of the board symbols.
 const (
-	waterColor = "\x1b[34m"   // blue
-	shipColor  = "\x1b[1;37m" // bold white
-	hitColor   = "\x1b[1;31m" // bold red
-	missColor  = "\x1b[36m"   // cyan
-	resetColor = "\x1b[0m"
+	waterColor     = "\x1b[34m"   // blue
+	shipColor      = "\x1b[1;37m" // bold white
+	hitColor       = "\x1b[1;31m" // bold red
+	missColor      = "\x1b[36m"   // cyan
+	untouchedColor = "\x1b[90m"   // gray
+	sunkColor      = "\x1b[31m"   // red
+	resetColor     = "\x1b[0m"
 )
 
 // paint returns symbol in color, followed by the reset code, or symbol
