@@ -18,42 +18,51 @@ const (
 )
 
 // PlaySolo runs a solo game: it reads shots from in, one per line, and
-// writes the attack board and messages to out until every ship of b is sunk
-// or the player gives up, with "sair" or the end of the input. The boards
-// are drawn with style. It returns an error if writing to out or reading
+// writes a screen with the attack board and the result of the last shot to
+// out after each shot, until every ship of b is sunk or the player gives up,
+// with "sair" or the end of the input. The last screen reveals b. The game
+// is shown as display says. It returns an error if writing to out or reading
 // from in fails.
-func PlaySolo(in io.Reader, out io.Writer, b *board.Board, style Style) error {
-	g := &playerAttack{out: out, target: b, style: style}
+func PlaySolo(in io.Reader, out io.Writer, b *board.Board, display Display) error {
+	g := &playerAttack{out: out, target: b, style: display.Style, clear: display.Clear}
 	g.showBoard()
 	scanner := bufio.NewScanner(in)
 	for {
 		line, ok := g.prompt(scanner, shotPrompt)
 		if !ok {
-			g.giveUp("A frota era:")
+			g.showReveal("Você desistiu depois de " + shotCount(g.shots) + ".")
 			return g.err
 		}
-		if _, ok := g.shoot(line); !ok {
+		c, shot, ok := g.shoot(line)
+		if !ok {
 			if g.err != nil {
 				return g.err
 			}
 			continue
 		}
+		g.events = append(g.events, g.shotResult(c, shot))
 		if b.AllSunk() {
-			g.write(g.style.paint("Você afundou toda a frota em "+shotCount(g.shots)+"!", winColor) + "\n")
+			g.showReveal(g.style.paint("Você afundou toda a frota em "+shotCount(g.shots)+"!", winColor))
 			return g.err
 		}
+		g.showBoard()
 	}
 }
 
 // playerAttack holds the player's side of a game: the board they shoot at,
-// how many valid shots they made and the style every board is drawn with.
-// Writes stop at the first error, which is kept in err.
+// how many valid shots they made, the style every board is drawn with and
+// whether the terminal is cleared before each screen. Writes stop at the
+// first error, which is kept in err.
 type playerAttack struct {
 	out    io.Writer
 	target *board.Board
 	style  Style
+	clear  bool
 	shots  int
 	err    error
+	// events are the lines of what happened since the last screen, shown
+	// below the boards of the next one.
+	events []string
 }
 
 // prompt writes text and returns the line the player typed. It returns
@@ -78,31 +87,38 @@ func (g *playerAttack) prompt(scanner *bufio.Scanner, text string) (string, bool
 	return line, true
 }
 
-// shoot fires at the cell in line and shows the result followed by the
-// attack board. Invalid input only shows a message, does not count as a shot
-// and returns false.
-func (g *playerAttack) shoot(line string) (board.Shot, bool) {
+// shoot fires at the cell in line and returns the cell and the shot.
+// Invalid input only shows a message, does not count as a shot and returns
+// false.
+func (g *playerAttack) shoot(line string) (board.Coord, board.Shot, bool) {
 	c, err := board.ParseCoord(line)
 	if err != nil {
 		g.reject(err, c)
-		return board.Shot{}, false
+		return c, board.Shot{}, false
 	}
 	shot, err := g.target.Fire(c)
 	if err != nil {
 		g.reject(err, c)
-		return board.Shot{}, false
+		return c, board.Shot{}, false
 	}
 	g.shots++
-	g.write(g.style.paint(ShotMessage(shot), shotColor(shot.Result)) + "\n\n")
-	g.showBoard()
-	return shot, g.err == nil
+	return c, shot, true
 }
 
-// giveUp ends the game with the number of shots and reveal, then the target
-// board with its ships and the shots it received.
-func (g *playerAttack) giveUp(reveal string) {
-	g.write("Você desistiu depois de " + shotCount(g.shots) + ". " + reveal + "\n\n")
-	g.render(RenderBoard, g.target)
+// shotResult is the result of the player's shot at c, citing the cell, such
+// as "Seu disparo em B7: Acerto!", with the result in its color.
+func (g *playerAttack) shotResult(c board.Coord, shot board.Shot) string {
+	return "Seu disparo em " + c.String() + ": " + g.style.paint(ShotMessage(shot), shotColor(shot.Result))
+}
+
+// showReveal writes the last screen of a solo game: the target board with
+// its ships and the shots it received, the events since the last screen and
+// message.
+func (g *playerAttack) showReveal(message string) {
+	g.clearScreen()
+	g.write(strings.Join(ownGrid(g.target, g.style), "\n") + "\n\n" + finalLegend + "\n\n")
+	g.writeEvents()
+	g.write(message + "\n")
 }
 
 // shotCount writes n shots in Portuguese, such as "1 disparo" or "2 disparos".
@@ -139,10 +155,29 @@ func shotErrorMessage(err error, c board.Coord) (string, bool) {
 	}
 }
 
-// showBoard writes the attack board followed by a blank line.
+// showBoard writes the screen of a solo game: the attack board, a blank
+// line and the events since the last screen. The prompt comes after it.
 func (g *playerAttack) showBoard() {
+	g.clearScreen()
 	g.render(RenderAttackBoard, g.target)
 	g.write("\n")
+	g.writeEvents()
+}
+
+// clearScreen clears the terminal before a screen, if the game clears it.
+func (g *playerAttack) clearScreen() {
+	if g.clear {
+		g.write(clearScreen)
+	}
+}
+
+// writeEvents writes the events since the last screen, one per line, and
+// forgets them.
+func (g *playerAttack) writeEvents() {
+	for _, event := range g.events {
+		g.write(event + "\n")
+	}
+	g.events = nil
 }
 
 // render draws b with draw in the game's style, unless an earlier write failed.

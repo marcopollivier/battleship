@@ -31,11 +31,21 @@ var shipSymbols = map[board.ShipType]string{
 	board.AircraftCarrier: "P",
 }
 
+// gridWidth is the visible width of every line of a board grid, without the
+// color codes: 2 columns for the row number and 2 for each cell.
+const gridWidth = 2 + 2*board.Size
+
 // RenderBoard writes the player's own board, including the shots it has
 // received, followed by a blank line and the legend. The cells of a sunk
 // ship are drawn as #. With Colored, each cell is drawn in the color of its
 // symbol.
 func RenderBoard(w io.Writer, b *board.Board, style Style) error {
+	return writeBoard(w, ownGrid(b, style), Legend)
+}
+
+// ownGrid returns the lines of the player's own board, the header and one
+// line per row, with the ships and the shots received.
+func ownGrid(b *board.Board, style Style) []string {
 	var grid [board.Size][board.Size]string
 	for row := range grid {
 		for col := range grid[row] {
@@ -65,31 +75,34 @@ func RenderBoard(w io.Writer, b *board.Board, style Style) error {
 			grid[c.Row][c.Col] = style.paint(sunkSymbol, sunkColor)
 		}
 	}
-	return writeBoard(w, &grid, Legend)
+	return gridLines(&grid)
 }
 
-// writeBoard writes the header, the rows of grid, a blank line and legend
-// as a single Write.
-func writeBoard(w io.Writer, grid *[board.Size][board.Size]string, legend string) error {
+// gridLines returns the header and one line per row of grid, the cells
+// separated by spaces.
+func gridLines(grid *[board.Size][board.Size]string) []string {
 	var sb strings.Builder
-
 	sb.WriteString("  ")
 	for col := range board.Size {
 		sb.WriteString(" " + columnName(col))
 	}
-	sb.WriteString("\n")
+	lines := []string{sb.String()}
 
 	for row := range board.Size {
+		sb.Reset()
 		fmt.Fprintf(&sb, "%2d", row+1)
 		for col := range board.Size {
 			sb.WriteString(" " + grid[row][col])
 		}
-		sb.WriteString("\n")
+		lines = append(lines, sb.String())
 	}
+	return lines
+}
 
-	sb.WriteString("\n" + legend + "\n")
-
-	_, err := w.Write([]byte(sb.String()))
+// writeBoard writes the lines of a grid, a blank line and legend as a
+// single Write.
+func writeBoard(w io.Writer, lines []string, legend string) error {
+	_, err := io.WriteString(w, strings.Join(lines, "\n")+"\n\n"+legend+"\n")
 	return err
 }
 

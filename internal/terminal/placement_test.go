@@ -103,23 +103,62 @@ func placementPlayStyle(t *testing.T, input string, style Style) string {
 	t.Helper()
 	var sb strings.Builder
 	player := board.NewBoard(board.DefaultFleet())
-	err := PlayVsMachine(strings.NewReader(input), &sb, player, machineEnemyBoard(t), rand.New(rand.NewPCG(1, 0)), style, board.RandomShot)
+	err := PlayVsMachine(strings.NewReader(input), &sb, player, machineEnemyBoard(t), rand.New(rand.NewPCG(1, 0)), Display{Style: style}, board.RandomShot)
 	if err != nil {
 		t.Fatalf("PlayVsMachine: %v", err)
 	}
 	return sb.String()
 }
 
-// placementAsk is the board followed by the prompt for the next ship.
+// placementAsk is the screen that asks for the next ship, without clearing
+// the terminal: the instructions, the board and the prompt.
 func placementAsk(t *testing.T, b *board.Board, prompt string) string {
 	t.Helper()
-	return soloReveal(t, b) + "\n" + prompt
+	return placementScreen(t, b, "", prompt)
+}
+
+// placementScreen is placementAsk with warning, a line or nothing, between
+// the instructions and the board.
+func placementScreen(t *testing.T, b *board.Board, warning, prompt string) string {
+	t.Helper()
+	return placementIntro + warning + soloReveal(t, b) + "\n" + prompt
+}
+
+// CA-8 (spec 022): with Clear, every ship is asked on a new screen that
+// starts with the code that clears the terminal and the instructions; the
+// game screen after the fleet is placed is cleared too, and errors are not.
+func TestPlayVsMachine_PlacementClear(t *testing.T) {
+	play := func(clear bool) string {
+		var sb strings.Builder
+		err := PlayVsMachine(strings.NewReader("B1 baixo\nxyz\naleatorio\nsair\n"), &sb, board.NewBoard(board.DefaultFleet()), machineEnemyBoard(t),
+			rand.New(rand.NewPCG(1, 0)), Display{Style: Plain, Clear: clear}, board.RandomShot)
+		if err != nil {
+			t.Fatalf("PlayVsMachine: %v", err)
+		}
+		return sb.String()
+	}
+	plain, cleared := play(false), play(true)
+	if got := strings.ReplaceAll(cleared, clearScreen, ""); got != plain {
+		t.Errorf("with Clear, without the clear codes =\n%s\nwant\n%s", got, plain)
+	}
+	screens := strings.Split(cleared, clearScreen)
+	if len(screens) != 5 || screens[0] != "" {
+		t.Fatalf("with Clear, %d parts split by the clear code, want the output to start with it and 4 screens:\n%q", len(screens), cleared)
+	}
+	for i, screen := range screens[1:3] {
+		if !strings.HasPrefix(screen, placementIntro) {
+			t.Errorf("placement screen %d does not start with the instructions:\n%s", i+1, screen)
+		}
+	}
+	if !strings.HasPrefix(screens[3], "Sua frota                  Frota inimiga\n") {
+		t.Errorf("the game screen does not start with the titles:\n%s", screens[3])
+	}
 }
 
 // CA-1: placing starts with the instructions, the empty board and the
 // aircraft carrier with its four orientations.
 func TestPlayVsMachine_PlacementStart(t *testing.T) {
-	want := placementIntro + placementAsk(t, board.NewBoard(board.DefaultFleet()), placementExample[0].prompt)
+	want := placementAsk(t, board.NewBoard(board.DefaultFleet()), placementExample[0].prompt)
 	if got := placementPlay(t, ""); !strings.HasPrefix(got, want) {
 		t.Errorf("PlayVsMachine() =\n%s\nwant prefix\n%s", got, want)
 	}
@@ -129,7 +168,7 @@ func TestPlayVsMachine_PlacementStart(t *testing.T) {
 // game starts with the ships where the player put them.
 func TestPlayVsMachine_PlaceFleet(t *testing.T) {
 	replay := board.NewBoard(board.DefaultFleet())
-	want := placementIntro
+	want := ""
 	var input []string
 	for _, p := range placementExample {
 		want += placementAsk(t, replay, p.prompt)
@@ -142,7 +181,7 @@ func TestPlayVsMachine_PlaceFleet(t *testing.T) {
 		}
 		input = append(input, p.line)
 	}
-	want += "Frota posicionada!\n\n" + machineScreen(t, replay, machineEnemyBoard(t))
+	want += machineScreen(t, replay, machineEnemyBoard(t), "Frota posicionada!")
 
 	if got := placementPlay(t, strings.Join(input, "\n")+"\n"); !strings.HasPrefix(got, want) {
 		t.Errorf("PlayVsMachine() =\n%s\nwant prefix\n%s", got, want)
@@ -158,7 +197,7 @@ func TestPlayVsMachine_PlacementErrors(t *testing.T) {
 		badFormat        = "Posição inválida: digite a casa e a orientação, por exemplo E5 vertical.\n"
 	)
 	replay := board.NewBoard(board.DefaultFleet())
-	want := placementIntro + placementAsk(t, replay, carrierPrompt) +
+	want := placementAsk(t, replay, carrierPrompt) +
 		"Orientação inválida para o Porta-Aviões: use cima, baixo, esquerda ou direita.\n" + carrierPrompt
 	if err := replay.Place(board.AircraftCarrier, board.Coord{Col: 1}, board.Down); err != nil {
 		t.Fatalf("Place: %v", err)
@@ -221,11 +260,11 @@ func placementWithCarrier(t *testing.T) (empty, withCarrier *board.Board) {
 // game's random source and starts the game.
 func TestPlayVsMachine_PlacementRandom(t *testing.T) {
 	empty, replay := placementWithCarrier(t)
-	want := placementIntro + placementAsk(t, empty, placementCarrierPrompt) + placementAsk(t, replay, placementBattleshipPrompt)
+	want := placementAsk(t, empty, placementCarrierPrompt) + placementAsk(t, replay, placementBattleshipPrompt)
 	if err := board.FillRandom(replay, rand.New(rand.NewPCG(1, 0))); err != nil {
 		t.Fatalf("FillRandom: %v", err)
 	}
-	want += "Frota posicionada!\n\n" + machineScreen(t, replay, machineEnemyBoard(t))
+	want += machineScreen(t, replay, machineEnemyBoard(t), "Frota posicionada!")
 
 	if got := placementPlay(t, "B1 baixo\nAleatorio\n"); !strings.HasPrefix(got, want) {
 		t.Errorf("PlayVsMachine() =\n%s\nwant prefix\n%s", got, want)
@@ -237,11 +276,11 @@ func TestPlayVsMachine_PlacementRandom(t *testing.T) {
 func TestPlayVsMachine_PlacementRandomDoesNotFit(t *testing.T) {
 	const prompt = "Submarino, 1 casa: "
 	fleet := []board.FleetEntry{{Type: board.Submarine, Count: 26}}
-	want := placementIntro + placementAsk(t, board.NewBoard(fleet), prompt) +
+	want := placementAsk(t, board.NewBoard(fleet), prompt) +
 		"Não foi possível sortear o resto da frota. Mude a posição dos navios com recomecar.\n" + prompt
 
 	var sb strings.Builder
-	err := PlayVsMachine(strings.NewReader("aleatorio\n"), &sb, board.NewBoard(fleet), machineEnemyBoard(t), rand.New(rand.NewPCG(1, 0)), Plain, board.RandomShot)
+	err := PlayVsMachine(strings.NewReader("aleatorio\n"), &sb, board.NewBoard(fleet), machineEnemyBoard(t), rand.New(rand.NewPCG(1, 0)), Display{Style: Plain}, board.RandomShot)
 	if err != nil {
 		t.Fatalf("PlayVsMachine: %v", err)
 	}
@@ -253,7 +292,7 @@ func TestPlayVsMachine_PlacementRandomDoesNotFit(t *testing.T) {
 // CA-7: "recomecar" removes every ship and asks for the carrier again.
 func TestPlayVsMachine_PlacementRestart(t *testing.T) {
 	empty, withCarrier := placementWithCarrier(t)
-	want := placementIntro + placementAsk(t, empty, placementCarrierPrompt) +
+	want := placementAsk(t, empty, placementCarrierPrompt) +
 		placementAsk(t, withCarrier, placementBattleshipPrompt) +
 		placementAsk(t, empty, placementCarrierPrompt)
 
@@ -277,7 +316,7 @@ func TestPlayVsMachine_PlacementUndo(t *testing.T) {
 			t.Fatalf("Place(%q): %v", p.line, err)
 		}
 	}
-	want := placementIntro + placementAsk(t, empty, placementCarrierPrompt) +
+	want := placementAsk(t, empty, placementCarrierPrompt) +
 		"Não há navio para desfazer.\n" + placementCarrierPrompt +
 		placementAsk(t, withCarrier, placementBattleshipPrompt) +
 		placementAsk(t, withTwo, "Cruzador, 3 casas (horizontal, vertical): ") +
@@ -303,7 +342,7 @@ func TestPlayVsMachine_PlacementWarning(t *testing.T) {
 	)
 	fleet := []board.FleetEntry{{Type: board.Battleship, Count: 7}, {Type: board.Cruiser, Count: 1}}
 	replay := board.NewBoard(fleet)
-	want := placementIntro
+	want := ""
 	var input []string
 	for _, line := range []string{"A2 h", "F2 h", "A5 h", "F5 h", "A8 h", "F8 h"} {
 		want += placementAsk(t, replay, battleshipPrompt)
@@ -321,7 +360,7 @@ func TestPlayVsMachine_PlacementWarning(t *testing.T) {
 	if err := replay.Place(board.Battleship, board.Coord{Col: 3, Row: 9}, board.Horizontal); err != nil {
 		t.Fatalf("Place(D10): %v", err)
 	}
-	want += warning + placementAsk(t, replay, cruiserPrompt) + sixShips
+	want += placementScreen(t, replay, warning, cruiserPrompt) + sixShips
 	replay.RemoveLast()
 	if err := replay.Place(board.Battleship, board.Coord{Col: 2, Row: 9}, board.Horizontal); err != nil {
 		t.Fatalf("Place(C10): %v", err)
@@ -330,7 +369,7 @@ func TestPlayVsMachine_PlacementWarning(t *testing.T) {
 	input = append(input, "D10 h", "desfazer", "C10 h", "sair")
 
 	var sb strings.Builder
-	err := PlayVsMachine(strings.NewReader(strings.Join(input, "\n")+"\n"), &sb, board.NewBoard(fleet), machineEnemyBoard(t), rand.New(rand.NewPCG(1, 0)), Plain, board.RandomShot)
+	err := PlayVsMachine(strings.NewReader(strings.Join(input, "\n")+"\n"), &sb, board.NewBoard(fleet), machineEnemyBoard(t), rand.New(rand.NewPCG(1, 0)), Display{Style: Plain}, board.RandomShot)
 	if err != nil {
 		t.Fatalf("PlayVsMachine: %v", err)
 	}
@@ -342,7 +381,7 @@ func TestPlayVsMachine_PlacementWarning(t *testing.T) {
 // CA-8: "sair" or the end of the input gives up before the game.
 func TestPlayVsMachine_PlacementGiveUp(t *testing.T) {
 	empty, withCarrier := placementWithCarrier(t)
-	asked := placementIntro + placementAsk(t, empty, placementCarrierPrompt) + placementAsk(t, withCarrier, placementBattleshipPrompt)
+	asked := placementAsk(t, empty, placementCarrierPrompt) + placementAsk(t, withCarrier, placementBattleshipPrompt)
 	tests := []struct {
 		name  string
 		input string
@@ -365,7 +404,7 @@ func TestPlayVsMachine_PlacementGiveUp(t *testing.T) {
 func TestPlayVsMachine_PlacementColored(t *testing.T) {
 	empty, withCarrier := placementWithCarrier(t)
 	want := placementIntro + renderColored(t, RenderBoard, empty) + "\n" + placementCarrierPrompt +
-		renderColored(t, RenderBoard, withCarrier) + "\n" + placementBattleshipPrompt
+		placementIntro + renderColored(t, RenderBoard, withCarrier) + "\n" + placementBattleshipPrompt
 
 	const input = "B1 baixo\naleatorio\nA1\nsair\n"
 	got := placementPlayStyle(t, input, Colored)
@@ -392,7 +431,7 @@ func TestPlayVsMachine_PlacementColoredErrors(t *testing.T) {
 	const prompt = "Submarino, 1 casa: "
 	fleet := []board.FleetEntry{{Type: board.Submarine, Count: 26}}
 	var sb strings.Builder
-	err := PlayVsMachine(strings.NewReader("aleatorio\n"), &sb, board.NewBoard(fleet), machineEnemyBoard(t), rand.New(rand.NewPCG(1, 0)), Colored, board.RandomShot)
+	err := PlayVsMachine(strings.NewReader("aleatorio\n"), &sb, board.NewBoard(fleet), machineEnemyBoard(t), rand.New(rand.NewPCG(1, 0)), Display{Style: Colored}, board.RandomShot)
 	if err != nil {
 		t.Fatalf("PlayVsMachine: %v", err)
 	}
@@ -415,7 +454,7 @@ func TestPlayVsMachine_PlacementColoredUndoAndWarning(t *testing.T) {
 	fleet := []board.FleetEntry{{Type: board.Battleship, Count: 7}, {Type: board.Cruiser, Count: 1}}
 	input := "A2 h\nF2 h\nA5 h\nF5 h\nA8 h\nF8 h\nD10 h\nsair\n"
 	var sb strings.Builder
-	err := PlayVsMachine(strings.NewReader(input), &sb, board.NewBoard(fleet), machineEnemyBoard(t), rand.New(rand.NewPCG(1, 0)), Colored, board.RandomShot)
+	err := PlayVsMachine(strings.NewReader(input), &sb, board.NewBoard(fleet), machineEnemyBoard(t), rand.New(rand.NewPCG(1, 0)), Display{Style: Colored}, board.RandomShot)
 	if err != nil {
 		t.Fatalf("PlayVsMachine: %v", err)
 	}
