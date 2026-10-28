@@ -47,7 +47,7 @@ Two layers, and the domain never imports the terminal:
   - `names.go`: `ShipName` and `OrientationName`.
   - `color.go`: `Style` (`Plain`, the zero value, or `Colored`) and `paint`, which wraps a board symbol or a whole message in its ANSI color code and a reset when the style is `Colored`; `shotColor` gives a shot result's message the color of its board symbol (cyan for a miss, bold red for a hit or a sunk ship).
   - Message colors (spec 015): the shot results (the player's, and the machine's only after `A máquina atirou em C4: `), the wins in bold green, the machine's win in bold red, and invalid shots and placements in yellow. Prompts, instructions, titles and the give-up message stay uncolored, and line breaks stay outside the codes. `ShotMessage` itself stays plain; the callers paint it.
-  - `render.go`: `RenderBoard(w, board, style)`, the player's own board with ships and received shots.
+  - `render.go`: `RenderBoard(w, board, style)`, the player's own board with ships and received shots; the cells of a sunk ship are drawn as `#`.
   - `attack.go`: `RenderAttackBoard(w, board, style)`, the opponent's board showing only shots fired, and sunk ships.
   - Both renderers paint each cell while building the grid; `writeBoard` adds the header, row numbers and legend, which stay uncolored.
   - `messages.go`: `ShotMessage`, the result of a shot.

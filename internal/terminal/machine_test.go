@@ -264,6 +264,35 @@ func TestPlayVsMachine_Strategy(t *testing.T) {
 	}
 }
 
+// CA-4 (spec 023): when the machine sinks a ship of the player and the turn
+// comes back, the sunk ship is drawn as # under "Sua frota".
+func TestPlayVsMachine_SunkOwnShip(t *testing.T) {
+	player := machineBoard(t,
+		placement{board.Submarine, "A1", board.Horizontal},
+		placement{board.Submarine, "J10", board.Horizontal},
+	)
+	var sb strings.Builder
+	err := PlayVsMachine(strings.NewReader("A10\n"), &sb, player, machineEnemyBoard(t),
+		rand.New(rand.NewPCG(1, 0)), Plain, machineScript(t, "A1", "C3"))
+	if err != nil {
+		t.Fatalf("PlayVsMachine: %v", err)
+	}
+	_, screen, found := strings.Cut(sb.String(), "A máquina atirou em C3: Água.\n\nSua frota:\n")
+	if !found {
+		t.Fatalf("PlayVsMachine() =\n%s\nwant the screen after the machine's miss at C3", sb.String())
+	}
+	lines := strings.Split(screen, "\n")
+	for row, want := range map[int]string{
+		1:  " 1 # ~ ~ ~ ~ ~ ~ ~ ~ ~",
+		3:  " 3 ~ ~ o ~ ~ ~ ~ ~ ~ ~",
+		10: "10 ~ ~ ~ ~ ~ ~ ~ ~ ~ S",
+	} {
+		if lines[row] != want {
+			t.Errorf("Sua frota row %d = %q, want %q", row, lines[row], want)
+		}
+	}
+}
+
 // Errors that are not a mistake of the player end the game and are returned.
 func TestPlayVsMachine_Errors(t *testing.T) {
 	rng := func() *rand.Rand { return rand.New(rand.NewPCG(1, 0)) }
