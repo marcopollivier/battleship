@@ -28,10 +28,12 @@ Features da mesma onda não dependem umas das outras e são tocadas em paralelo 
 | 019 | Busca do aviso de posicionamento mais rápida: o Submarino tenta uma orientação só, e frotas grandes do `--frota` não esperam cerca de 1 s antes de cada tabuleiro | Encerramento da 014 | 014 | — | Backlog |
 | 020 | Nível `mestre` mais forte: contar as posições de todos os navios juntos, e não de cada navio sozinho | Encerramento da 018 | 018 | — | Backlog |
 | 021 | Ajustes de cores: sem cores com `TERM=dumb`, e cores nas mensagens de erro do `stderr` | Encerramento da 015 | 015 | — | Backlog |
-| 022 | Tela da partida: limpar a tela a cada turno e mostrar os dois tabuleiros lado a lado (issue #32) | Fora de escopo da 006 e da 007 | 015 | 8 | Spec |
-| 023 | Navios afundados no próprio tabuleiro, diferentes dos só atingidos (issue #33) | Fora de escopo da 009 | 015 | 8 | Spec |
-| 024 | Distribuição: `go install` documentado e releases com binários (issue #37) | Usabilidade | — | 8 | Spec |
-| 025 | Placar entre partidas: vitórias e derrotas por nível (issue #35) | Fora de escopo da 006 | 018 | 8 | Spec |
+| 022 | Tela da partida: limpar a tela a cada turno e mostrar os dois tabuleiros lado a lado (issue #32) | Fora de escopo da 006 e da 007 | 015 | 8 | Concluída |
+| 023 | Navios afundados no próprio tabuleiro, diferentes dos só atingidos (issue #33) | Fora de escopo da 009 | 015 | 8 | Concluída |
+| 024 | Distribuição: `go install` documentado e releases com binários (issue #37) | Usabilidade | — | 8 | Concluída |
+| 025 | Placar entre partidas: vitórias e derrotas por nível (issue #35) | Fora de escopo da 006 | 018 | 8 | Concluída |
+| 026 | Telas em 80 colunas: legenda e instruções do posicionamento numa largura só, e a mensagem de coordenada inválida mais curta | Encerramento da 022 | 022 | — | Backlog |
+| 027 | Conferir os workflows do GitHub com o `actionlint`, no `make setup` ou no CI, antes de uma tag | Encerramento da 024 | 024 | — | Backlog |
 
 ## Notas das specs concluídas
 
@@ -39,10 +41,13 @@ Pendências que specs anteriores deixaram para as próximas:
 
 - **Issue #25 (013):** a máquina `dificil` não atira nas casas em volta de um navio afundado. A decisão é provisória: o jogador quer testar jogando. A regra tira cerca de 24 tiros da média (59,7 com a regra, 83,8 sem), e fica numa função separada (`aroundSunk`) para sair fácil.
 
+- **Primeira release (024, issue #37):** falta criar a tag `v1.0.0` e conferir a release (os 5 binários) e o `go install ...@v1.0.0` (CA-2 e CA-3 da 024).
+- **Placar com duas partidas ao mesmo tempo (025):** duas partidas que terminam juntas no mesmo computador gravam o placar uma por cima da outra, e um resultado se perde. Se isso importar, uma trava no arquivo resolve.
+
 Decisões para quem joga, sem spec ainda:
 
 - **Aviso de posicionamento (014):** com a frota padrão ele nunca aparece, porque os navios que faltam são sempre os menores e sempre cabem. Só aparece com frotas do `--frota`. Decidir se continua.
-- **Nível padrão (018):** decidir, jogando contra a `mestre`, se ela vira o padrão no lugar da `dificil`. Médias em 200 partidas: `mestre` 54,7 tiros, `dificil` 59,7, `facil` 95,6.
+- **Nível padrão (018, issue #38):** decidir, jogando contra a `mestre`, se ela vira o padrão no lugar da `dificil`. Médias em 200 partidas: `mestre` 54,7 tiros, `dificil` 59,7, `facil` 95,6. O placar da 025 (`--placar`) mostra as vitórias e a melhor vitória em cada nível.
 - **Cores num terminal de verdade (015):** a conferência foi feita num terminal simulado. Falta ver como ficam, inclusive o amarelo em fundo claro.
 
 ## Questões em aberto do jogo
