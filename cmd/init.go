@@ -17,11 +17,13 @@ import (
 
 // Names of the command-line options.
 const (
-	fleetFlag = "frota"
-	seedFlag  = "semente"
-	modeFlag  = "modo"
-	levelFlag = "nivel"
-	colorFlag = "cores"
+	fleetFlag   = "frota"
+	seedFlag    = "semente"
+	modeFlag    = "modo"
+	levelFlag   = "nivel"
+	colorFlag   = "cores"
+	clearFlag   = "limpar"
+	versionFlag = "versao"
 
 	showScoreFlag  = "placar"
 	resetScoreFlag = "zerar-placar"
@@ -40,11 +42,11 @@ const (
 	masterLevel = "mestre"
 )
 
-// Values of the colors option.
+// Values of the colors and clear options.
 const (
-	colorsOn   = "sim"
-	colorsOff  = "nao"
-	colorsAuto = "auto"
+	optionOn   = "sim"
+	optionOff  = "nao"
+	optionAuto = "auto"
 )
 
 // Run runs a game, against the machine or solo, with the command-line args (without the program name),
@@ -68,7 +70,9 @@ func run(args []string, stdin io.Reader, stdout, stderr io.Writer, scorePath str
 	seed := fs.Uint64(seedFlag, 0, "número que define os tabuleiros e os disparos da máquina, para repetir uma partida (padrão: um número novo a cada execução)")
 	mode := fs.String(modeFlag, machineMode, "maquina para jogar contra a máquina, ou solo para só atacar um tabuleiro sorteado")
 	level := fs.String(levelFlag, hardLevel, "dificil para a máquina cercar os navios que acerta, facil para ela sortear todos os tiros, ou mestre para ela atirar onde ainda cabem mais navios")
-	colors := fs.String(colorFlag, colorsAuto, "auto para usar cores só quando a saída é um terminal e NO_COLOR não está definida, sim para usar sempre, ou nao para nunca usar")
+	colors := fs.String(colorFlag, optionAuto, "auto para usar cores só quando a saída é um terminal e NO_COLOR não está definida, sim para usar sempre, ou nao para nunca usar")
+	clearOption := fs.String(clearFlag, optionAuto, "auto para limpar a tela a cada jogada só quando a saída é um terminal, sim para limpar sempre, ou nao para nunca limpar")
+	showVersion := fs.Bool(versionFlag, false, "mostra a versão do jogo e termina")
 	showScore := fs.Bool(showScoreFlag, false, "mostra o placar contra a máquina em cada nível, sem começar partida")
 	resetScore := fs.Bool(resetScoreFlag, false, "apaga o placar contra a máquina, sem começar partida")
 	if err := fs.Parse(args); err != nil {
@@ -77,6 +81,9 @@ func run(args []string, stdin io.Reader, stdout, stderr io.Writer, scorePath str
 		}
 		return 2
 	}
+	if *showVersion {
+		return printVersion(stdout)
+	}
 	if code, done := scoreCommand(stdout, stderr, scorePath, *showScore, *resetScore); done {
 		return code
 	}
@@ -84,9 +91,15 @@ func run(args []string, stdin io.Reader, stdout, stderr io.Writer, scorePath str
 		fmt.Fprintln(stderr, "Modo inválido: use maquina ou solo.")
 		return 2
 	}
-	style, ok := chooseStyle(*colors, isTerminal(stdout), os.Getenv("NO_COLOR"))
+	tty := isTerminal(stdout)
+	style, ok := chooseStyle(*colors, tty, os.Getenv("NO_COLOR"))
 	if !ok {
 		fmt.Fprintln(stderr, "Cores inválidas: use sim, nao ou auto.")
+		return 2
+	}
+	clearScreen, ok := chooseClear(*clearOption, tty)
+	if !ok {
+		fmt.Fprintln(stderr, "Limpar inválido: use sim, nao ou auto.")
 		return 2
 	}
 	strategy, ok := chooseStrategy(*level)
@@ -103,7 +116,7 @@ func run(args []string, stdin io.Reader, stdout, stderr io.Writer, scorePath str
 	if !flagGiven(fs, seedFlag) {
 		*seed = rand.Uint64() //nolint:gosec // a game seed, not security-sensitive
 	}
-	result, err := play(*mode, fleet, strategy, newRNG(*seed), style, stdin, stdout)
+	result, err := play(*mode, fleet, strategy, newRNG(*seed), terminal.Display{Style: style, Clear: clearScreen}, stdin, stdout)
 	if err != nil {
 		fmt.Fprintln(stderr, terminal.FleetErrorMessage(err))
 		return 1
@@ -121,17 +134,17 @@ func run(args []string, stdin io.Reader, stdout, stderr io.Writer, scorePath str
 // Against the machine, rng draws the machine's board first, then the ships
 // the player asks to draw while placing, then the machine's shots, which
 // strategy chooses; the player starts with an empty board and places the fleet.
-// The boards are drawn with style. It returns how a game against the
+// The game is shown with display. It returns how a game against the
 // machine ended; a solo game returns the zero Result.
-func play(mode string, fleet []board.FleetEntry, strategy board.ShotStrategy, rng *rand.Rand, style terminal.Style, stdin io.Reader, stdout io.Writer) (terminal.Result, error) {
+func play(mode string, fleet []board.FleetEntry, strategy board.ShotStrategy, rng *rand.Rand, display terminal.Display, stdin io.Reader, stdout io.Writer) (terminal.Result, error) {
 	target, err := board.RandomBoard(fleet, rng)
 	if err != nil {
 		return terminal.Result{}, err
 	}
 	if strings.EqualFold(mode, soloMode) {
-		return terminal.Result{}, terminal.PlaySolo(stdin, stdout, target, style)
+		return terminal.Result{}, terminal.PlaySolo(stdin, stdout, target, display)
 	}
-	return terminal.PlayVsMachine(stdin, stdout, board.NewBoard(fleet), target, rng, style, strategy)
+	return terminal.PlayVsMachine(stdin, stdout, board.NewBoard(fleet), target, rng, display, strategy)
 }
 
 // counts reports whether a game in mode that ended with result goes into
@@ -204,17 +217,34 @@ func scoreCommand(stdout, stderr io.Writer, scorePath string, show, reset bool) 
 // colored only on a terminal with NO_COLOR empty or unset.
 func chooseStyle(colors string, tty bool, noColor string) (terminal.Style, bool) {
 	switch {
-	case strings.EqualFold(colors, colorsOn):
+	case strings.EqualFold(colors, optionOn):
 		return terminal.Colored, true
-	case strings.EqualFold(colors, colorsOff):
+	case strings.EqualFold(colors, optionOff):
 		return terminal.Plain, true
-	case strings.EqualFold(colors, colorsAuto):
+	case strings.EqualFold(colors, optionAuto):
 		if tty && noColor == "" {
 			return terminal.Colored, true
 		}
 		return terminal.Plain, true
 	default:
 		return terminal.Plain, false
+	}
+}
+
+// chooseClear reports whether the terminal is cleared before each screen
+// for the clear option (sim, nao or auto, in any case), given whether the
+// output is a terminal, and false for any other option value. With auto,
+// the terminal is cleared only when the output is one.
+func chooseClear(value string, tty bool) (cleared, ok bool) {
+	switch {
+	case strings.EqualFold(value, optionOn):
+		return true, true
+	case strings.EqualFold(value, optionOff):
+		return false, true
+	case strings.EqualFold(value, optionAuto):
+		return tty, true
+	default:
+		return false, false
 	}
 }
 

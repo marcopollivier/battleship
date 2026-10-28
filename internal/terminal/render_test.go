@@ -32,7 +32,7 @@ func TestRenderBoard_Empty(t *testing.T) {
  9 ~ ~ ~ ~ ~ ~ ~ ~ ~ ~
 10 ~ ~ ~ ~ ~ ~ ~ ~ ~ ~
 
-Legenda: ~ água, S Submarino, D Destroyer, C Cruzador, E Encouraçado, P Porta-Aviões, X atingido, o tiro na água
+Legenda: ~ água, S Submarino, D Destroyer, C Cruzador, E Encouraçado, P Porta-Aviões, X atingido, # afundado, o tiro na água
 `
 	got := render(t, board.NewBoard(board.DefaultFleet()))
 	if got != want {
@@ -134,7 +134,7 @@ func TestRenderBoard_FullFleet(t *testing.T) {
  9 ~ ~ ~ ~ ~ ~ ~ ~ ~ ~
 10 ~ ~ ~ ~ ~ ~ ~ ~ ~ ~
 
-Legenda: ~ água, S Submarino, D Destroyer, C Cruzador, E Encouraçado, P Porta-Aviões, X atingido, o tiro na água
+Legenda: ~ água, S Submarino, D Destroyer, C Cruzador, E Encouraçado, P Porta-Aviões, X atingido, # afundado, o tiro na água
 `
 	got := render(t, b)
 	if got != want {
@@ -174,7 +174,36 @@ func TestRenderBoard_ReceivedShots(t *testing.T) {
 	if !strings.HasSuffix(got, "\n\n"+Legend+"\n") {
 		t.Errorf("output does not end with a blank line and the legend:\n%s", got)
 	}
-	if want := "Legenda: ~ água, S Submarino, D Destroyer, C Cruzador, E Encouraçado, P Porta-Aviões, X atingido, o tiro na água"; Legend != want {
+	if want := "Legenda: ~ água, S Submarino, D Destroyer, C Cruzador, E Encouraçado, P Porta-Aviões, X atingido, # afundado, o tiro na água"; Legend != want {
 		t.Errorf("Legend = %q, want %q", Legend, want)
+	}
+}
+
+// CA-1 and CA-3 (spec 023): the cells of a sunk ship are #, the hit cells of
+// a ship still afloat are X, the cells of an untouched ship keep its letter,
+// and the legend names # afundado.
+func TestRenderBoard_Sunk(t *testing.T) {
+	b := attackExampleBoard(t)
+	attackFire(t, b, "H5", "A5", "B5", "E1", "J10")
+
+	want := `   A B C D E F G H I J
+ 1 P P P ~ X E E E ~ C
+ 2 ~ P ~ ~ ~ ~ ~ ~ ~ C
+ 3 ~ P ~ ~ D D ~ ~ ~ C
+ 4 ~ ~ ~ ~ ~ ~ ~ ~ ~ ~
+ 5 # # ~ ~ ~ ~ ~ # ~ ~
+ 6 ~ ~ ~ ~ ~ ~ ~ ~ ~ ~
+ 7 ~ ~ ~ ~ ~ ~ ~ ~ ~ ~
+ 8 S ~ ~ ~ S ~ ~ ~ ~ ~
+ 9 ~ ~ ~ ~ ~ ~ ~ ~ ~ ~
+10 ~ ~ ~ ~ ~ ~ ~ ~ ~ o
+
+Legenda: ~ água, S Submarino, D Destroyer, C Cruzador, E Encouraçado, P Porta-Aviões, X atingido, # afundado, o tiro na água
+`
+	if got := render(t, b); got != want {
+		t.Errorf("RenderBoard() =\n%s\nwant\n%s", got, want)
+	}
+	if !strings.Contains(Legend, "X atingido, # afundado,") {
+		t.Errorf("Legend = %q, want # afundado right after X atingido", Legend)
 	}
 }

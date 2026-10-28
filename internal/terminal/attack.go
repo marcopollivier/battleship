@@ -16,6 +16,12 @@ const untouchedSymbol = "."
 // ships appear only once hit, and sunk ships show their letter. With
 // Colored, each cell is drawn in the color of its symbol.
 func RenderAttackBoard(w io.Writer, b *board.Board, style Style) error {
+	return writeBoard(w, attackGrid(b, style), AttackLegend)
+}
+
+// attackGrid returns the lines of the opponent's board as the attacker sees
+// it, the header and one line per row.
+func attackGrid(b *board.Board, style Style) []string {
 	var grid [board.Size][board.Size]string
 	for row := range grid {
 		for col := range grid[row] {
@@ -37,7 +43,7 @@ func RenderAttackBoard(w io.Writer, b *board.Board, style Style) error {
 			grid[c.Row][c.Col] = style.paint(shipSymbol(ship.Type), sunkColor)
 		}
 	}
-	return writeBoard(w, &grid, AttackLegend)
+	return gridLines(&grid)
 }
 
 // shipSunk reports whether every cell of ship has been hit.

@@ -89,6 +89,7 @@ O binário foi rodado com `HOME` e `XDG_CONFIG_HOME` apontando para uma pasta te
 - O `shotCount` passou a usar o `plural`, o mesmo helper dos números da linha do placar.
 - O teste de cada tarefa falhou primeiro na compilação (tipos e funções novas); o `TestRun_ShowScore` e o `TestRun_ResetScore` falharam também com código 2, pela opção desconhecida, e o `TestRun_ScoreError` e o `TestRun_ScoreCommandError` pela falta do aviso no `stderr`.
 - O README ganhou uma seção "Placar", com o que conta e onde fica o arquivo em cada sistema, a linha do placar no exemplo e as duas opções na tabela.
+- No merge do `master` com a 022 e a 024, o `PlayVsMachine` passou a receber o `Display` e a devolver o `Result` ao mesmo tempo. A linha do placar sai depois da tela final, antes da semente. O `--versao` é tratado antes das opções do placar. Para o `run` continuar dentro do limite do `gocyclo`, a escrita da versão foi para `printVersion`, em `cmd/version.go`.
 
 **Para o roadmap:**
 

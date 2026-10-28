@@ -68,6 +68,7 @@ var ownBoardCodes = map[string]string{
 	"~": "34",
 	"S": "1;37", "D": "1;37", "C": "1;37", "E": "1;37", "P": "1;37",
 	"X": "1;31",
+	"#": "31",
 	"o": "36",
 }
 
@@ -121,6 +122,26 @@ func TestRender_ColoredMatchesPlain(t *testing.T) {
 				}
 			}
 		})
+	}
+}
+
+// CA-2 (spec 023): with colors, the # of a sunk ship is red, the same color
+// as a sunk ship on the attack board, and without the codes the board is the
+// plain one.
+func TestRenderBoard_SunkColored(t *testing.T) {
+	b := attackExampleBoard(t)
+	attackFire(t, b, "H5", "A5", "B5", "E1", "J10")
+	got := renderColored(t, RenderBoard, b)
+	plain := render(t, b)
+
+	for _, cell := range []string{"H5", "A5", "B5"} {
+		if s, want := coloredCellAt(t, got, cell), colored("31", "#"); s != want {
+			t.Errorf("cell %s = %q, want %q", cell, s, want)
+		}
+	}
+	assertColoredCells(t, got, plain, ownBoardCodes)
+	if s := stripColors(got); s != plain {
+		t.Errorf("colored board without codes =\n%s\nwant\n%s", s, plain)
 	}
 }
 
