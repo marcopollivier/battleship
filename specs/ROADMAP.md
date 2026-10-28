@@ -35,6 +35,23 @@ Features da mesma onda não dependem umas das outras e são tocadas em paralelo 
 | 026 | Telas em 80 colunas: legenda e instruções do posicionamento numa largura só, e a mensagem de coordenada inválida mais curta | Encerramento da 022 | 022 | — | Backlog |
 | 027 | Conferir os workflows do GitHub com o `actionlint`, no `make setup` ou no CI, antes de uma tag | Encerramento da 024 | 024 | — | Backlog |
 
+## v2: core e interfaces
+
+A v2 separa o jogo em **core** (`internal/core`: tabuleiro, placar e a sessão de partida, sem I/O) e **ui** (`internal/ui`: os textos em português e cada interface). Assim, várias interfaces usam o mesmo motor. A ordem é:
+
+1. `chore/core-ui-pacotes`: move `internal/board` e `internal/score` para `internal/core/`, e `internal/terminal` para `internal/ui/terminal`, e extrai os textos comuns para `internal/ui/text`. Sem mudança de comportamento.
+2. A 028, depois a 029, uma onda cada.
+
+| # | Feature | Origem | Depende de | Onda | Status |
+| - | ------- | ------ | ---------- | ---- | ------ |
+| 028 | Core da partida: a sessão de jogo (fases, turnos, máquina, posicionamento, fim) em `internal/core/game`, com o terminal simples usando ela sem mudar a saída | v2 | — | 9 | Backlog |
+| 029 | Interface web: `--interface web` sobe um servidor local com os tabuleiros no navegador, posicionar e atirar com clique | v2 | 028 | 10 | Backlog |
+
+Interfaces que ficam para depois, como issues:
+
+- **Terminal simples sobre o core (issue #48):** tirar qualquer regra de jogo que sobrar em `ui/terminal` depois da 028, e juntar a 021 e a 026.
+- **Terminal completo com clique (issue #49):** TUI com mouse, setas e redesenho no lugar. A issue compara Bubble Tea, tcell, biblioteca padrão + `x/term`, e só biblioteca padrão.
+
 ## Notas das specs concluídas
 
 Pendências que specs anteriores deixaram para as próximas:

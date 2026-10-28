@@ -2,7 +2,7 @@
 
 Princípios que todo plano precisa respeitar. Um plano que viole algum deles precisa justificar a exceção na seção "Checagem da constituição" e ter aprovação explícita.
 
-1. **Domínio separado da interface.** Regras do jogo (tabuleiro, navios, disparos, turnos) vivem em pacotes puros, sem `fmt.Print`, leitura de stdin ou aleatoriedade global. A interface de terminal só chama o domínio e exibe o resultado.
+1. **Core separado da UI.** Regras do jogo (tabuleiro, navios, disparos, turnos, placar) vivem nos pacotes de `internal/core`, puros, sem `fmt.Print`, leitura de stdin, rede ou aleatoriedade global. Os pacotes de `internal/ui` (terminal, web e as próximas interfaces) só chamam o core e exibem o resultado, e o core nunca importa a UI.
 2. **Determinismo testável.** Tudo que for aleatório (posicionamento, jogadas da máquina) recebe a fonte de aleatoriedade por parâmetro, para que os testes usem uma seed fixa.
 3. **Teste primeiro.** Cada critério de aceitação tem um teste escrito antes do código. Preferir testes table-driven com `testing` da biblioteca padrão.
 4. **Somente biblioteca padrão.** Nenhuma dependência externa sem justificativa no plano.
