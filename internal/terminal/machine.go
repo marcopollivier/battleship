@@ -97,13 +97,13 @@ func machineShotMessage(s board.Shot) string {
 // Legends of the boards on the game screen, which name the ship letters
 // together to keep the screen within 80 columns.
 const (
-	ownScreenLegend   = ownTitle + ": ~ água, S D C E P navio, X atingido, o tiro na água"
+	ownScreenLegend   = ownTitle + ": ~ água, S D C E P navio, X atingido, # afundado, o tiro na água"
 	enemyScreenLegend = enemyTitle + ": . não atingida, o água, X acerto, S D C E P navio afundado"
 )
 
 // finalLegend explains the symbols of both boards on the last screen,
 // which shows both fleets.
-const finalLegend = "Legenda: ~ água, S D C E P navio, X atingido, o tiro na água"
+const finalLegend = "Legenda: ~ água, S D C E P navio, X atingido, # afundado, o tiro na água"
 
 // showScreen writes the game screen, with both boards side by side, their
 // legends and the events since the last screen. The prompt comes after it.

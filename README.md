@@ -75,6 +75,58 @@ AKA: Couraçado
 
 **Descrição**: Um porta-aviões é um navio de guerra cujo papel principal é servir de base aérea móvel. Permite, portanto, que uma força naval possa projetar o seu poderio aéreo a grandes distâncias, sem a necessidade de depender de aeroportos para os seus aviões. **Fonte:** [Wikipedia](https://pt.wikipedia.org/wiki/Porta-avi%C3%B5es)
 
+## Instalar
+
+### Com Go instalado
+
+```
+go install github.com/marcopollivier/battleship@latest
+battleship
+```
+
+O `go install` coloca o `battleship` na pasta de binários do Go (`$(go env GOPATH)/bin`, normalmente `~/go/bin`). Se o comando `battleship` não for encontrado, coloque essa pasta no `PATH`.
+
+### Sem Go
+
+Na [página de releases](https://github.com/marcopollivier/battleship/releases), baixe o arquivo do seu sistema na versão mais recente:
+
+Sistema | Arquivo
+------- | -------
+macOS (Apple Silicon: M1, M2...) | `battleship-<versão>-darwin-arm64`
+macOS (Intel) | `battleship-<versão>-darwin-amd64`
+Linux (64 bits) | `battleship-<versão>-linux-amd64`
+Linux (ARM 64 bits, como o Raspberry Pi) | `battleship-<versão>-linux-arm64`
+Windows (64 bits) | `battleship-<versão>-windows-amd64.exe`
+
+No macOS e no Linux, dê permissão de execução e rode pelo terminal, na pasta do arquivo:
+
+```
+chmod +x battleship-v1.0.0-darwin-arm64
+./battleship-v1.0.0-darwin-arm64
+```
+
+No Windows, rode o `.exe` pelo terminal (Prompt de Comando ou PowerShell), na pasta do arquivo: `.\battleship-v1.0.0-windows-amd64.exe`.
+
+Os binários não são assinados, então o sistema pode avisar que o programa não foi verificado:
+
+- **macOS:** se aparecer que o programa "não pode ser aberto", libere com `xattr -d com.apple.quarantine battleship-v1.0.0-darwin-arm64`, ou em Ajustes do Sistema → Privacidade e Segurança → "Abrir Mesmo Assim".
+- **Windows:** se o SmartScreen avisar, clique em "Mais informações" e depois em "Executar assim mesmo".
+
+### Versão
+
+`battleship --versao` mostra a versão instalada, como `battleship v1.0.0`. Rodando do repositório (`make run` ou `make build`), aparece `battleship (desenvolvimento)`.
+
+### Publicar uma versão (para quem mantém o projeto)
+
+Antes, `make release-check` compila os 5 binários em `dist/` para conferir. Depois, na `master` atualizada, crie e envie a tag da versão:
+
+```
+git tag v1.0.0
+git push origin v1.0.0
+```
+
+O workflow `Release` do GitHub compila os binários e publica a release `v1.0.0`, com as notas geradas a partir dos PRs. Se ele falhar, corrija num PR, apague a tag (`git push origin :v1.0.0` e `git tag -d v1.0.0`) e crie de novo.
+
 ## Como jogar
 
 Com Go instalado, rode `make run` (ou `go run .`). Primeiro você arma a sua frota; o computador arma a dele em segredo. Você atira primeiro; quem acerta atira de novo, e quem erra passa a vez. Ganha quem afundar primeiro a frota inteira do outro:
@@ -109,7 +161,7 @@ Sua frota                  Frota inimiga
 ...
 10 ~ ~ ~ ~ ~ ~ ~ ~ ~ ~     10 . . . . . . . . . .
 
-Sua frota: ~ água, S D C E P navio, X atingido, o tiro na água
+Sua frota: ~ água, S D C E P navio, X atingido, # afundado, o tiro na água
 Frota inimiga: . não atingida, o água, X acerto, S D C E P navio afundado
 
 Seu disparo em B1: Água.
@@ -134,6 +186,7 @@ Opção | Exemplo | O que faz
 `--nivel` | `--nivel facil` | `dificil` (padrão): a máquina joga como quem joga no papel, sorteia casas até acertar um navio e então atira em volta do acerto até afundá-lo, sem atirar nas casas encostadas num navio já afundado. `facil`: a máquina sorteia todos os tiros. `mestre`: a máquina sabe quais navios ainda faltam e atira onde mais deles ainda caberiam, pelo que ela já viu; depois de um acerto, ela segue o navio para o lado em que ele cabe.
 `--cores` | `--cores nao` | Pinta os tabuleiros e as mensagens de acerto, água, navio afundado, fim de partida e entrada inválida. `auto` (padrão) usa cores só quando a saída é um terminal e a variável `NO_COLOR` não está definida (ou está vazia), então `go run . > partida.txt` e `go run . \| less` saem sem cores; `sim` usa cores sempre, mesmo com `NO_COLOR`; `nao` nunca usa.
 `--limpar` | `--limpar nao` | Limpa a tela antes de cada jogada e antes de cada navio a posicionar. `auto` (padrão) limpa só quando a saída é um terminal, então `go run . > partida.txt` guarda as telas uma embaixo da outra; `sim` limpa sempre; `nao` nunca limpa.
+`--versao` | `--versao` | Mostra a versão do jogo e termina, sem começar partida.
 
 ## TODO - Evolução do projeto
 

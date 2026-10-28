@@ -8,6 +8,7 @@ import (
 	"io"
 	"math/rand/v2"
 	"os"
+	"runtime/debug"
 	"strings"
 
 	"github.com/marcopollivier/battleship/internal/board"
@@ -16,12 +17,13 @@ import (
 
 // Names of the command-line options.
 const (
-	fleetFlag = "frota"
-	seedFlag  = "semente"
-	modeFlag  = "modo"
-	levelFlag = "nivel"
-	colorFlag = "cores"
-	clearFlag = "limpar"
+	fleetFlag   = "frota"
+	seedFlag    = "semente"
+	modeFlag    = "modo"
+	levelFlag   = "nivel"
+	colorFlag   = "cores"
+	clearFlag   = "limpar"
+	versionFlag = "versao"
 )
 
 // Values of the mode option.
@@ -56,11 +58,18 @@ func Run(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
 	level := fs.String(levelFlag, hardLevel, "dificil para a máquina cercar os navios que acerta, facil para ela sortear todos os tiros, ou mestre para ela atirar onde ainda cabem mais navios")
 	colors := fs.String(colorFlag, optionAuto, "auto para usar cores só quando a saída é um terminal e NO_COLOR não está definida, sim para usar sempre, ou nao para nunca usar")
 	clearOption := fs.String(clearFlag, optionAuto, "auto para limpar a tela a cada jogada só quando a saída é um terminal, sim para limpar sempre, ou nao para nunca limpar")
+	showVersion := fs.Bool(versionFlag, false, "mostra a versão do jogo e termina")
 	if err := fs.Parse(args); err != nil {
 		if errors.Is(err, flag.ErrHelp) {
 			return 0
 		}
 		return 2
+	}
+	if *showVersion {
+		if _, err := fmt.Fprintln(stdout, versionText(version(debug.ReadBuildInfo()))); err != nil {
+			return 1
+		}
+		return 0
 	}
 	if !strings.EqualFold(*mode, machineMode) && !strings.EqualFold(*mode, soloMode) {
 		fmt.Fprintln(stderr, "Modo inválido: use maquina ou solo.")

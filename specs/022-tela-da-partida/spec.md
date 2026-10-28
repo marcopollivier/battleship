@@ -22,7 +22,7 @@ Hoje cada tabuleiro é impresso abaixo do anterior. Numa partida contra a máqui
    ...
   10 ~ ~ ~ ~ ~ ~ ~ ~ ~ ~     10 . . . . . . . . . .
 
-  Sua frota: ~ água, S D C E P navio, X atingido, o tiro na água
+  Sua frota: ~ água, S D C E P navio, X atingido, # afundado, o tiro na água
   Frota inimiga: . não atingida, o água, X acerto, S D C E P navio afundado
   ```
 
@@ -107,7 +107,7 @@ Sua frota                  Frota inimiga
 ...
 10 ~ ~ ~ ~ ~ ~ ~ ~ ~ ~     10 . . . . . . . . . .
 
-Sua frota: ~ água, S D C E P navio, X atingido, o tiro na água
+Sua frota: ~ água, S D C E P navio, X atingido, # afundado, o tiro na água
 Frota inimiga: . não atingida, o água, X acerto, S D C E P navio afundado
 
 Seu disparo em B1: Água.
@@ -119,6 +119,7 @@ Disparo:
 
 - A legenda da frota própria na tela tinha 114 colunas e contrariava a regra das 80. A implementação parou depois do T3, e a spec mudou durante a implementação (questão 6): a legenda da tela é `Sua frota: ~ água, S D C E P navio, X atingido, o tiro na água`, numa constante própria (`ownScreenLegend`); a `Legend` do `RenderBoard` não mudou. As instruções do posicionamento e a mensagem de coordenada inválida ficaram fora da regra.
 - A tela final tem uma legenda só, `Legenda: ~ água, S D C E P navio, X atingido, o tiro na água`, porque os dois tabuleiros mostram os navios. O plano não listava legenda na tela final.
+- Com a 023 no `master`, as legendas curtas da tela ganharam `# afundado` (`Sua frota: ~ água, S D C E P navio, X atingido, # afundado, o tiro na água`, 74 colunas), no merge do `master` neste branch.
 - No modo solo, a tela final usa a grade do `RenderBoard` com essa legenda curta, e não o `RenderBoard` inteiro, para caber em 80 colunas. As frases `A frota era:` e `A frota inimiga era:` saíram, porque a frota já aparece na tela.
 - `Frota posicionada!` virou a primeira mensagem da primeira tela da partida; antes da tela, ela sumiria com a limpeza.
 - As instruções do posicionamento aparecem em cada tela de navio, como no plano, também sem limpar a tela.

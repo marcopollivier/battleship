@@ -54,7 +54,7 @@ func soloTurn(t *testing.T, replay *board.Board, cell, message string) string {
 // and the shots received, the short legend, the events and the message.
 func soloFinal(t *testing.T, b *board.Board, style Style, message string, events ...string) string {
 	t.Helper()
-	lines := append(ownGrid(b, style), "", "Legenda: ~ água, S D C E P navio, X atingido, o tiro na água", "")
+	lines := append(ownGrid(b, style), "", "Legenda: ~ água, S D C E P navio, X atingido, # afundado, o tiro na água", "")
 	lines = append(lines, events...)
 	return strings.Join(lines, "\n") + "\n" + message + "\n"
 }
@@ -215,6 +215,27 @@ func TestPlaySolo_GiveUp(t *testing.T) {
 				t.Errorf("PlaySolo() =\n%s\nwant\n%s", got, want)
 			}
 		})
+	}
+}
+
+// CA-5 (spec 023): after the player sinks a ship and gives up, the revealed
+// fleet shows that ship as #, a hit ship still afloat as X and the others
+// with their letters.
+func TestPlaySolo_GiveUpShowsSunk(t *testing.T) {
+	got := soloPlay(t, attackExampleBoard(t), "H5\nE1\nJ10\nsair\n")
+	if !strings.HasSuffix(got, "Você desistiu depois de 3 disparos.\n") {
+		t.Fatalf("PlaySolo() =\n%s\nwant the give-up message at the end", got)
+	}
+	reveal := got[strings.LastIndex(got, soloPrompt)+len(soloPrompt):]
+	lines := strings.Split(reveal, "\n")
+	for row, want := range map[int]string{
+		1:  " 1 P P P ~ X E E E ~ C",
+		5:  " 5 D D ~ ~ ~ ~ ~ # ~ ~",
+		10: "10 ~ ~ ~ ~ ~ ~ ~ ~ ~ o",
+	} {
+		if lines[row] != want {
+			t.Errorf("revealed row %d = %q, want %q", row, lines[row], want)
+		}
 	}
 }
 

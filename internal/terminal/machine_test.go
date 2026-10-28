@@ -80,7 +80,7 @@ func machineScreenStyle(t *testing.T, style Style, player, enemy *board.Board, e
 	t.Helper()
 	lines := append([]string{"Sua frota                  Frota inimiga"}, sideBySide(ownGrid(player, style), attackGrid(enemy, style))...)
 	lines = append(lines, "",
-		"Sua frota: ~ água, S D C E P navio, X atingido, o tiro na água",
+		"Sua frota: ~ água, S D C E P navio, X atingido, # afundado, o tiro na água",
 		"Frota inimiga: . não atingida, o água, X acerto, S D C E P navio afundado",
 		"")
 	lines = append(lines, events...)
@@ -99,7 +99,7 @@ func machineFinal(t *testing.T, player, enemy *board.Board, message string, even
 func machineFinalStyle(t *testing.T, style Style, player, enemy *board.Board, message string, events ...string) string {
 	t.Helper()
 	lines := append([]string{"Sua frota                  Frota inimiga"}, sideBySide(ownGrid(player, style), ownGrid(enemy, style))...)
-	lines = append(lines, "", "Legenda: ~ água, S D C E P navio, X atingido, o tiro na água", "")
+	lines = append(lines, "", "Legenda: ~ água, S D C E P navio, X atingido, # afundado, o tiro na água", "")
 	lines = append(lines, events...)
 	return strings.Join(lines, "\n") + "\n" + message + "\n"
 }
@@ -375,6 +375,37 @@ func TestPlayVsMachine_Strategy(t *testing.T) {
 	} {
 		if !strings.Contains(got, want) {
 			t.Errorf("PlayVsMachine() =\n%s\nwant it to contain %q", got, want)
+		}
+	}
+}
+
+// CA-4 (spec 023): when the machine sinks a ship of the player and the turn
+// comes back, the sunk ship is drawn as # under "Sua frota".
+func TestPlayVsMachine_SunkOwnShip(t *testing.T) {
+	player := machineBoard(t,
+		placement{board.Submarine, "A1", board.Horizontal},
+		placement{board.Submarine, "J10", board.Horizontal},
+	)
+	var sb strings.Builder
+	err := PlayVsMachine(strings.NewReader("A10\n"), &sb, player, machineEnemyBoard(t),
+		rand.New(rand.NewPCG(1, 0)), Display{Style: Plain}, machineScript(t, "A1", "C3"))
+	if err != nil {
+		t.Fatalf("PlayVsMachine: %v", err)
+	}
+	before, _, found := strings.Cut(sb.String(), "A máquina atirou em C3: Água.\n")
+	if !found {
+		t.Fatalf("PlayVsMachine() =\n%s\nwant the screen after the machine's miss at C3", sb.String())
+	}
+	title := "Sua frota                  Frota inimiga\n"
+	screen := before[strings.LastIndex(before, title)+len(title):]
+	lines := strings.Split(screen, "\n")
+	for row, want := range map[int]string{
+		1:  " 1 # ~ ~ ~ ~ ~ ~ ~ ~ ~",
+		3:  " 3 ~ ~ o ~ ~ ~ ~ ~ ~ ~",
+		10: "10 ~ ~ ~ ~ ~ ~ ~ ~ ~ S",
+	} {
+		if got := lines[row][:gridWidth]; got != want {
+			t.Errorf("Sua frota row %d = %q, want %q", row, got, want)
 		}
 	}
 }
