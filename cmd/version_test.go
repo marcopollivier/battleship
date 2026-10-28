@@ -51,7 +51,7 @@ func TestRun_Version(t *testing.T) {
 		{"--versao"},
 		{"--versao", "--modo", "xyz"},
 	} {
-		code, stdout, stderr := run("", args...)
+		code, stdout, stderr := runCmd(t, "", args...)
 		if code != 0 {
 			t.Errorf("Run(%q) code = %d, want 0", args, code)
 		}

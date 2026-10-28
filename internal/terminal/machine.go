@@ -9,44 +9,69 @@ import (
 	"github.com/marcopollivier/battleship/internal/board"
 )
 
+// Outcome is how a game against the machine ended.
+type Outcome int
+
+const (
+	// GaveUp is sair or the end of the input, while placing or shooting.
+	GaveUp Outcome = iota
+	// PlayerWon means the player sank the enemy fleet.
+	PlayerWon
+	// MachineWon means the machine sank the player's fleet.
+	MachineWon
+)
+
+// Result is how a game ended and how many shots the player fired.
+type Result struct {
+	Outcome Outcome
+	Shots   int
+}
+
 // PlayVsMachine runs a game against the machine. If player is not complete,
 // the player first places the missing ships. Then the player shoots at enemy
 // with shots read from in, the machine shoots at player with the cells shoot
 // chooses, drawing with rng, and whoever hits shoots again. The player gives
 // up with "sair" or the end of the input. It writes the game to out, with the
-// boards drawn as display says, and returns an error if reading, writing or
-// choosing a machine shot fails.
-func PlayVsMachine(in io.Reader, out io.Writer, player, enemy *board.Board, rng *rand.Rand, display Display, shoot board.ShotStrategy) error {
+// boards drawn as display says, and returns how the game ended with the
+// player's valid shots, and an error if reading, writing or choosing a
+// machine shot fails.
+func PlayVsMachine(in io.Reader, out io.Writer, player, enemy *board.Board, rng *rand.Rand, display Display, shoot board.ShotStrategy) (Result, error) {
 	g := &machineGame{playerAttack: playerAttack{out: out, target: enemy, style: display.Style, clear: display.Clear}, player: player, rng: rng, strategy: shoot}
 	scanner := bufio.NewScanner(in)
 	if !player.Complete() && !g.placeFleet(scanner) {
-		return g.err
+		return g.result(GaveUp)
 	}
 	g.showScreen()
 	for {
 		line, ok := g.prompt(scanner, shotPrompt)
 		if !ok {
 			g.showFinal("Você desistiu depois de " + shotCount(g.shots) + ".")
-			return g.err
+			return g.result(GaveUp)
 		}
 		c, shot, ok := g.shoot(line)
 		if !ok {
 			if g.err != nil {
-				return g.err
+				return g.result(GaveUp)
 			}
 			continue
 		}
 		g.events = append(g.events, g.shotResult(c, shot))
 		if enemy.AllSunk() {
 			g.showFinal(g.style.paint("Você venceu! Afundou a frota inimiga em "+shotCount(g.shots)+".", winColor))
-			return g.err
+			return g.result(PlayerWon)
 		}
 		if shot.Result == board.Miss && g.machineTurn() {
 			g.showFinal(g.style.paint("A máquina venceu! Ela afundou a sua frota em "+shotCount(g.machineShots)+".", hitColor))
-			return g.err
+			return g.result(MachineWon)
 		}
 		g.showScreen()
 	}
+}
+
+// result is the game's result with outcome and the player's shots so far,
+// and the error that ended the game, if any.
+func (g *machineGame) result(outcome Outcome) (Result, error) {
+	return Result{Outcome: outcome, Shots: g.shots}, g.err
 }
 
 // machineGame is a game against the machine: the player's attack on the

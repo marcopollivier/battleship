@@ -147,6 +147,7 @@ Disparo: e1
 Seu disparo em E1: Afundou o Encouraçado!
 ...
 Você venceu! Afundou a frota inimiga em 52 disparos.
+Placar no nível dificil: 3 vitórias, 2 derrotas. Melhor vitória: 41 disparos.
 Semente: 1729901234
 ```
 
@@ -176,6 +177,12 @@ No fim da partida, a última tela mostra as duas frotas inteiras, com os navios 
 - Na partida, digite uma coordenada por vez, como `B7` ou `j10`.
 - Digite `sair` (ou aperte Ctrl+D) para desistir e ver onde estavam os navios inimigos.
 
+### Placar
+
+O jogo guarda, para cada nível, as suas vitórias e derrotas contra a máquina e a melhor vitória (a de menos disparos). Só contam as partidas com a frota da cartela, sem `--frota`; o modo solo não conta. Desistir depois do primeiro disparo conta como derrota; desistir enquanto arma a frota, ou antes de atirar, não conta. No fim de cada partida que conta, aparece o placar do nível jogado.
+
+O placar fica no arquivo `placar.json`, na pasta `battleship` da pasta de configuração do usuário: `~/Library/Application Support/battleship/placar.json` no macOS, `~/.config/battleship/placar.json` no Linux (ou em `$XDG_CONFIG_HOME`) e `%AppData%\battleship\placar.json` no Windows. Se não der para ler ou gravar o arquivo (por exemplo, se ele estiver corrompido), o jogo avisa `Não foi possível guardar o placar.` e segue normalmente; `--zerar-placar` começa um placar novo.
+
 As opções vão em `ARGS`, como em `make run ARGS="--frota S=2,P=1 --semente 42"`, ou depois de `go run .`, como em `go run . --frota S=2,P=1 --semente 42`:
 
 Opção | Exemplo | O que faz
@@ -184,6 +191,8 @@ Opção | Exemplo | O que faz
 `--semente` | `--semente 42` | Repete uma partida anterior: o tabuleiro da máquina, os navios sorteados com `aleatorio` e os tiros da máquina, desde que você digite as mesmas coisas e use o mesmo nível. A semente aparece no fim de cada partida.
 `--modo` | `--modo solo` | `maquina` (padrão) joga contra a máquina; `solo` só ataca um tabuleiro sorteado, sem a máquina atirar de volta.
 `--nivel` | `--nivel facil` | `dificil` (padrão): a máquina joga como quem joga no papel, sorteia casas até acertar um navio e então atira em volta do acerto até afundá-lo, sem atirar nas casas encostadas num navio já afundado. `facil`: a máquina sorteia todos os tiros. `mestre`: a máquina sabe quais navios ainda faltam e atira onde mais deles ainda caberiam, pelo que ela já viu; depois de um acerto, ela segue o navio para o lado em que ele cabe.
+`--placar` | `--placar` | Mostra o placar dos três níveis e termina, sem começar partida.
+`--zerar-placar` | `--zerar-placar` | Apaga o placar e termina, sem começar partida.
 `--cores` | `--cores nao` | Pinta os tabuleiros e as mensagens de acerto, água, navio afundado, fim de partida e entrada inválida. `auto` (padrão) usa cores só quando a saída é um terminal e a variável `NO_COLOR` não está definida (ou está vazia), então `go run . > partida.txt` e `go run . \| less` saem sem cores; `sim` usa cores sempre, mesmo com `NO_COLOR`; `nao` nunca usa.
 `--limpar` | `--limpar nao` | Limpa a tela antes de cada jogada e antes de cada navio a posicionar. `auto` (padrão) limpa só quando a saída é um terminal, então `go run . > partida.txt` guarda as telas uma embaixo da outra; `sim` limpa sempre; `nao` nunca limpa.
 `--versao` | `--versao` | Mostra a versão do jogo e termina, sem começar partida.

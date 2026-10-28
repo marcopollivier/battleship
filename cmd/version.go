@@ -1,6 +1,10 @@
 package cmd
 
-import "runtime/debug"
+import (
+	"fmt"
+	"io"
+	"runtime/debug"
+)
 
 // develVersion is the version the Go tool stamps on a build that is not
 // from a module version or a tag.
@@ -23,4 +27,13 @@ func versionText(v string) string {
 		return "battleship (desenvolvimento)"
 	}
 	return "battleship " + v
+}
+
+// printVersion writes the --versao text to stdout and returns the exit
+// code: 0, or 1 if writing fails.
+func printVersion(stdout io.Writer) int {
+	if _, err := fmt.Fprintln(stdout, versionText(version(debug.ReadBuildInfo()))); err != nil {
+		return 1
+	}
+	return 0
 }
