@@ -7,7 +7,8 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/marcopollivier/battleship/internal/board"
+	"github.com/marcopollivier/battleship/internal/core/board"
+	"github.com/marcopollivier/battleship/internal/ui/text"
 )
 
 // errInvalidPlacement means the line is not a cell followed by an orientation.
@@ -29,23 +30,11 @@ func parsePlacement(line string, t board.ShipType) (board.Coord, board.Orientati
 	if len(fields) == 1 {
 		return c, board.Horizontal, nil
 	}
-	o, ok := orientationByName(fields[1])
+	o, ok := text.OrientationByName(fields[1])
 	if !ok || !slices.Contains(board.ValidOrientations(t), o) {
 		return board.Coord{}, 0, fmt.Errorf("%w: %v %q", board.ErrInvalidOrientation, t, fields[1])
 	}
 	return c, o, nil
-}
-
-// orientationByName finds an orientation by its Portuguese name or first
-// letter, in any case.
-func orientationByName(name string) (board.Orientation, bool) {
-	name = strings.ToLower(name)
-	for o, full := range orientationNames {
-		if name == full || name == full[:1] {
-			return o, true
-		}
-	}
-	return 0, false
 }
 
 // placementInstructions explain how to place the fleet.
@@ -140,45 +129,17 @@ func (g *machineGame) placeShip(scanner *bufio.Scanner, t board.ShipType) bool {
 // ship of type t refused with err, and false if err is not a mistake of the
 // player.
 func placementErrorMessage(err error, t board.ShipType) (string, bool) {
-	switch {
-	case errors.Is(err, errInvalidPlacement), errors.Is(err, board.ErrInvalidFormat):
+	if errors.Is(err, errInvalidPlacement) || errors.Is(err, board.ErrInvalidFormat) {
 		return "Posição inválida: digite a casa e a orientação, por exemplo E5 vertical.", true
-	case errors.Is(err, board.ErrInvalidOrientation):
-		return "Orientação inválida para o " + ShipName(t) + ": use " + joinOr(orientationList(t)) + ".", true
-	case errors.Is(err, board.ErrOutOfBounds):
-		return "Fora do tabuleiro: o " + ShipName(t) + " não cabe nessa posição.", true
-	case errors.Is(err, board.ErrOverlap):
-		return "Posição ocupada: o " + ShipName(t) + " ficaria em cima de outro navio.", true
-	case errors.Is(err, board.ErrAdjacent):
-		return "Muito perto: os navios não podem se encostar, nem pela diagonal.", true
-	default:
-		return "", false
 	}
+	return text.PlacementErrorMessage(err, t)
 }
 
 // placementPrompt asks for a ship, such as "Destroyer, 2 casas (horizontal,
 // vertical): ". One-cell ships list no orientation.
 func placementPrompt(t board.ShipType) string {
 	if t.Size() == 1 {
-		return ShipName(t) + ", 1 casa: "
+		return text.ShipName(t) + ", 1 casa: "
 	}
-	return fmt.Sprintf("%s, %d casas (%s): ", ShipName(t), t.Size(), strings.Join(orientationList(t), ", "))
-}
-
-// orientationList names the orientations that apply to t, in Portuguese.
-func orientationList(t board.ShipType) []string {
-	var names []string
-	for _, o := range board.ValidOrientations(t) {
-		names = append(names, OrientationName(o))
-	}
-	return names
-}
-
-// joinOr lists names with commas and "ou" before the last one, such as
-// "cima, baixo, esquerda ou direita".
-func joinOr(names []string) string {
-	if len(names) < 2 {
-		return strings.Join(names, "")
-	}
-	return strings.Join(names[:len(names)-1], ", ") + " ou " + names[len(names)-1]
+	return fmt.Sprintf("%s, %d casas (%s): ", text.ShipName(t), t.Size(), strings.Join(text.OrientationList(t), ", "))
 }

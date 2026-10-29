@@ -3,7 +3,8 @@ package terminal
 import (
 	"io"
 
-	"github.com/marcopollivier/battleship/internal/board"
+	"github.com/marcopollivier/battleship/internal/core/board"
+	"github.com/marcopollivier/battleship/internal/ui/text"
 )
 
 // AttackLegend explains the symbols of the attack board.
@@ -40,7 +41,7 @@ func attackGrid(b *board.Board, style Style) []string {
 			continue
 		}
 		for _, c := range ship.Cells {
-			grid[c.Row][c.Col] = style.paint(shipSymbol(ship.Type), sunkColor)
+			grid[c.Row][c.Col] = style.paint(text.ShipSymbol(ship.Type), sunkColor)
 		}
 	}
 	return gridLines(&grid)

@@ -1,4 +1,4 @@
-// Package cmd wires the game domain to the terminal.
+// Package cmd wires the core of the game to its interfaces.
 package cmd
 
 import (
@@ -10,9 +10,10 @@ import (
 	"os"
 	"strings"
 
-	"github.com/marcopollivier/battleship/internal/board"
-	"github.com/marcopollivier/battleship/internal/score"
-	"github.com/marcopollivier/battleship/internal/terminal"
+	"github.com/marcopollivier/battleship/internal/core/board"
+	"github.com/marcopollivier/battleship/internal/core/score"
+	"github.com/marcopollivier/battleship/internal/ui/terminal"
+	"github.com/marcopollivier/battleship/internal/ui/text"
 )
 
 // Names of the command-line options.
@@ -110,7 +111,7 @@ func run(args []string, stdin io.Reader, stdout, stderr io.Writer, scorePath str
 
 	fleet, err := chooseFleet(fs, *fleetText)
 	if err != nil {
-		fmt.Fprintln(stderr, terminal.FleetErrorMessage(err))
+		fmt.Fprintln(stderr, text.FleetErrorMessage(err))
 		return 1
 	}
 	if !flagGiven(fs, seedFlag) {
@@ -118,7 +119,7 @@ func run(args []string, stdin io.Reader, stdout, stderr io.Writer, scorePath str
 	}
 	result, err := play(*mode, fleet, strategy, newRNG(*seed), terminal.Display{Style: style, Clear: clearScreen}, stdin, stdout)
 	if err != nil {
-		fmt.Fprintln(stderr, terminal.FleetErrorMessage(err))
+		fmt.Fprintln(stderr, text.FleetErrorMessage(err))
 		return 1
 	}
 	if counts(*mode, flagGiven(fs, fleetFlag), result) {
@@ -179,7 +180,7 @@ func recordScore(stdout, stderr io.Writer, scorePath, level string, result termi
 		fmt.Fprintln(stderr, scoreErrorMessage)
 		return
 	}
-	fmt.Fprintln(stdout, terminal.ScoreLine(level, b[level]))
+	fmt.Fprintln(stdout, text.ScoreLine(level, b[level]))
 }
 
 // scoreCommand runs the score options instead of a game: with reset it
@@ -205,7 +206,7 @@ func scoreCommand(stdout, stderr io.Writer, scorePath string, show, reset bool) 
 			return 0, true
 		}
 		for _, level := range []string{easyLevel, hardLevel, masterLevel} {
-			fmt.Fprintln(stdout, terminal.ScoreLine(level, b[level]))
+			fmt.Fprintln(stdout, text.ScoreLine(level, b[level]))
 		}
 	}
 	return 0, true
@@ -278,12 +279,12 @@ func newRNG(seed uint64) *rand.Rand {
 }
 
 // chooseFleet returns the default fleet when the fleet option was not given,
-// and otherwise the parsed and validated fleet text.
-func chooseFleet(fs *flag.FlagSet, text string) ([]board.FleetEntry, error) {
+// and otherwise the parsed and validated fleet value.
+func chooseFleet(fs *flag.FlagSet, value string) ([]board.FleetEntry, error) {
 	if !flagGiven(fs, fleetFlag) {
 		return board.DefaultFleet(), nil
 	}
-	fleet, err := terminal.ParseFleet(text)
+	fleet, err := text.ParseFleet(value)
 	if err != nil {
 		return nil, err
 	}

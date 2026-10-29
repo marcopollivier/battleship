@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/marcopollivier/battleship/internal/board"
+	"github.com/marcopollivier/battleship/internal/core/board"
 )
 
 // CA-3: a cell and an orientation by name or first letter, in any case; a
@@ -219,23 +219,6 @@ func TestPlayVsMachine_PlacementErrors(t *testing.T) {
 	input := "C3 horizontal\nB1 baixo\nE5\nE5 vertical sim\n5E vertical\nE5 diagonal\nJ9 vertical\nK1 h\nA2 h\nD1 v\nE1 h\n"
 	if got := placementPlay(t, input); !strings.HasPrefix(got, want) {
 		t.Errorf("PlayVsMachine() =\n%s\nwant prefix\n%s", got, want)
-	}
-}
-
-func TestJoinOr(t *testing.T) {
-	tests := []struct {
-		names []string
-		want  string
-	}{
-		{nil, ""},
-		{[]string{"cima"}, "cima"},
-		{[]string{"horizontal", "vertical"}, "horizontal ou vertical"},
-		{[]string{"cima", "baixo", "esquerda", "direita"}, "cima, baixo, esquerda ou direita"},
-	}
-	for _, tt := range tests {
-		if got := joinOr(tt.names); got != tt.want {
-			t.Errorf("joinOr(%q) = %q, want %q", tt.names, got, tt.want)
-		}
 	}
 }
 

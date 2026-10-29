@@ -1,4 +1,4 @@
-package terminal
+package text
 
 import (
 	"errors"
@@ -6,7 +6,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/marcopollivier/battleship/internal/board"
+	"github.com/marcopollivier/battleship/internal/core/board"
 )
 
 // ErrInvalidFleetFormat means the fleet text is not a comma-separated list of letter=count pairs.

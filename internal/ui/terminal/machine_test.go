@@ -7,7 +7,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/marcopollivier/battleship/internal/board"
+	"github.com/marcopollivier/battleship/internal/core/board"
+	"github.com/marcopollivier/battleship/internal/ui/text"
 )
 
 // machineBoard returns a complete board whose fleet is exactly the placed ships.
@@ -116,7 +117,7 @@ func machineShot(t *testing.T, replay *board.Board, cell string) string {
 	if err != nil {
 		t.Fatalf("Fire(%s): %v", cell, err)
 	}
-	return "Seu disparo em " + c.String() + ": " + ShotMessage(shot)
+	return "Seu disparo em " + c.String() + ": " + text.ShotMessage(shot)
 }
 
 // CA-1 (spec 022): the game starts with both boards side by side, their
@@ -223,9 +224,9 @@ func machineTurn(t *testing.T, player *board.Board, rng *rand.Rand) ([]string, b
 		if err != nil {
 			t.Fatalf("Fire(%v): %v", c, err)
 		}
-		message := ShotMessage(shot)
+		message := text.ShotMessage(shot)
 		if shot.Result == board.Sunk {
-			message = "Afundou o seu " + ShipName(shot.Ship) + "!"
+			message = "Afundou o seu " + text.ShipName(shot.Ship) + "!"
 		}
 		lines = append(lines, "A máquina atirou em "+c.String()+": "+message)
 		if player.AllSunk() {
@@ -294,7 +295,7 @@ func TestPlayVsMachine_MachineWins(t *testing.T) {
 		machineShots += len(lines)
 		if machineWon {
 			won = true
-			want += machineFinal(t, player, enemy, "A máquina venceu! Ela afundou a sua frota em "+shotCount(machineShots)+".", events...)
+			want += machineFinal(t, player, enemy, "A máquina venceu! Ela afundou a sua frota em "+text.ShotCount(machineShots)+".", events...)
 			break
 		}
 		want += machineScreen(t, player, enemy, events...)

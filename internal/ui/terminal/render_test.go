@@ -5,7 +5,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/marcopollivier/battleship/internal/board"
+	"github.com/marcopollivier/battleship/internal/core/board"
+	"github.com/marcopollivier/battleship/internal/ui/text"
 )
 
 func render(t *testing.T, b *board.Board) string {
@@ -153,8 +154,8 @@ Legenda: ~ água, S Submarino, D Destroyer, C Cruzador, E Encouraçado, P Porta-
 }
 
 func TestShipSymbol_Unknown(t *testing.T) {
-	if got := shipSymbol(board.ShipType(99)); got != "?" {
-		t.Errorf("shipSymbol(ShipType(99)) = %q, want %q", got, "?")
+	if got := text.ShipSymbol(board.ShipType(99)); got != "?" {
+		t.Errorf("text.ShipSymbol(ShipType(99)) = %q, want %q", got, "?")
 	}
 }
 

@@ -7,7 +7,8 @@ import (
 	"testing"
 	"testing/iotest"
 
-	"github.com/marcopollivier/battleship/internal/board"
+	"github.com/marcopollivier/battleship/internal/core/board"
+	"github.com/marcopollivier/battleship/internal/ui/text"
 )
 
 // soloShipCells are the 19 ship cells of the example board from spec 003.
@@ -101,7 +102,7 @@ func TestPlaySolo_Win(t *testing.T) {
 		if err != nil {
 			t.Fatalf("Fire(%s): %v", cell, err)
 		}
-		result := "Seu disparo em " + cell + ": " + ShotMessage(shot)
+		result := "Seu disparo em " + cell + ": " + text.ShotMessage(shot)
 		if i == len(cells)-1 {
 			want.WriteString(soloFinal(t, replay, Plain, "Você afundou toda a frota em 21 disparos!", result))
 			break
