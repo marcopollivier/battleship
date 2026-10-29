@@ -1,9 +1,9 @@
-package terminal
+package text
 
 import (
 	"testing"
 
-	"github.com/marcopollivier/battleship/internal/board"
+	"github.com/marcopollivier/battleship/internal/core/board"
 )
 
 // CA-4: each shot result has its Portuguese message, and only a sunk ship

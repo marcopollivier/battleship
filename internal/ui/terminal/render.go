@@ -1,3 +1,5 @@
+// Package terminal draws the game on a text terminal. It reads the core and
+// never changes it; text shown to the player is in Portuguese.
 package terminal
 
 import (
@@ -5,7 +7,8 @@ import (
 	"io"
 	"strings"
 
-	"github.com/marcopollivier/battleship/internal/board"
+	"github.com/marcopollivier/battleship/internal/core/board"
+	"github.com/marcopollivier/battleship/internal/ui/text"
 )
 
 // Legend explains the symbols of the player's own board.
@@ -21,15 +24,6 @@ const (
 	// missSymbol is the symbol of a water cell that was shot.
 	missSymbol = "o"
 )
-
-// shipSymbols are the ASCII letters drawn on the cells of each ship type.
-var shipSymbols = map[board.ShipType]string{
-	board.Submarine:       "S",
-	board.Destroyer:       "D",
-	board.Cruiser:         "C",
-	board.Battleship:      "E",
-	board.AircraftCarrier: "P",
-}
 
 // gridWidth is the visible width of every line of a board grid, without the
 // color codes: 2 columns for the row number and 2 for each cell.
@@ -54,7 +48,7 @@ func ownGrid(b *board.Board, style Style) []string {
 	}
 	for _, ship := range b.Ships() {
 		for _, c := range ship.Cells {
-			grid[c.Row][c.Col] = style.paint(shipSymbol(ship.Type), shipColor)
+			grid[c.Row][c.Col] = style.paint(text.ShipSymbol(ship.Type), shipColor)
 		}
 	}
 	for row := range grid {
@@ -110,12 +104,4 @@ func writeBoard(w io.Writer, lines []string, legend string) error {
 // rule from the domain instead of converting the index to a rune here.
 func columnName(col int) string {
 	return strings.TrimSuffix(board.Coord{Col: col}.String(), "1")
-}
-
-// shipSymbol returns the letter drawn for a ship type, or "?" for an unknown type.
-func shipSymbol(t board.ShipType) string {
-	if symbol, ok := shipSymbols[t]; ok {
-		return symbol
-	}
-	return "?"
 }

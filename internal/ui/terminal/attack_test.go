@@ -4,7 +4,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/marcopollivier/battleship/internal/board"
+	"github.com/marcopollivier/battleship/internal/core/board"
 )
 
 // attackExampleBoard returns the complete example board from spec 003.

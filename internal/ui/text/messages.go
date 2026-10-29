@@ -1,6 +1,6 @@
-package terminal
+package text
 
-import "github.com/marcopollivier/battleship/internal/board"
+import "github.com/marcopollivier/battleship/internal/core/board"
 
 // ShotMessage returns the Portuguese message for a shot result, e.g. "Afundou o Cruzador!".
 // The ship is named only when it sinks, since Shot.Ship is unset otherwise.

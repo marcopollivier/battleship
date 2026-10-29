@@ -8,8 +8,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/marcopollivier/battleship/internal/board"
-	"github.com/marcopollivier/battleship/internal/score"
+	"github.com/marcopollivier/battleship/internal/core/board"
+	"github.com/marcopollivier/battleship/internal/core/score"
 )
 
 // scoreStart is the score the spec 025 tests start from.

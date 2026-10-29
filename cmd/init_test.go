@@ -10,9 +10,10 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/marcopollivier/battleship/internal/board"
-	"github.com/marcopollivier/battleship/internal/score"
-	"github.com/marcopollivier/battleship/internal/terminal"
+	"github.com/marcopollivier/battleship/internal/core/board"
+	"github.com/marcopollivier/battleship/internal/core/score"
+	"github.com/marcopollivier/battleship/internal/ui/terminal"
+	"github.com/marcopollivier/battleship/internal/ui/text"
 )
 
 // runCmd runs the program with stdin and args, keeping the score in a new
@@ -172,7 +173,7 @@ func levelGame(t *testing.T, input string, seed uint64, strategy board.ShotStrat
 	if _, err := terminal.PlayVsMachine(strings.NewReader(input), &sb, board.NewBoard(board.DefaultFleet()), enemy, rng, terminal.Display{Style: terminal.Colored}, strategy); err != nil {
 		t.Fatalf("PlayVsMachine: %v", err)
 	}
-	return sb.String() + terminal.ScoreLine(level, score.Record{Losses: 1}) + "\n" + fmt.Sprintf("Semente: %d\n", seed)
+	return sb.String() + text.ScoreLine(level, score.Record{Losses: 1}) + "\n" + fmt.Sprintf("Semente: %d\n", seed)
 }
 
 // CA-8 and the level option (spec 013): dificil, the default, plays with

@@ -2,11 +2,11 @@ package terminal
 
 import (
 	"bufio"
-	"errors"
 	"io"
 	"strings"
 
-	"github.com/marcopollivier/battleship/internal/board"
+	"github.com/marcopollivier/battleship/internal/core/board"
+	"github.com/marcopollivier/battleship/internal/ui/text"
 )
 
 const (
@@ -29,7 +29,7 @@ func PlaySolo(in io.Reader, out io.Writer, b *board.Board, display Display) erro
 	for {
 		line, ok := g.prompt(scanner, shotPrompt)
 		if !ok {
-			g.showReveal("Você desistiu depois de " + shotCount(g.shots) + ".")
+			g.showReveal("Você desistiu depois de " + text.ShotCount(g.shots) + ".")
 			return g.err
 		}
 		c, shot, ok := g.shoot(line)
@@ -41,7 +41,7 @@ func PlaySolo(in io.Reader, out io.Writer, b *board.Board, display Display) erro
 		}
 		g.events = append(g.events, g.shotResult(c, shot))
 		if b.AllSunk() {
-			g.showReveal(g.style.paint("Você afundou toda a frota em "+shotCount(g.shots)+"!", winColor))
+			g.showReveal(g.style.paint("Você afundou toda a frota em "+text.ShotCount(g.shots)+"!", winColor))
 			return g.err
 		}
 		g.showBoard()
@@ -107,7 +107,7 @@ func (g *playerAttack) shoot(line string) (board.Coord, board.Shot, bool) {
 // shotResult is the result of the player's shot at c, citing the cell, such
 // as "Seu disparo em B7: Acerto!", with the result in its color.
 func (g *playerAttack) shotResult(c board.Coord, shot board.Shot) string {
-	return "Seu disparo em " + c.String() + ": " + g.style.paint(ShotMessage(shot), shotColor(shot.Result))
+	return "Seu disparo em " + c.String() + ": " + g.style.paint(text.ShotMessage(shot), shotColor(shot.Result))
 }
 
 // showReveal writes the last screen of a solo game: the target board with
@@ -120,35 +120,15 @@ func (g *playerAttack) showReveal(message string) {
 	g.write(message + "\n")
 }
 
-// shotCount writes n shots in Portuguese, such as "1 disparo" or "2 disparos".
-func shotCount(n int) string {
-	return plural(n, "disparo", "disparos")
-}
-
 // reject shows the message for an invalid shot at c, in yellow. An error with no
 // message for the player is kept in g.err and ends the game.
 func (g *playerAttack) reject(err error, c board.Coord) {
-	message, ok := shotErrorMessage(err, c)
+	message, ok := text.ShotErrorMessage(err, c)
 	if !ok {
 		g.err = err
 		return
 	}
 	g.write(g.style.paint(message, warnColor) + "\n")
-}
-
-// shotErrorMessage returns the Portuguese message for a shot at c that was
-// refused with err, and false if err is not a mistake of the player.
-func shotErrorMessage(err error, c board.Coord) (string, bool) {
-	switch {
-	case errors.Is(err, board.ErrInvalidFormat):
-		return "Coordenada inválida: use uma letra de A a J e um número de 1 a 10, por exemplo B7.", true
-	case errors.Is(err, board.ErrOutOfBounds):
-		return "Fora do tabuleiro: use uma letra de A a J e um número de 1 a 10.", true
-	case errors.Is(err, board.ErrAlreadyShot):
-		return "Você já atirou em " + c.String() + ".", true
-	default:
-		return "", false
-	}
 }
 
 // showBoard writes the screen of a solo game: the attack board, a blank

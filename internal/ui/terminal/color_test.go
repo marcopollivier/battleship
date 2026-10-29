@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/marcopollivier/battleship/internal/board"
+	"github.com/marcopollivier/battleship/internal/core/board"
 )
 
 // colorCode matches an ANSI color code, such as "\x1b[1;31m" or "\x1b[0m".

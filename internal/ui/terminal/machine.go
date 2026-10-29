@@ -6,7 +6,8 @@ import (
 	"math/rand/v2"
 	"strings"
 
-	"github.com/marcopollivier/battleship/internal/board"
+	"github.com/marcopollivier/battleship/internal/core/board"
+	"github.com/marcopollivier/battleship/internal/ui/text"
 )
 
 // Outcome is how a game against the machine ended.
@@ -45,7 +46,7 @@ func PlayVsMachine(in io.Reader, out io.Writer, player, enemy *board.Board, rng 
 	for {
 		line, ok := g.prompt(scanner, shotPrompt)
 		if !ok {
-			g.showFinal("Você desistiu depois de " + shotCount(g.shots) + ".")
+			g.showFinal("Você desistiu depois de " + text.ShotCount(g.shots) + ".")
 			return g.result(GaveUp)
 		}
 		c, shot, ok := g.shoot(line)
@@ -57,11 +58,11 @@ func PlayVsMachine(in io.Reader, out io.Writer, player, enemy *board.Board, rng 
 		}
 		g.events = append(g.events, g.shotResult(c, shot))
 		if enemy.AllSunk() {
-			g.showFinal(g.style.paint("Você venceu! Afundou a frota inimiga em "+shotCount(g.shots)+".", winColor))
+			g.showFinal(g.style.paint("Você venceu! Afundou a frota inimiga em "+text.ShotCount(g.shots)+".", winColor))
 			return g.result(PlayerWon)
 		}
 		if shot.Result == board.Miss && g.machineTurn() {
-			g.showFinal(g.style.paint("A máquina venceu! Ela afundou a sua frota em "+shotCount(g.machineShots)+".", hitColor))
+			g.showFinal(g.style.paint("A máquina venceu! Ela afundou a sua frota em "+text.ShotCount(g.machineShots)+".", hitColor))
 			return g.result(MachineWon)
 		}
 		g.showScreen()
@@ -114,9 +115,9 @@ func (g *machineGame) machineTurn() bool {
 // ship when it sinks, such as "Afundou o seu Cruzador!".
 func machineShotMessage(s board.Shot) string {
 	if s.Result == board.Sunk {
-		return "Afundou o seu " + ShipName(s.Ship) + "!"
+		return "Afundou o seu " + text.ShipName(s.Ship) + "!"
 	}
-	return ShotMessage(s)
+	return text.ShotMessage(s)
 }
 
 // Legends of the boards on the game screen, which name the ship letters

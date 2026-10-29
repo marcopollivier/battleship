@@ -1,4 +1,4 @@
-package terminal
+package text
 
 import (
 	"errors"
@@ -6,7 +6,7 @@ import (
 	"slices"
 	"testing"
 
-	"github.com/marcopollivier/battleship/internal/board"
+	"github.com/marcopollivier/battleship/internal/core/board"
 )
 
 // CA-1, CA-2: a valid fleet text lists only the given types, in type order.

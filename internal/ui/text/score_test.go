@@ -1,9 +1,9 @@
-package terminal
+package text
 
 import (
 	"testing"
 
-	"github.com/marcopollivier/battleship/internal/score"
+	"github.com/marcopollivier/battleship/internal/core/score"
 )
 
 // CA-1 and CA-4 (spec 025): the score line of a level, in singular or

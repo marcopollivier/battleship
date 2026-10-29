@@ -1,6 +1,6 @@
 package terminal
 
-import "github.com/marcopollivier/battleship/internal/board"
+import "github.com/marcopollivier/battleship/internal/core/board"
 
 // Style says whether the boards and the messages are drawn with ANSI colors.
 type Style int
